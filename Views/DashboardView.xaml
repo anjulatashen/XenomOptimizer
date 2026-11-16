@@ -1,0 +1,1309 @@
+<UserControl x:Class="XenomOptimizer.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:XenomOptimizer.Converters"
+             xmlns:views="clr-namespace:XenomOptimizer.Views">
+
+    <UserControl.Resources>
+        <converters:MediaTypeToBrushConverter x:Key="MediaTypeToBrush"/>
+        <converters:UsageToBrushConverter x:Key="UsageToBrush"/>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVis"/>
+        <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVis"/>
+        <converters:StringToColorBrushConverter x:Key="StringToBrush"/>
+        <converters:PercentageToStrokeDashArrayConverter x:Key="PctToDash"/>
+        <converters:ArcGaugeStrokeDashConverter x:Key="ArcGaugeDash"/>
+        <converters:ArchPathDashConverter x:Key="ArchPathDash"/>
+    </UserControl.Resources>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- STAGED HERO ANIMATIONS: Left Hero + Right Socials               -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <UserControl.Triggers>
+        <EventTrigger RoutedEvent="UserControl.Loaded">
+            <BeginStoryboard>
+                <Storyboard>
+                    <!-- Left Hero Content glides in from top -->
+                    <DoubleAnimation Storyboard.TargetName="HeroCardBox"
+                                     Storyboard.TargetProperty="Opacity"
+                                     From="0" To="1" Duration="0:0:0.6" BeginTime="0:0:0.1">
+                        <DoubleAnimation.EasingFunction>
+                            <CubicEase EasingMode="EaseOut"/>
+                        </DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                    <DoubleAnimation Storyboard.TargetName="HeroCardBox"
+                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                     From="-12" To="0" Duration="0:0:0.6" BeginTime="0:0:0.1">
+                        <DoubleAnimation.EasingFunction>
+                            <CubicEase EasingMode="EaseOut"/>
+                        </DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+
+                    <!-- Right Social Buttons glide in from right -->
+                    <DoubleAnimation Storyboard.TargetName="SocialButtonsBox"
+                                     Storyboard.TargetProperty="Opacity"
+                                     From="0" To="1" Duration="0:0:0.6" BeginTime="0:0:0.25">
+                        <DoubleAnimation.EasingFunction>
+                            <CubicEase EasingMode="EaseOut"/>
+                        </DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                    <DoubleAnimation Storyboard.TargetName="SocialButtonsBox"
+                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                     From="16" To="0" Duration="0:0:0.6" BeginTime="0:0:0.25">
+                        <DoubleAnimation.EasingFunction>
+                            <CubicEase EasingMode="EaseOut"/>
+                        </DoubleAnimation.EasingFunction>
+                    </DoubleAnimation>
+                </Storyboard>
+            </BeginStoryboard>
+        </EventTrigger>
+    </UserControl.Triggers>
+
+    <!-- NO SCROLLBAR: Content fits seamlessly with generous bezels -->
+    <ScrollViewer VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled" Padding="24,20,24,20">
+        <StackPanel MaxWidth="1200">
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- 1. HAULIX LUXURY HERO SECTION (HORIZONTAL SPLIT BANNER)    -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <Border CornerRadius="22" BorderBrush="#20222B" BorderThickness="1.5"
+                    Margin="0,12,0,14">
+                <Border.Background>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#16171B" Offset="0"/>
+                        <GradientStop Color="#131417" Offset="1"/>
+                    </LinearGradientBrush>
+                </Border.Background>
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="24" ShadowDepth="3" Direction="270" Color="#000000" Opacity="0.5"/>
+                </Border.Effect>
+
+                <Grid>
+                    <!-- ═══ TOPO ARTWORK: Seamlessly blended inside right side, clipped to border radius ═══ -->
+                    <Border HorizontalAlignment="Right" Width="650"
+                            CornerRadius="0,20,20,0" Margin="0,1.5,1.5,1.5"
+                            Opacity="0.25" IsHitTestVisible="False">
+                        <Border.Background>
+                            <ImageBrush ImageSource="pack://application:,,,/Assets/topo_transparent.png"
+                                        Stretch="UniformToFill"
+                                        AlignmentX="Right"
+                                        AlignmentY="Center"/>
+                        </Border.Background>
+                        <Border.OpacityMask>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#00000000" Offset="0.0"/>
+                                <GradientStop Color="#00000000" Offset="0.25"/>
+                                <GradientStop Color="#15000000" Offset="0.45"/>
+                                <GradientStop Color="#60000000" Offset="0.70"/>
+                                <GradientStop Color="#FF000000" Offset="1.0"/>
+                            </LinearGradientBrush>
+                        </Border.OpacityMask>
+                    </Border>
+
+                    <!-- ═══ FOREGROUND CONTENT (Margin 36,28) ═══ -->
+                    <Grid x:Name="HeroContentGrid" Margin="36,28">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- ═══ LEFT COLUMN: Title, By Xenom, Description, Get Start (Vertically Centered) ═══ -->
+                        <Border x:Name="HeroCardBox" Grid.Column="0" VerticalAlignment="Center" Margin="0,0,28,0" Opacity="0">
+                        <Border.RenderTransform>
+                            <TranslateTransform Y="-10"/>
+                        </Border.RenderTransform>
+                        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Center">
+
+                            <!-- Clean, High-End Title: WELCOME TO LAG KILLER (No jumping, No hover pop) -->
+                            <TextBlock Text="WELCOME TO LAG KILLER"
+                                       FontFamily="{StaticResource DisplayFont}"
+                                       FontSize="30" FontWeight="Black"
+                                       Foreground="#F3F6FA"
+                                       Margin="0,0,0,10" HorizontalAlignment="Left">
+                                <TextBlock.Effect>
+                                    <DropShadowEffect BlurRadius="12" ShadowDepth="1" Direction="270" Color="#000000" Opacity="0.45"/>
+                                </TextBlock.Effect>
+                            </TextBlock>
+
+                            <!-- BY XENOM -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12" VerticalAlignment="Center">
+                                <TextBlock Text="BY" FontFamily="{StaticResource DisplayFont}" FontSize="12" FontWeight="ExtraBold"
+                                           Foreground="#64748B" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="XENOM" FontFamily="{StaticResource DisplayFont}" FontSize="20" FontWeight="Black"
+                                           Foreground="{StaticResource AccentElectricBlueBrush}" VerticalAlignment="Center">
+                                    <TextBlock.Effect>
+                                        <DropShadowEffect BlurRadius="14" ShadowDepth="0" Color="#00D4FF" Opacity="0.5"/>
+                                    </TextBlock.Effect>
+                                </TextBlock>
+                            </StackPanel>
+
+                            <!-- 2-Line Bio Description (Clean, Readable Typography) -->
+                            <TextBlock FontFamily="{StaticResource PrimaryFont}" FontSize="13" Foreground="#94A3B8"
+                                       LineHeight="21" Margin="0,0,0,18" HorizontalAlignment="Left">
+                                <Run Text="My name is Xenom. This application is 100% free to optimize Windows &amp; GameLoop for peak FPS and zero stutter."/><LineBreak/>
+                                <Run Text="Want to contact me or get support? Join our official community:" Foreground="#64748B"/>
+                            </TextBlock>
+
+                            <!-- Minimal Compact GET START Link -->
+                            <Button Command="{Binding NavigateToOptimizeCommand}"
+                                    Cursor="Hand" ToolTip="Open Windows &amp; GameLoop Optimization Suite"
+                                    Background="Transparent" BorderThickness="0" Padding="0"
+                                    HorizontalAlignment="Left">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <TextBlock x:Name="GetStartTxt" Text="GET START →"
+                                                   FontFamily="{StaticResource PrimaryFont}" FontSize="12.5" FontWeight="Black"
+                                                   Foreground="{StaticResource AccentElectricBlueBrush}">
+                                            <TextBlock.Effect>
+                                                <DropShadowEffect BlurRadius="8" ShadowDepth="0" Color="#00D4FF" Opacity="0.45"/>
+                                            </TextBlock.Effect>
+                                        </TextBlock>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="GetStartTxt" Property="Foreground" Value="#60E8FF"/>
+                                                <Setter TargetName="GetStartTxt" Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect BlurRadius="14" ShadowDepth="0" Color="#00D4FF" Opacity="0.9"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+
+                        </StackPanel>
+                    </Border>
+
+                    <!-- ═══ RIGHT COLUMN: 4 Social Buttons (YouTube, Facebook, TikTok, Discord) ═══ -->
+                    <Border x:Name="SocialButtonsBox" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Opacity="0">
+                        <Border.RenderTransform>
+                            <TranslateTransform X="16"/>
+                        </Border.RenderTransform>
+                        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
+
+                            <!-- 1. YOUTUBE (Red #FF0000) -> Expands left, reveals SUBSCRIBE -->
+                            <Button Command="{Binding OpenYouTubeCommand}"
+                                    Cursor="Hand" ToolTip="Subscribe to Xenom on YouTube"
+                                    Background="Transparent" BorderThickness="0" Padding="0"
+                                    HorizontalAlignment="Right" Margin="0,0,0,8">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="SocialBox" Height="40" Width="40" CornerRadius="20"
+                                                Background="#181A22" BorderBrush="#262834" BorderThickness="1.5"
+                                                HorizontalAlignment="Right">
+                                            <Grid Width="144" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                                <Border x:Name="IconHolder" Width="18" Height="18" HorizontalAlignment="Left" Margin="11,0,0,0" VerticalAlignment="Center">
+                                                    <Border.RenderTransform>
+                                                        <TranslateTransform x:Name="IconTrans" X="0"/>
+                                                    </Border.RenderTransform>
+                                                    <Path Data="M21.58 7.19C21.35 6.33 20.67 5.65 19.81 5.42C18.25 5 12 5 12 5C12 5 5.75 5 4.19 5.42C3.33 5.65 2.65 6.33 2.42 7.19C2 8.75 2 12 2 12C2 12 2 15.25 2.42 16.81C2.65 17.67 3.33 18.35 4.19 18.58C5.75 19 12 19 12 19C12 19 18.25 19 19.81 18.58C20.67 18.35 21.35 17.67 21.58 16.81C22 15.25 22 12 22 12C22 12 22 8.75 21.58 7.19ZM10 15V9L15.2 12L10 15Z"
+                                                          Fill="#FFFFFF" Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <TextBlock x:Name="SocialText" Text="SUBSCRIBE"
+                                                           FontFamily="{StaticResource PrimaryFont}" FontSize="11" FontWeight="Black"
+                                                           Foreground="#FFFFFF" HorizontalAlignment="Left" Margin="38,0,0,0" VerticalAlignment="Center"
+                                                           Opacity="0">
+                                                    <TextBlock.RenderTransform>
+                                                        <TranslateTransform x:Name="TextTrans" X="6"/>
+                                                    </TextBlock.RenderTransform>
+                                                </TextBlock>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="SocialBox" Property="Background" Value="#14151D"/>
+                                                <Setter TargetName="SocialBox" Property="BorderBrush" Value="#FF0000"/>
+                                                <Setter TargetName="SocialBox" Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect BlurRadius="8" ShadowDepth="0" Color="#FF0000" Opacity="0.5"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Trigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialBox" Storyboard.TargetProperty="Width"
+                                                                             To="142" Duration="0:0:0.25">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                            <DoubleAnimation Storyboard.TargetName="IconHolder" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                             To="-2" Duration="0:0:0.2"/>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialText" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                             To="0" Duration="0:0:0.2"/>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialText" Storyboard.TargetProperty="Opacity"
+                                                                             From="0" To="1" Duration="0:0:0.18" BeginTime="0:0:0.04"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.EnterActions>
+                                                <Trigger.ExitActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialBox" Storyboard.TargetProperty="Width"
+                                                                             To="40" Duration="0:0:0.22">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                            <DoubleAnimation Storyboard.TargetName="IconHolder" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                             To="0" Duration="0:0:0.18"/>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialText" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                             To="6" Duration="0:0:0.18"/>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialText" Storyboard.TargetProperty="Opacity"
+                                                                             To="0" Duration="0:0:0.1"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.ExitActions>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+
+                            <!-- 2. FACEBOOK (Blue #1877F2) -> Expands left, reveals FOLLOW ME -->
+                            <Button Command="{Binding OpenFacebookCommand}"
+                                    Cursor="Hand" ToolTip="Follow Xenom on Facebook"
+                                    Background="Transparent" BorderThickness="0" Padding="0"
+                                    HorizontalAlignment="Right" Margin="0,0,0,8">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="SocialBox" Height="40" Width="40" CornerRadius="20"
+                                                Background="#181A22" BorderBrush="#262834" BorderThickness="1.5"
+                                                HorizontalAlignment="Right">
+                                            <Grid Width="144" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                                <Border x:Name="IconHolder" Width="18" Height="18" HorizontalAlignment="Left" Margin="11,0,0,0" VerticalAlignment="Center">
+                                                    <Border.RenderTransform>
+                                                        <TranslateTransform x:Name="IconTrans" X="0"/>
+                                                    </Border.RenderTransform>
+                                                    <Path Data="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24V15.563H7.078V12.073H10.125V9.413C10.125 6.388 11.916 4.71 14.658 4.71C15.97 4.71 17.344 4.946 17.344 4.946V7.925H15.83C14.34 7.925 13.875 8.855 13.875 9.81V12.073H17.203L16.671 15.563H13.875V24C19.612 23.094 24 18.1 24 12.073Z"
+                                                          Fill="#FFFFFF" Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <TextBlock x:Name="SocialText" Text="FOLLOW ME"
+                                                           FontFamily="{StaticResource PrimaryFont}" FontSize="11" FontWeight="Black"
+                                                           Foreground="#FFFFFF" HorizontalAlignment="Left" Margin="38,0,0,0" VerticalAlignment="Center"
+                                                           Opacity="0">
+                                                    <TextBlock.RenderTransform>
+                                                        <TranslateTransform x:Name="TextTrans" X="6"/>
+                                                    </TextBlock.RenderTransform>
+                                                </TextBlock>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="SocialBox" Property="Background" Value="#14151D"/>
+                                                <Setter TargetName="SocialBox" Property="BorderBrush" Value="#1877F2"/>
+                                                <Setter TargetName="SocialBox" Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect BlurRadius="8" ShadowDepth="0" Color="#1877F2" Opacity="0.5"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Trigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialBox" Storyboard.TargetProperty="Width"
+                                                                             To="142" Duration="0:0:0.25">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                            <DoubleAnimation Storyboard.TargetName="IconHolder" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                             To="-2" Duration="0:0:0.2"/>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialText" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                             To="0" Duration="0:0:0.2"/>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialText" Storyboard.TargetProperty="Opacity"
+                                                                             From="0" To="1" Duration="0:0:0.18" BeginTime="0:0:0.04"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.EnterActions>
+                                                <Trigger.ExitActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialBox" Storyboard.TargetProperty="Width"
+                                                                             To="40" Duration="0:0:0.22">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                            <DoubleAnimation Storyboard.TargetName="IconHolder" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                             To="0" Duration="0:0:0.18"/>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialText" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                             To="6" Duration="0:0:0.18"/>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialText" Storyboard.TargetProperty="Opacity"
+                                                                             To="0" Duration="0:0:0.1"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.ExitActions>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+
+                            <!-- 3. TIKTOK (Cyan #00F2FE) -> Expands left, reveals FOLLOW ME -->
+                            <Button Command="{Binding OpenTikTokCommand}"
+                                    Cursor="Hand" ToolTip="Follow Xenom on TikTok"
+                                    Background="Transparent" BorderThickness="0" Padding="0"
+                                    HorizontalAlignment="Right" Margin="0,0,0,8">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="SocialBox" Height="40" Width="40" CornerRadius="20"
+                                                Background="#181A22" BorderBrush="#262834" BorderThickness="1.5"
+                                                HorizontalAlignment="Right">
+                                            <Grid Width="144" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                                <Border x:Name="IconHolder" Width="18" Height="18" HorizontalAlignment="Left" Margin="11,0,0,0" VerticalAlignment="Center">
+                                                    <Border.RenderTransform>
+                                                        <TranslateTransform x:Name="IconTrans" X="0"/>
+                                                    </Border.RenderTransform>
+                                                    <Path Data="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.24 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"
+                                                          Fill="#FFFFFF" Width="17" Height="17" Stretch="Uniform" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <TextBlock x:Name="SocialText" Text="FOLLOW ME"
+                                                           FontFamily="{StaticResource PrimaryFont}" FontSize="11" FontWeight="Black"
+                                                           Foreground="#FFFFFF" HorizontalAlignment="Left" Margin="38,0,0,0" VerticalAlignment="Center"
+                                                           Opacity="0">
+                                                    <TextBlock.RenderTransform>
+                                                        <TranslateTransform x:Name="TextTrans" X="6"/>
+                                                    </TextBlock.RenderTransform>
+                                                </TextBlock>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="SocialBox" Property="Background" Value="#14151D"/>
+                                                <Setter TargetName="SocialBox" Property="BorderBrush" Value="#00F2FE"/>
+                                                <Setter TargetName="SocialBox" Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect BlurRadius="8" ShadowDepth="0" Color="#00F2FE" Opacity="0.5"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Trigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialBox" Storyboard.TargetProperty="Width"
+                                                                             To="142" Duration="0:0:0.25">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                            <DoubleAnimation Storyboard.TargetName="IconHolder" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                             To="-2" Duration="0:0:0.2"/>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialText" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                             To="0" Duration="0:0:0.2"/>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialText" Storyboard.TargetProperty="Opacity"
+                                                                             From="0" To="1" Duration="0:0:0.18" BeginTime="0:0:0.04"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.EnterActions>
+                                                <Trigger.ExitActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialBox" Storyboard.TargetProperty="Width"
+                                                                             To="40" Duration="0:0:0.22">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                            <DoubleAnimation Storyboard.TargetName="IconHolder" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                             To="0" Duration="0:0:0.18"/>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialText" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                             To="6" Duration="0:0:0.18"/>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialText" Storyboard.TargetProperty="Opacity"
+                                                                             To="0" Duration="0:0:0.1"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.ExitActions>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+
+                            <!-- 4. DISCORD (Blurple #5865F2) -> Expands left, reveals CONTACT ME -->
+                            <Button Command="{Binding OpenDiscordCommand}"
+                                    Cursor="Hand" ToolTip="Join Xenom's Official Discord Server (discord.gg/J6YNFYB)"
+                                    Background="Transparent" BorderThickness="0" Padding="0"
+                                    HorizontalAlignment="Right">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="SocialBox" Height="40" Width="40" CornerRadius="20"
+                                                Background="#181A22" BorderBrush="#262834" BorderThickness="1.5"
+                                                HorizontalAlignment="Right">
+                                            <Grid Width="144" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                                <Border x:Name="IconHolder" Width="18" Height="18" HorizontalAlignment="Left" Margin="11,0,0,0" VerticalAlignment="Center">
+                                                    <Border.RenderTransform>
+                                                        <TranslateTransform x:Name="IconTrans" X="0"/>
+                                                    </Border.RenderTransform>
+                                                    <Path Data="M20.5 4.5C18.9 3.8 17.2 3.3 15.4 3C15.1 3.5 14.8 4.2 14.6 4.7C12.7 4.4 10.8 4.4 8.9 4.7C8.7 4.2 8.4 3.5 8.1 3C6.3 3.3 4.6 3.8 3 4.5C-0.3 9.4 -0.6 14.1 0.4 18.8C2.5 20.3 4.5 21.3 6.5 21.9C7 21.2 7.5 20.5 7.9 19.7C7.2 19.4 6.5 19.1 5.9 18.6C6.1 18.5 6.2 18.4 6.4 18.2C10.3 20 14.5 20 18.3 18.2C18.5 18.4 18.6 18.5 18.8 18.6C18.2 19.1 17.5 19.4 16.8 19.7C17.2 20.5 17.7 21.2 18.2 21.9C20.2 21.3 22.2 20.3 24.3 18.8C25.5 13.4 23.8 8.7 20.5 4.5ZM8.5 15.8C7.3 15.8 6.3 14.7 6.3 13.3C6.3 11.9 7.3 10.8 8.5 10.8C9.7 10.8 10.7 11.9 10.7 13.3C10.7 14.7 9.7 15.8 8.5 15.8ZM16.2 15.8C15 15.8 14 14.7 14 13.3C14 11.9 15 10.8 16.2 10.8C17.4 10.8 18.4 11.9 18.4 13.3C18.4 14.7 17.4 15.8 16.2 15.8Z"
+                                                          Fill="#FFFFFF" Width="18" Height="18" Stretch="Uniform" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <TextBlock x:Name="SocialText" Text="CONTACT ME"
+                                                           FontFamily="{StaticResource PrimaryFont}" FontSize="11" FontWeight="Black"
+                                                           Foreground="#FFFFFF" HorizontalAlignment="Left" Margin="38,0,0,0" VerticalAlignment="Center"
+                                                           Opacity="0">
+                                                    <TextBlock.RenderTransform>
+                                                        <TranslateTransform x:Name="TextTrans" X="6"/>
+                                                    </TextBlock.RenderTransform>
+                                                </TextBlock>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="SocialBox" Property="Background" Value="#14151D"/>
+                                                <Setter TargetName="SocialBox" Property="BorderBrush" Value="#5865F2"/>
+                                                <Setter TargetName="SocialBox" Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect BlurRadius="8" ShadowDepth="0" Color="#5865F2" Opacity="0.5"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Trigger.EnterActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialBox" Storyboard.TargetProperty="Width"
+                                                                             To="142" Duration="0:0:0.25">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                            <DoubleAnimation Storyboard.TargetName="IconHolder" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                             To="-2" Duration="0:0:0.2"/>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialText" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                             To="0" Duration="0:0:0.2"/>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialText" Storyboard.TargetProperty="Opacity"
+                                                                             From="0" To="1" Duration="0:0:0.18" BeginTime="0:0:0.04"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.EnterActions>
+                                                <Trigger.ExitActions>
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialBox" Storyboard.TargetProperty="Width"
+                                                                             To="40" Duration="0:0:0.22">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                            <DoubleAnimation Storyboard.TargetName="IconHolder" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                             To="0" Duration="0:0:0.18"/>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialText" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                             To="6" Duration="0:0:0.18"/>
+                                                            <DoubleAnimation Storyboard.TargetName="SocialText" Storyboard.TargetProperty="Opacity"
+                                                                             To="0" Duration="0:0:0.1"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </Trigger.ExitActions>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Border>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- 2. SECTION TITLE: USAGE TELEMETRY (PUSHED DOWNWARD)        -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <Grid Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="HARDWARE USAGE &amp; TELEMETRY" FontFamily="{StaticResource PrimaryFont}"
+                               FontSize="12" FontWeight="Bold" Foreground="#64748B"/>
+                </StackPanel>
+
+                <!-- Status indicator + Re-Scan button -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Re-Scan Button (Visible when HasRunInitialScan is true) -->
+                    <Button Command="{Binding ReScanSystemCommand}" Cursor="Hand" ToolTip="Re-Scan PC Hardware &amp; SMART Health"
+                            Visibility="{Binding HasRunInitialScan, Converter={StaticResource BoolToVis}}"
+                            Background="#14151C" BorderBrush="#262832" BorderThickness="1"
+                            MinWidth="98" Padding="10,4">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="ReScanBorder" Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="7" ClipToBounds="True">
+                                    <Grid>
+                                        <!-- Reservoir / Liquid Fill Layer (fills left-to-right on mouse hover) -->
+                                        <Border x:Name="FillLayer" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                                                CornerRadius="6" IsHitTestVisible="False"
+                                                RenderTransformOrigin="0,0.5">
+                                            <Border.RenderTransform>
+                                                <ScaleTransform x:Name="FillScale" ScaleX="0" ScaleY="1"/>
+                                            </Border.RenderTransform>
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                    <GradientStop Color="#092642" Offset="0.0"/>
+                                                    <GradientStop Color="#0E426F" Offset="0.5"/>
+                                                    <GradientStop Color="#0284C7" Offset="0.92"/>
+                                                    <GradientStop Color="#38BDF8" Offset="1.0"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                        </Border>
+
+                                        <!-- State 1: Normal Content (Icon + Text) -->
+                                        <StackPanel x:Name="NormalContent" Orientation="Horizontal" Margin="10,4"
+                                                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock x:Name="ReScanIcon" Text="&#xE72C;" FontFamily="{StaticResource IconFont}" FontSize="10"
+                                                       Foreground="{StaticResource AccentElectricBlueBrush}" VerticalAlignment="Center" Margin="0,0,6,0"
+                                                       RenderTransformOrigin="0.5,0.5">
+                                                <TextBlock.RenderTransform>
+                                                    <RotateTransform x:Name="IconRot" Angle="0"/>
+                                                </TextBlock.RenderTransform>
+                                            </TextBlock>
+                                            <TextBlock x:Name="ReScanText" Text="Re-Scan PC" FontSize="11" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource AccentElectricBlueBrush}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <!-- State 2: 3 Bouncing Dots Loader (Scanning in progress) -->
+                                        <StackPanel x:Name="DotsLoader" Orientation="Horizontal" Margin="10,4"
+                                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                    Visibility="Collapsed">
+                                            <Border Width="6" Height="6" CornerRadius="3" Background="#00D4FF" Margin="3,0">
+                                                <Border.RenderTransform>
+                                                    <TranslateTransform x:Name="Dot1Trans" Y="0"/>
+                                                </Border.RenderTransform>
+                                            </Border>
+                                            <Border Width="6" Height="6" CornerRadius="3" Background="#00D4FF" Margin="3,0">
+                                                <Border.RenderTransform>
+                                                    <TranslateTransform x:Name="Dot2Trans" Y="0"/>
+                                                </Border.RenderTransform>
+                                            </Border>
+                                            <Border Width="6" Height="6" CornerRadius="3" Background="#00D4FF" Margin="3,0">
+                                                <Border.RenderTransform>
+                                                    <TranslateTransform x:Name="Dot3Trans" Y="0"/>
+                                                </Border.RenderTransform>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <!-- State 3: Done Content (Finished successfully) -->
+                                        <StackPanel x:Name="DoneContent" Orientation="Horizontal" Margin="10,4"
+                                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                    Visibility="Collapsed">
+                                            <TextBlock Text="&#xE73E;" FontFamily="{StaticResource IconFont}" FontSize="11" FontWeight="Bold"
+                                                       Foreground="#10B981" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                            <TextBlock Text="Done" FontSize="11" FontWeight="SemiBold"
+                                                       Foreground="#10B981" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <!-- Mouse hover: smooth liquid fill from left to right, NO outline, spin icon -->
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="ReScanBorder" Property="BorderBrush" Value="#262832"/>
+                                        <Setter TargetName="ReScanText" Property="Foreground" Value="#E0F2FE"/>
+                                        <Trigger.EnterActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetName="FillScale"
+                                                                     Storyboard.TargetProperty="ScaleX"
+                                                                     To="1.0" Duration="0:0:0.55">
+                                                        <DoubleAnimation.EasingFunction>
+                                                            <CubicEase EasingMode="EaseOut"/>
+                                                        </DoubleAnimation.EasingFunction>
+                                                    </DoubleAnimation>
+                                                    <DoubleAnimation Storyboard.TargetName="IconRot"
+                                                                     Storyboard.TargetProperty="Angle"
+                                                                     To="360" Duration="0:0:0.65">
+                                                        <DoubleAnimation.EasingFunction>
+                                                            <CubicEase EasingMode="EaseOut"/>
+                                                        </DoubleAnimation.EasingFunction>
+                                                    </DoubleAnimation>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </Trigger.EnterActions>
+                                        <Trigger.ExitActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetName="FillScale"
+                                                                     Storyboard.TargetProperty="ScaleX"
+                                                                     To="0.0" Duration="0:0:0.30">
+                                                        <DoubleAnimation.EasingFunction>
+                                                            <CubicEase EasingMode="EaseOut"/>
+                                                        </DoubleAnimation.EasingFunction>
+                                                    </DoubleAnimation>
+                                                    <DoubleAnimation Storyboard.TargetName="IconRot"
+                                                                     Storyboard.TargetProperty="Angle"
+                                                                     To="0" Duration="0:0:0.20"/>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </Trigger.ExitActions>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter Property="Opacity" Value="0.85"/>
+                                    </Trigger>
+
+                                    <!-- State 2 Trigger: Scanning State (3 Bouncing Dots Wave) -->
+                                    <DataTrigger Binding="{Binding IsReScanning}" Value="True">
+                                        <Setter TargetName="NormalContent" Property="Visibility" Value="Collapsed"/>
+                                        <Setter TargetName="DoneContent" Property="Visibility" Value="Collapsed"/>
+                                        <Setter TargetName="DotsLoader" Property="Visibility" Value="Visible"/>
+                                        <Setter TargetName="FillLayer" Property="Visibility" Value="Collapsed"/>
+                                        <Setter TargetName="ReScanBorder" Property="BorderBrush" Value="#00D4FF"/>
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard x:Name="ReScanDotsWave">
+                                                <Storyboard RepeatBehavior="Forever">
+                                                    <!-- Dot 1 -->
+                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Dot1Trans" Storyboard.TargetProperty="Y" Duration="0:0:0.7">
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:0.00" Value="0"/>
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:0.18" Value="-6" KeySpline="0.25,0.1,0.25,1.0"/>
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:0.36" Value="0" KeySpline="0.25,0.1,0.25,1.0"/>
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:0.70" Value="0"/>
+                                                    </DoubleAnimationUsingKeyFrames>
+                                                    <!-- Dot 2 -->
+                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Dot2Trans" Storyboard.TargetProperty="Y" Duration="0:0:0.7">
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:0.00" Value="0"/>
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:0.12" Value="0"/>
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:0.30" Value="-6" KeySpline="0.25,0.1,0.25,1.0"/>
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:0.48" Value="0" KeySpline="0.25,0.1,0.25,1.0"/>
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:0.70" Value="0"/>
+                                                    </DoubleAnimationUsingKeyFrames>
+                                                    <!-- Dot 3 -->
+                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Dot3Trans" Storyboard.TargetProperty="Y" Duration="0:0:0.7">
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:0.00" Value="0"/>
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:0.24" Value="0"/>
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:0.42" Value="-6" KeySpline="0.25,0.1,0.25,1.0"/>
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:0.60" Value="0" KeySpline="0.25,0.1,0.25,1.0"/>
+                                                        <SplineDoubleKeyFrame KeyTime="0:0:0.70" Value="0"/>
+                                                    </DoubleAnimationUsingKeyFrames>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                        <DataTrigger.ExitActions>
+                                            <StopStoryboard BeginStoryboardName="ReScanDotsWave"/>
+                                        </DataTrigger.ExitActions>
+                                    </DataTrigger>
+
+                                    <!-- State 3 Trigger: Done State (Shows '✓ Done' for ~1.8 seconds) -->
+                                    <DataTrigger Binding="{Binding IsReScanDone}" Value="True">
+                                        <Setter TargetName="NormalContent" Property="Visibility" Value="Collapsed"/>
+                                        <Setter TargetName="DotsLoader" Property="Visibility" Value="Collapsed"/>
+                                        <Setter TargetName="DoneContent" Property="Visibility" Value="Visible"/>
+                                        <Setter TargetName="FillLayer" Property="Visibility" Value="Collapsed"/>
+                                        <Setter TargetName="ReScanBorder" Property="BorderBrush" Value="#059669"/>
+                                        <Setter TargetName="ReScanBorder" Property="Background" Value="#0A1E17"/>
+                                    </DataTrigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- 2.5 INITIAL HARDWARE SCAN CARD (VISIBLE BEFORE INITIAL SCAN) -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <Border Visibility="{Binding HasRunInitialScan, Converter={StaticResource InverseBoolToVis}}"
+                    CornerRadius="22" Background="#14151D" BorderBrush="#20232E" BorderThickness="1.5"
+                    Padding="32,24" Margin="0,0,0,20">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="20" ShadowDepth="3" Direction="270" Color="#000000" Opacity="0.5"/>
+                </Border.Effect>
+
+                <Grid>
+                    <!-- State A: Ready to Scan -->
+                    <Grid Visibility="{Binding IsScanningSystem, Converter={StaticResource InverseBoolToVis}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- High-Tech Hardware Scan Icon -->
+                        <Border Grid.Column="0" Width="54" Height="54" CornerRadius="27" Background="#1A2030"
+                                BorderBrush="#00D4FF" BorderThickness="1.5" Margin="0,0,20,0" VerticalAlignment="Center">
+                            <TextBlock Text="&#xE946;" FontFamily="{StaticResource IconFont}" FontSize="24"
+                                       Foreground="#00D4FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+
+                        <!-- Heading and Information -->
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                <TextBlock Text="SYSTEM HARDWARE &amp; HEALTH SCAN" FontFamily="{StaticResource PrimaryFont}"
+                                           FontSize="15" FontWeight="Black" Foreground="#FFFFFF"/>
+                                <Border CornerRadius="6" Background="#2000D4FF" BorderBrush="#4000D4FF" BorderThickness="1"
+                                        Padding="6,1" Margin="10,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="FIRST TIME SETUP" FontSize="9.5" FontWeight="Bold" Foreground="#00D4FF"/>
+                                </Border>
+                            </StackPanel>
+                            <TextBlock Text="Run an initial diagnostics scan to detect your CPU, GPU, RAM, NVMe/HDD health status, and live gaming telemetry."
+                                       FontFamily="{StaticResource PrimaryFont}" FontSize="12.5" Foreground="#94A3B8" TextWrapping="Wrap"/>
+                        </StackPanel>
+
+                        <!-- Scan PC Button -->
+                        <Button Grid.Column="2" Command="{Binding ScanSystemCommand}" Cursor="Hand"
+                                Background="#00D4FF" BorderThickness="0" Margin="16,0,0,0" VerticalAlignment="Center">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="ScanBtnBorder" Background="{TemplateBinding Background}" CornerRadius="8" Padding="20,11">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="14" ShadowDepth="0" Color="#00D4FF" Opacity="0.55"/>
+                                        </Border.Effect>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="⚡" FontSize="13" Foreground="#0A0B0E" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="SCAN PC HARDWARE" FontFamily="{StaticResource PrimaryFont}"
+                                                       FontSize="12.5" FontWeight="Black" Foreground="#0A0B0E" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="ScanBtnBorder" Property="Background" Value="#60E8FF"/>
+                                            <Setter TargetName="ScanBtnBorder" Property="Effect">
+                                                <Setter.Value>
+                                                    <DropShadowEffect BlurRadius="20" ShadowDepth="0" Color="#00D4FF" Opacity="0.85"/>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </Grid>
+
+                    <!-- State B: Scanning in Progress -->
+                    <StackPanel Visibility="{Binding IsScanningSystem, Converter={StaticResource BoolToVis}}" VerticalAlignment="Center">
+                        <Grid Margin="0,0,0,10">
+                            <TextBlock Text="{Binding ScanProgressText}" FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="13" FontWeight="Bold" Foreground="#00D4FF"/>
+                            <TextBlock Text="{Binding ScanProgressValue, StringFormat='{}{0:F0}%'}" HorizontalAlignment="Right"
+                                       FontFamily="{StaticResource PrimaryFont}" FontSize="13" FontWeight="Bold" Foreground="#FFFFFF"/>
+                        </Grid>
+                        <ProgressBar Value="{Binding ScanProgressValue}" Maximum="100" Height="6"
+                                     Foreground="{StaticResource AccentElectricBlueBrush}" Background="#1E2330" BorderThickness="0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- 3. THE 4 CARDS: CPU, MEMORY, GPU, STORAGE (CRYPTO STYLE)   -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <Grid Margin="0,0,0,20" Visibility="{Binding HasRunInitialScan, Converter={StaticResource BoolToVis}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="1.1*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- ─── CARD 1: CPU LOAD ─── -->
+                <Border Grid.Column="0" Margin="0,0,10,0" CornerRadius="20"
+                        Background="#12141A" BorderBrush="#262626" BorderThickness="1.5"
+                        Padding="18,16">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="16" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.4"/>
+                    </Border.Effect>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Top: Icon Pill + Tag (Unified Dark AAA Theme) -->
+                        <Grid Grid.Row="0">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="30" Height="30" CornerRadius="15" Background="#171717" BorderBrush="#262626" BorderThickness="1" Margin="0,0,8,0">
+                                    <TextBlock Text="&#xE950;" FontFamily="{StaticResource IconFont}" FontSize="13"
+                                               Foreground="#FAFAFA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="CPU" FontFamily="{StaticResource PrimaryFont}" FontSize="13"
+                                           FontWeight="Bold" Foreground="#FAFAFA" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <Border CornerRadius="6" Background="#171717" BorderBrush="#262626" BorderThickness="1" HorizontalAlignment="Right" Padding="7,2.5" VerticalAlignment="Center">
+                                <TextBlock Text="Dynamic" FontSize="10" FontWeight="SemiBold" Foreground="#D4D4D4"/>
+                            </Border>
+                        </Grid>
+
+                        <!-- Center: Large Metric -->
+                        <StackPanel Grid.Row="1" Margin="0,14,0,8">
+                            <TextBlock Text="CPU LOAD" FontFamily="{StaticResource PrimaryFont}" FontSize="10"
+                                       FontWeight="SemiBold" Foreground="#8A8A8A"/>
+                            <TextBlock x:Name="CpuUsageText" Text="{Binding CpuUsage, StringFormat={}{0:F0}%}" FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="28" FontWeight="Black" Foreground="#FFFFFF" Margin="0,2,0,0"/>
+                        </StackPanel>
+
+                        <!-- Bottom: Details & Bar -->
+                        <StackPanel Grid.Row="2" VerticalAlignment="Bottom">
+                            <ProgressBar x:Name="CpuProgressBar" Value="{Binding CpuUsage, Mode=OneWay}" Maximum="100" Height="4" Margin="0,0,0,8"
+                                         Foreground="{Binding CpuUsage, Converter={StaticResource UsageToBrush}}"
+                                         Background="#1A202A" BorderThickness="0"/>
+                            <TextBlock Text="{Binding CpuModel}" FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="10.5" Foreground="#A3A3A3" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ─── CARD 2: MEMORY USAGE ─── -->
+                <Border Grid.Column="1" Margin="0,0,10,0" CornerRadius="20"
+                        Background="#12141A" BorderBrush="#262626" BorderThickness="1.5"
+                        Padding="18,16">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="16" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.4"/>
+                    </Border.Effect>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Top: Icon Pill + Tag (Unified Dark AAA Theme) -->
+                        <Grid Grid.Row="0">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="30" Height="30" CornerRadius="15" Background="#171717" BorderBrush="#262626" BorderThickness="1" Margin="0,0,8,0">
+                                    <TextBlock Text="&#xE964;" FontFamily="{StaticResource IconFont}" FontSize="13"
+                                               Foreground="#FAFAFA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="MEMORY" FontFamily="{StaticResource PrimaryFont}" FontSize="13"
+                                           FontWeight="Bold" Foreground="#FAFAFA" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <Border CornerRadius="6" Background="#171717" BorderBrush="#262626" BorderThickness="1" HorizontalAlignment="Right" Padding="7,2.5" VerticalAlignment="Center">
+                                <TextBlock Text="Cleaned" FontSize="10" FontWeight="SemiBold" Foreground="#D4D4D4"/>
+                            </Border>
+                        </Grid>
+
+                        <!-- Center: Large Metric -->
+                        <StackPanel Grid.Row="1" Margin="0,14,0,8">
+                            <TextBlock Text="RAM ALLOCATED" FontFamily="{StaticResource PrimaryFont}" FontSize="10"
+                                       FontWeight="SemiBold" Foreground="#8A8A8A"/>
+                            <TextBlock x:Name="RamUsageText" Text="{Binding RamUsage, StringFormat={}{0:F0}%}" FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="28" FontWeight="Black" Foreground="#FFFFFF" Margin="0,2,0,0"/>
+                        </StackPanel>
+
+                        <!-- Bottom: Details & Bar -->
+                        <StackPanel Grid.Row="2" VerticalAlignment="Bottom">
+                            <ProgressBar x:Name="RamProgressBar" Value="{Binding RamUsage, Mode=OneWay}" Maximum="100" Height="4" Margin="0,0,0,8"
+                                         Foreground="{Binding RamUsage, Converter={StaticResource UsageToBrush}}"
+                                         Background="#1A202A" BorderThickness="0"/>
+                            <TextBlock Text="{Binding RamSpec, StringFormat={}{0} Installed}" FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="10.5" Foreground="#A3A3A3" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ─── CARD 3: GPU 3D ENGINE ─── -->
+                <Border Grid.Column="2" Margin="0,0,10,0" CornerRadius="20"
+                        Background="#12141A" BorderBrush="#262626" BorderThickness="1.5"
+                        Padding="18,16">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="16" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.4"/>
+                    </Border.Effect>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Top: Icon Pill + Tag (Unified Dark AAA Theme) -->
+                        <Grid Grid.Row="0">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="30" Height="30" CornerRadius="15" Background="#171717" BorderBrush="#262626" BorderThickness="1" Margin="0,0,8,0">
+                                    <TextBlock Text="&#xE790;" FontFamily="{StaticResource IconFont}" FontSize="13"
+                                               Foreground="#FAFAFA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="GPU" FontFamily="{StaticResource PrimaryFont}" FontSize="13"
+                                           FontWeight="Bold" Foreground="#FAFAFA" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <Border CornerRadius="6" Background="#171717" BorderBrush="#262626" BorderThickness="1" HorizontalAlignment="Right" Padding="7,2.5" VerticalAlignment="Center">
+                                <TextBlock Text="DirectX+" FontSize="10" FontWeight="SemiBold" Foreground="#D4D4D4"/>
+                            </Border>
+                        </Grid>
+
+                        <!-- Center: Large Metric -->
+                        <StackPanel Grid.Row="1" Margin="0,14,0,8">
+                            <TextBlock Text="3D GRAPHICS LOAD" FontFamily="{StaticResource PrimaryFont}" FontSize="10"
+                                       FontWeight="SemiBold" Foreground="#8A8A8A"/>
+                            <TextBlock x:Name="GpuUsageText" Text="{Binding GpuUsage, StringFormat={}{0:F0}%}" FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="28" FontWeight="Black" Foreground="#FFFFFF" Margin="0,2,0,0"/>
+                        </StackPanel>
+
+                        <!-- Bottom: Details & Bar -->
+                        <StackPanel Grid.Row="2" VerticalAlignment="Bottom">
+                            <ProgressBar x:Name="GpuProgressBar" Value="{Binding GpuUsage, Mode=OneWay}" Maximum="100" Height="4" Margin="0,0,0,8"
+                                         Foreground="{Binding GpuUsage, Converter={StaticResource UsageToBrush}}"
+                                         Background="#1A202A" BorderThickness="0"/>
+                            <TextBlock Text="{Binding GpuModel}" FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="10.5" Foreground="#A3A3A3" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ─── CARD 4: STORAGE (3 DISKS: NVME, HDD, SSD) ─── -->
+                <Border Grid.Column="3" CornerRadius="20"
+                        Background="#12141A" BorderBrush="#262626" BorderThickness="1.5"
+                        Padding="16,14">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="16" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.4"/>
+                    </Border.Effect>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Top: Icon Pill + Disks Count (Unified Dark AAA Theme) -->
+                        <Grid Grid.Row="0" Margin="0,0,0,10">
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="30" Height="30" CornerRadius="15" Background="#171717" BorderBrush="#262626" BorderThickness="1" Margin="0,0,8,0">
+                                    <TextBlock Text="&#xEDA2;" FontFamily="{StaticResource IconFont}" FontSize="12"
+                                               Foreground="#FAFAFA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="STORAGE" FontFamily="{StaticResource PrimaryFont}" FontSize="12.5"
+                                           FontWeight="Bold" Foreground="#FAFAFA" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <Border CornerRadius="6" Background="#171717" BorderBrush="#262626" BorderThickness="1" HorizontalAlignment="Right" Padding="7,2.5" VerticalAlignment="Center">
+                                <TextBlock Text="3 Drives" FontSize="10" FontWeight="SemiBold" Foreground="#D4D4D4"/>
+                            </Border>
+                        </Grid>
+
+                        <!-- 3 Disks Stack -->
+                        <ItemsControl Grid.Row="1" ItemsSource="{Binding StorageDrives}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,0,0,7" Padding="8,5" Background="#171717" CornerRadius="8"
+                                            BorderBrush="#262626" BorderThickness="1">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+
+                                            <!-- Row 1: Drive Letter & Model + Media Type Badge -->
+                                            <Grid Grid.Row="0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding DriveLetter}" FontWeight="Bold" FontSize="11"
+                                                               Foreground="#FAFAFA" Margin="0,0,4,0"/>
+                                                    <TextBlock Text="{Binding ModelName}" FontSize="10"
+                                                               Foreground="#8A8A8A" MaxWidth="100" TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+
+                                                <!-- NVMe / SSD / HDD Pill Badge -->
+                                                <Border CornerRadius="6" Background="#1E2330" HorizontalAlignment="Right" Padding="6,1">
+                                                    <TextBlock Text="{Binding MediaType}" FontSize="9" FontWeight="Bold"
+                                                               Foreground="{Binding MediaType, Converter={StaticResource MediaTypeToBrush}}"/>
+                                                </Border>
+                                            </Grid>
+
+                                            <!-- Row 2: Space used % and Drive Health Status -->
+                                            <Grid Grid.Row="1" Margin="0,3,0,3">
+                                                <TextBlock Text="{Binding UsedSizeFormatted, StringFormat='{}Used: {0}'}"
+                                                           ToolTip="{Binding UsagePercentFormatted, StringFormat='{}Usage: {0}'}"
+                                                           FontSize="9.5" FontWeight="SemiBold" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                    <Ellipse Width="5" Height="5" Fill="{Binding HealthColorHex, Converter={StaticResource StringToBrush}}"
+                                                             Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding HealthText}" FontSize="9.5" FontWeight="Bold"
+                                                               Foreground="{Binding HealthColorHex, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Grid>
+
+                                            <!-- Row 3: Mini Progress Bar -->
+                                            <ProgressBar Grid.Row="2" Value="{Binding UsagePercent, Mode=OneWay}" Maximum="100" Height="3"
+                                                         Foreground="{Binding UsagePercent, Converter={StaticResource UsageToBrush}}"
+                                                         Background="#1F232F" BorderThickness="0"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- 4. SYSTEM SPECIFICATIONS & READINESS OVERVIEW               -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <Grid Margin="0,18,0,0" Visibility="{Binding HasRunInitialScan, Converter={StaticResource BoolToVis}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="360"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- LEFT COLUMN: MINIMUM REQUIREMENTS + LAG FIX PLAN (Equal height to Right Box) -->
+                <Grid Grid.Column="0" Margin="0,0,14,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="12"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- CARD 1: GAMING REQUIREMENTS (Sleep Time Style) -->
+                    <Border Grid.Row="0" CornerRadius="18" Background="#111319" BorderBrush="#20232E" BorderThickness="1.5"
+                            Padding="20,13">
+                        <Grid VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Left text info -->
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock Text="GAMING REQUIREMENTS" FontFamily="{StaticResource PrimaryFont}"
+                                           FontSize="11" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding GameLoopStatusText}"
+                                           FontFamily="{StaticResource PrimaryFont}"
+                                           FontSize="15" FontWeight="Black"
+                                           Foreground="{Binding GameLoopScoreColorHex, Converter={StaticResource StringToBrush}}"
+                                           Margin="0,0,0,4" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding GameLoopDetailText}"
+                                           FontFamily="{StaticResource PrimaryFont}"
+                                           FontSize="10.5" FontWeight="Medium" Foreground="#94A3B8"
+                                           TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <!-- Right Semi-Circle / Arch Gauge (Spacious Dome with Generous Room) -->
+                            <Grid Grid.Column="1" Width="104" Height="58" Margin="8,0,0,0" VerticalAlignment="Center">
+                                <!-- Background Track Arc (180 deg semicircle with round caps) -->
+                                <Path Data="M 10,50 A 42,42 0 0 1 94,50"
+                                      Stroke="#1E2330" StrokeThickness="6"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+
+                                <!-- Active Colored Progress Arc -->
+                                <Path x:Name="ArchProgressPath"
+                                      Data="M 10,50 A 42,42 0 0 1 94,50"
+                                      Stroke="{Binding GameLoopScoreColorHex, Converter={StaticResource StringToBrush}}"
+                                      StrokeThickness="6"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      StrokeDashCap="Round"
+                                      StrokeDashArray="{Binding GameLoopScore, Converter={StaticResource ArchPathDash}}"/>
+
+                                <!-- Centered Percentage (Generous breathing room on all sides) -->
+                                <TextBlock x:Name="ArchScoreText"
+                                           Text="{Binding GameLoopScore, StringFormat={}{0:F0}%}"
+                                           FontFamily="{StaticResource PrimaryFont}"
+                                           FontSize="14.5" FontWeight="Black" Foreground="#FFFFFF"
+                                           HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                           Margin="0,0,0,8"/>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- CARD 2: LAG FIX PLAN (Weight Loss Plan Style) -->
+                    <Border Grid.Row="2" CornerRadius="18" Background="#111319" BorderBrush="#20232E" BorderThickness="1.5"
+                            Padding="20,15">
+                        <StackPanel VerticalAlignment="Center">
+                            <!-- Header & Completion Percentage -->
+                            <Grid Margin="0,0,0,10">
+                                <TextBlock Text="Lag Fix Plan" FontFamily="{StaticResource PrimaryFont}"
+                                           FontSize="13" FontWeight="Bold" Foreground="#FFFFFF"
+                                           VerticalAlignment="Center"/>
+                                <TextBlock x:Name="LagFixProgressTextBlock"
+                                           Text="{Binding LagFixProgressText}"
+                                           FontSize="12" FontWeight="SemiBold" Foreground="#A3E635"
+                                           HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <!-- Horizontal Rounded Progress Bar -->
+                            <ProgressBar x:Name="LagFixProgressBar" Height="10" Value="{Binding LagFixProgressPercent, Mode=OneWay}" Minimum="0" Maximum="100"
+                                         Margin="0,0,0,9" BorderThickness="0" Background="#1E2330">
+                                <ProgressBar.Foreground>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#84CC16" Offset="0"/>
+                                        <GradientStop Color="#A3E635" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </ProgressBar.Foreground>
+                                <ProgressBar.Template>
+                                    <ControlTemplate TargetType="ProgressBar">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="5">
+                                            <Grid x:Name="PART_Track">
+                                                <Border x:Name="PART_Indicator" Background="{TemplateBinding Foreground}" CornerRadius="5" HorizontalAlignment="Left"/>
+                                            </Grid>
+                                        </Border>
+                                    </ControlTemplate>
+                                </ProgressBar.Template>
+                            </ProgressBar>
+
+                            <!-- Applied vs Total Counts -->
+                            <Grid>
+                                <TextBlock Text="{Binding LagFixAppliedCount, StringFormat={}{0} Applied}"
+                                           FontSize="10.5" FontWeight="SemiBold" Foreground="#94A3B8"
+                                           HorizontalAlignment="Left"/>
+                                <TextBlock Text="{Binding LagFixTotalCount, StringFormat={}{0} Total Tweaks}"
+                                           FontSize="10.5" FontWeight="SemiBold" Foreground="#64748B"
+                                           HorizontalAlignment="Right"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- RIGHT COLUMN: HARDWARE SPECIFICATIONS -->
+                <Border Grid.Column="1" CornerRadius="18" Background="#111319" BorderBrush="#20232E" BorderThickness="1.5"
+                        Padding="24,18">
+                    <Grid VerticalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Top Title Bar -->
+                        <Grid Grid.Row="0" Margin="0,0,0,15">
+                            <TextBlock Text="HARDWARE SPECIFICATIONS" FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="11.5" FontWeight="Bold" Foreground="#64748B"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <!-- Specifications Split Grid (Left Specs | Divider | Right Specs) -->
+                        <Grid Grid.Row="1" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- LEFT SIDE SPECS: CPU, GPU, MEMORY, HARD DISK -->
+                            <Grid Grid.Column="0" VerticalAlignment="Center">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- CPU Row -->
+                                <Grid Grid.Row="0" Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="72"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="CPU" FontSize="11" FontWeight="Bold" Foreground="#64748B" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="|" FontSize="11" Foreground="#333B4F" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding CpuModel}" FontSize="12.5" FontWeight="Bold" Foreground="#FFFFFF"
+                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </Grid>
+
+                                <!-- GPU Row -->
+                                <Grid Grid.Row="1" Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="72"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="GPU" FontSize="11" FontWeight="Bold" Foreground="#64748B" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="|" FontSize="11" Foreground="#333B4F" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding GpuModel}" FontSize="12.5" FontWeight="Bold" Foreground="#FFFFFF"
+                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </Grid>
+
+                                <!-- Memory Row -->
+                                <Grid Grid.Row="2" Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="72"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="MEMORY" FontSize="11" FontWeight="Bold" Foreground="#64748B" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="|" FontSize="11" Foreground="#333B4F" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding RamSpec}" FontSize="12.5" FontWeight="Bold" Foreground="#FFFFFF"
+                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </Grid>
+
+                                <!-- Hard Disk Row -->
+                                <Grid Grid.Row="3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="72"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="HARD DISK" FontSize="11" FontWeight="Bold" Foreground="#64748B" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="|" FontSize="11" Foreground="#333B4F" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding SystemDriveType}" FontSize="12.5" FontWeight="Bold" Foreground="#FFFFFF"
+                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </Grid>
+                            </Grid>
+
+                            <!-- VERTICAL DIVIDER LINE (Centered, soft fade top/bottom) -->
+                            <Rectangle Grid.Column="1" Width="1.5" Height="96" VerticalAlignment="Center" Margin="18,0">
+                                <Rectangle.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                        <GradientStop Color="#00242838" Offset="0.0"/>
+                                        <GradientStop Color="#2C3246" Offset="0.25"/>
+                                        <GradientStop Color="#2C3246" Offset="0.75"/>
+                                        <GradientStop Color="#00242838" Offset="1.0"/>
+                                    </LinearGradientBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+
+                            <!-- RIGHT SIDE SPECS: WINDOWS, GPU DRIVER, POWER PLAN, VIRTUALIZATION -->
+                            <Grid Grid.Column="2" VerticalAlignment="Center">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Windows Row -->
+                                <Grid Grid.Row="0" Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="104"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="WINDOWS" FontSize="11" FontWeight="Bold" Foreground="#64748B" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="|" FontSize="11" Foreground="#333B4F" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding WindowsVersion}" FontSize="12.5" FontWeight="Bold" Foreground="#FFFFFF"
+                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </Grid>
+
+                                <!-- GPU Driver Row -->
+                                <Grid Grid.Row="1" Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="104"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="GPU DRIVER" FontSize="11" FontWeight="Bold" Foreground="#64748B" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="|" FontSize="11" Foreground="#333B4F" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding GpuDriverVersion}" FontSize="12.5" FontWeight="Bold" Foreground="#FFFFFF"
+                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </Grid>
+
+                                <!-- Power Plan Row -->
+                                <Grid Grid.Row="2" Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="104"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="POWER PLAN" FontSize="11" FontWeight="Bold" Foreground="#64748B" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="|" FontSize="11" Foreground="#333B4F" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding CurrentPowerPlan}" FontSize="12.5" FontWeight="Bold"
+                                               Foreground="{Binding PowerPlanColorHex, Converter={StaticResource StringToBrush}}"
+                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </Grid>
+
+                                <!-- Virtualization Row -->
+                                <Grid Grid.Row="3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="104"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="VIRTUALIZATION" FontSize="11" FontWeight="Bold" Foreground="#64748B" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="1" Text="|" FontSize="11" Foreground="#333B4F" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding VirtualizationStatus}" FontSize="12.5" FontWeight="Bold"
+                                               Foreground="{Binding VirtualizationColorHex, Converter={StaticResource StringToBrush}}"
+                                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,47 @@
+<UserControl x:Class="XenomOptimizer.Views.ArcGaugeControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="RootGauge">
+    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+        <!-- Canvas for the Track and Progress Arcs -->
+        <Canvas x:Name="GaugeCanvas" Width="148" Height="110">
+            <!-- Background Track Arc (Image 2 style) -->
+            <Path x:Name="TrackPath"
+                  Stroke="#252A3A"
+                  StrokeThickness="9.5"
+                  StrokeStartLineCap="Round"
+                  StrokeEndLineCap="Round"/>
+
+            <!-- Foreground Progress Arc -->
+            <Path x:Name="ProgressPath"
+                  Stroke="#00D4FF"
+                  StrokeThickness="9.5"
+                  StrokeStartLineCap="Round"
+                  StrokeEndLineCap="Round">
+                <Path.Effect>
+                    <DropShadowEffect x:Name="GlowEffect" BlurRadius="12" ShadowDepth="0" Color="#00D4FF" Opacity="0.5"/>
+                </Path.Effect>
+            </Path>
+        </Canvas>
+
+        <!-- Center Content: Percentage + Subtitle (Image 2 style) -->
+        <StackPanel x:Name="CenterContentPanel" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,18,0,0">
+            <TextBlock x:Name="ValueTextBlock"
+                       Text="0%"
+                       FontFamily="{StaticResource PrimaryFont}"
+                       FontSize="27"
+                       FontWeight="Bold"
+                       Foreground="#FFFFFF"
+                       HorizontalAlignment="Center"/>
+
+            <TextBlock x:Name="SubtitleTextBlock"
+                       Text="CPU LOAD"
+                       FontFamily="{StaticResource PrimaryFont}"
+                       FontSize="10.5"
+                       FontWeight="SemiBold"
+                       Foreground="#7E8798"
+                       HorizontalAlignment="Center"
+                       Margin="0,1,0,0"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

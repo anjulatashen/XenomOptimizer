@@ -1,0 +1,126 @@
+<UserControl x:Class="XenomOptimizer.Views.BackupRestoreView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24,24">
+        <StackPanel MaxWidth="1100">
+            <TextBlock Text="Backup &amp; Restore" FontSize="24" FontWeight="Bold"
+                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4"/>
+            <TextBlock Text="All optimization changes are automatically backed up. Restore any change at any time."
+                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="13" Margin="0,0,0,24"/>
+
+            <TextBlock Text="{Binding StatusMessage}" FontSize="12"
+                       Foreground="{StaticResource AccentGreenBrush}" Margin="0,0,0,12"
+                       Visibility="{Binding StatusMessage, Converter={StaticResource StringToVis}}"
+                       TextWrapping="Wrap"/>
+
+            <!-- Restore All -->
+            <Button Style="{StaticResource DangerButton}" Content="⟲ Restore All Changes"
+                    Command="{Binding RestoreAllCommand}" HorizontalAlignment="Left" Margin="0,0,0,20"/>
+
+            <!-- No backups message -->
+            <Border>
+                <Border.Style>
+                    <Style TargetType="Border" BasedOn="{StaticResource CardBorder}">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Sessions.Count}" Value="0">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <StackPanel HorizontalAlignment="Center" Margin="0,20">
+                    <TextBlock Text="📦" FontSize="36" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                    <TextBlock Text="No backups yet" FontSize="16" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Backups will appear here when you apply optimizations."
+                               Foreground="{StaticResource TextMutedBrush}" FontSize="12"
+                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Backup Sessions -->
+            <ItemsControl ItemsSource="{Binding Sessions}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource CardBorder}" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="📦 Backup Session" FontSize="15" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <Border CornerRadius="4" Padding="6,2" Margin="10,0,0,0"
+                                                VerticalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background">
+                                                        <Setter.Value><SolidColorBrush Color="#33A3E635"/></Setter.Value>
+                                                    </Setter>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsFullyRestored}" Value="True">
+                                                            <Setter Property="Background">
+                                                                <Setter.Value><SolidColorBrush Color="#3394A3B8"/></Setter.Value>
+                                                            </Setter>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock FontSize="10">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="Active"/>
+                                                        <Setter Property="Foreground" Value="{StaticResource AccentGreenBrush}"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsFullyRestored}" Value="True">
+                                                                <Setter Property="Text" Value="Restored"/>
+                                                                <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/><ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Date" Foreground="{StaticResource TextMutedBrush}" FontSize="12"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding FormattedDate}" FontSize="12"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    </Grid>
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/><ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Windows" Foreground="{StaticResource TextMutedBrush}" FontSize="12"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding WindowsVersion}" FontSize="12"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    </Grid>
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="120"/><ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Changes" Foreground="{StaticResource TextMutedBrush}" FontSize="12"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding TotalChanges}" FontSize="12"
+                                                   Foreground="{StaticResource AccentCyanBrush}" FontWeight="SemiBold"/>
+                                    </Grid>
+                                </StackPanel>
+
+                                <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="⟲ Restore"
+                                        Command="{Binding RestoreSessionCommand}" VerticalAlignment="Center"
+                                        Margin="16,0,0,0"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

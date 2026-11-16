@@ -1,0 +1,246 @@
+<UserControl x:Class="XenomOptimizer.Views.DriverWarningModalControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             IsVisibleChanged="OnIsVisibleChanged">
+
+    <Grid>
+        <!-- Full-window Dark Dimming Backdrop (Dismiss on click outside) -->
+        <Border x:Name="BackdropBorder" Background="#D8000000"
+                MouseLeftButtonDown="Backdrop_MouseLeftButtonDown"/>
+
+        <!-- ═══ FIXED-SIZE SLEEK DARK MODAL CARD (EXACT PALETTE & WIREFRAME LAYOUT) ═══ -->
+        <Border x:Name="ModalCard" Width="460" CornerRadius="24" Padding="26,20"
+                Background="#0A0A0A" BorderBrush="#262626" BorderThickness="1.2"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                RenderTransformOrigin="0.5,0.5">
+
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="45" ShadowDepth="10" Opacity="0.95" Color="#000000"/>
+            </Border.Effect>
+
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="ModalCardTranslate" Y="0"/>
+            </Border.RenderTransform>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <!-- Row 0: Top Header (Close Button) -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Row 1: Title & Subtitle (Install Notice) -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Row 2: Middle Prominent Centered Notice -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Row 3: Bottom Separated Section (Before Installing Driver Booster + Action Tab) -->
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- ── ROW 0: TOP CLOSE BUTTON (STANDARD APP CLOSE BUTTON STYLE) ── -->
+                <Grid Grid.Row="0">
+                    <Button HorizontalAlignment="Right" VerticalAlignment="Center"
+                            Width="32" Height="26" Cursor="Hand"
+                            Command="{Binding CancelDriverWarningCommand}"
+                            ToolTip="Close (Esc)">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="CloseBox" Width="32" Height="26" CornerRadius="8"
+                                        Background="Transparent" BorderThickness="0">
+                                    <TextBlock x:Name="CloseIcon" Text="&#xE711;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="10.5" Foreground="#94A3B8"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="CloseBox" Property="Background" Value="#EF4444"/>
+                                        <Setter TargetName="CloseIcon" Property="Foreground" Value="#FFFFFF"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="CloseBox" Property="Background" Value="#DC2626"/>
+                                        <Setter TargetName="CloseIcon" Property="Foreground" Value="#FFFFFF"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </Grid>
+
+                <!-- ── ROW 1: TITLE & SUBTITLE ── -->
+                <StackPanel Grid.Row="1" HorizontalAlignment="Center" Margin="0,2,0,16">
+                    <TextBlock Text="Install Notice" FontSize="22" FontWeight="Bold"
+                               Foreground="#FFFFFF" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                    <TextBlock Text="Please review before install" FontSize="12"
+                               Foreground="#525252" HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- ── ROW 2: CENTERED PROMINENT PRIMARY DRIVERS NOTICE ── -->
+                <Border Grid.Row="2" Padding="14,4,14,16" Margin="0,0,0,4">
+                    <TextBlock FontSize="13.5" FontWeight="SemiBold" Foreground="#D4D4D4"
+                               TextAlignment="Center" TextWrapping="Wrap" LineHeight="20"
+                               HorizontalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Text" Value="Please ensure all primary PC drivers (Motherboard, GPU, Wi-Fi, DirectX, VC++) have finished downloading and installing before installing Driver Booster."/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding AreAllDriversInstalled}" Value="True">
+                                        <Setter Property="Text" Value="All primary PC drivers have been successfully installed! You can now proceed to install Driver Booster to update all remaining peripheral and device drivers."/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Border>
+
+                <!-- ── ROW 3: BOTTOM SEPARATED CONTAINER (#171717 PALETTE) ── -->
+                <Border Grid.Row="3" Background="#171717" BorderBrush="#262626" BorderThickness="1.2"
+                        CornerRadius="16" Padding="16,14">
+                    <StackPanel>
+                        <!-- Before Installation Header -->
+                        <TextBlock Text="Before Installing Driver Booster" FontSize="12.5" FontWeight="Bold"
+                                   Foreground="#FFFFFF" Margin="0,0,0,4"/>
+
+                        <!-- During Setup Precaution Text -->
+                        <TextBlock Text="During setup, the installer may present optional bundled third-party software. Please uncheck those optional checkboxes before clicking Next."
+                                   FontSize="11.5" Foreground="#737373" TextWrapping="Wrap" LineHeight="17" Margin="0,0,0,14"/>
+
+                        <!-- Two Distinct Action Buttons -->
+                        <Grid Margin="0,4,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- 1. Download Later Button -->
+                            <Button x:Name="LaterButton" Grid.Column="0" Command="{Binding CancelDriverWarningCommand}"
+                                    Cursor="Hand" Height="38">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="LaterBox" Background="#D1FE29" CornerRadius="10"
+                                                BorderBrush="Transparent" BorderThickness="0">
+                                            <TextBlock x:Name="LaterText" Text="Download Later" FontSize="12" FontWeight="Bold"
+                                                       Foreground="#0A0A0A" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="LaterBox" Property="Background" Value="#E2FF4A"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="LaterBox" Property="Background" Value="#B8E619"/>
+                                            </Trigger>
+                                            <!-- WHEN ALL DRIVERS ARE INSTALLED: Download Later becomes dark secondary -->
+                                            <DataTrigger Binding="{Binding AreAllDriversInstalled}" Value="True">
+                                                <Setter TargetName="LaterBox" Property="Background" Value="#262626"/>
+                                                <Setter TargetName="LaterBox" Property="BorderBrush" Value="#373737"/>
+                                                <Setter TargetName="LaterBox" Property="BorderThickness" Value="1.2"/>
+                                                <Setter TargetName="LaterText" Property="Foreground" Value="#D4D4D4"/>
+                                                <Setter TargetName="LaterText" Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding AreAllDriversInstalled}" Value="True"/>
+                                                    <Condition Binding="{Binding Path=IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter TargetName="LaterBox" Property="Background" Value="#373737"/>
+                                                <Setter TargetName="LaterBox" Property="BorderBrush" Value="#525252"/>
+                                                <Setter TargetName="LaterText" Property="Foreground" Value="#FFFFFF"/>
+                                            </MultiDataTrigger>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding AreAllDriversInstalled}" Value="True"/>
+                                                    <Condition Binding="{Binding Path=IsPressed, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter TargetName="LaterBox" Property="Background" Value="#1C1C1C"/>
+                                            </MultiDataTrigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+
+                            <!-- 2. I Understand, Download Button -->
+                            <Button x:Name="UnderstandButton" Grid.Column="2" Command="{Binding ConfirmDriverBoosterDownloadCommand}"
+                                    Cursor="Hand" Height="38">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="UnderstandBox" Background="#262626" BorderBrush="#373737" BorderThickness="1.2"
+                                                CornerRadius="10" RenderTransformOrigin="0.5,0.5">
+                                            <Border.RenderTransform>
+                                                <ScaleTransform x:Name="UnderstandScale" ScaleX="1.0" ScaleY="1.0"/>
+                                            </Border.RenderTransform>
+                                            <TextBlock x:Name="UnderstandTxt" Text="I Understand, Download" FontSize="11.5" FontWeight="SemiBold"
+                                                       Foreground="#D4D4D4" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="UnderstandBox" Property="Background" Value="#373737"/>
+                                                <Setter TargetName="UnderstandBox" Property="BorderBrush" Value="#525252"/>
+                                                <Setter TargetName="UnderstandTxt" Property="Foreground" Value="#FFFFFF"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="UnderstandBox" Property="Background" Value="#1C1C1C"/>
+                                            </Trigger>
+                                            <!-- WHEN ALL DRIVERS ARE INSTALLED: I Understand turns Green & Bumps! -->
+                                            <DataTrigger Binding="{Binding AreAllDriversInstalled}" Value="True">
+                                                <Setter TargetName="UnderstandBox" Property="Background" Value="#D1FE29"/>
+                                                <Setter TargetName="UnderstandBox" Property="BorderBrush" Value="Transparent"/>
+                                                <Setter TargetName="UnderstandBox" Property="BorderThickness" Value="0"/>
+                                                <Setter TargetName="UnderstandTxt" Property="Foreground" Value="#0A0A0A"/>
+                                                <Setter TargetName="UnderstandTxt" Property="FontWeight" Value="Bold"/>
+                                                <Setter TargetName="UnderstandTxt" Property="FontSize" Value="12"/>
+                                                <DataTrigger.EnterActions>
+                                                    <BeginStoryboard x:Name="UnderstandBumpStoryboard">
+                                                        <Storyboard RepeatBehavior="Forever">
+                                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="UnderstandScale"
+                                                                                           Storyboard.TargetProperty="ScaleX"
+                                                                                           Duration="0:0:1.8">
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:0.0" Value="1.0"/>
+                                                                <SplineDoubleKeyFrame KeyTime="0:0:0.25" Value="1.06" KeySpline="0.2,0.8,0.4,1.0"/>
+                                                                <SplineDoubleKeyFrame KeyTime="0:0:0.50" Value="1.0" KeySpline="0.6,0.0,0.8,0.2"/>
+                                                                <SplineDoubleKeyFrame KeyTime="0:0:0.70" Value="1.03" KeySpline="0.2,0.8,0.4,1.0"/>
+                                                                <SplineDoubleKeyFrame KeyTime="0:0:0.90" Value="1.0" KeySpline="0.6,0.0,0.8,0.2"/>
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:1.8" Value="1.0"/>
+                                                            </DoubleAnimationUsingKeyFrames>
+                                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="UnderstandScale"
+                                                                                           Storyboard.TargetProperty="ScaleY"
+                                                                                           Duration="0:0:1.8">
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:0.0" Value="1.0"/>
+                                                                <SplineDoubleKeyFrame KeyTime="0:0:0.25" Value="1.06" KeySpline="0.2,0.8,0.4,1.0"/>
+                                                                <SplineDoubleKeyFrame KeyTime="0:0:0.50" Value="1.0" KeySpline="0.6,0.0,0.8,0.2"/>
+                                                                <SplineDoubleKeyFrame KeyTime="0:0:0.70" Value="1.03" KeySpline="0.2,0.8,0.4,1.0"/>
+                                                                <SplineDoubleKeyFrame KeyTime="0:0:0.90" Value="1.0" KeySpline="0.6,0.0,0.8,0.2"/>
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:1.8" Value="1.0"/>
+                                                            </DoubleAnimationUsingKeyFrames>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </DataTrigger.EnterActions>
+                                                <DataTrigger.ExitActions>
+                                                    <StopStoryboard BeginStoryboardName="UnderstandBumpStoryboard"/>
+                                                </DataTrigger.ExitActions>
+                                            </DataTrigger>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding AreAllDriversInstalled}" Value="True"/>
+                                                    <Condition Binding="{Binding Path=IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter TargetName="UnderstandBox" Property="Background" Value="#E2FF4A"/>
+                                            </MultiDataTrigger>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding AreAllDriversInstalled}" Value="True"/>
+                                                    <Condition Binding="{Binding Path=IsPressed, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter TargetName="UnderstandBox" Property="Background" Value="#B8E619"/>
+                                            </MultiDataTrigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

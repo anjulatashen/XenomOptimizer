@@ -1,0 +1,29 @@
+<UserControl x:Class="XenomOptimizer.Views.RadialTickGaugeControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Name="RootGauge">
+    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+        <!-- Canvas for the Exact Chunky Radial Tick Pills (360x210) -->
+        <Canvas x:Name="GaugeCanvas" Width="360" Height="210" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+        <!-- Center Content: Percentage + Subtitle (Positioned inside the arch dome clearing) -->
+        <StackPanel x:Name="CenterContentPanel" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,46">
+            <TextBlock x:Name="ValueTextBlock"
+                       Text="0%"
+                       FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                       FontSize="34"
+                       FontWeight="Bold"
+                       Foreground="#FFFFFF"
+                       HorizontalAlignment="Center"/>
+
+            <TextBlock x:Name="SubtitleTextBlock"
+                       Text="Scan"
+                       FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"
+                       FontSize="13.5"
+                       FontWeight="Medium"
+                       Foreground="#9E9EA4"
+                       HorizontalAlignment="Center"
+                       Margin="0,2,0,0"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

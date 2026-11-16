@@ -1,0 +1,889 @@
+<UserControl x:Class="XenomOptimizer.Views.InstructionGuideModalControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             IsVisibleChanged="OnIsVisibleChanged"
+             SizeChanged="OnUserControlSizeChanged"
+             Loaded="OnControlLoaded">
+
+    <Grid x:Name="RootGuideGrid" ClipToBounds="False">
+        <!-- 1. Full-window Deep Dark Translucent Backdrop (Dismiss on click outside) -->
+        <Border x:Name="BackdropBorder" Background="#C8000000" Opacity="0"
+                MouseLeftButtonDown="Backdrop_MouseLeftButtonDown"/>
+
+        <!-- 2. Centered Floating Modal Card (Exact Centered Layout) -->
+        <Border x:Name="InstructionModalCard"
+                Width="660" MaxHeight="720"
+                Background="#11131C" BorderBrush="#242938" BorderThickness="1.2"
+                CornerRadius="24" Padding="32,28"
+                HorizontalAlignment="Center" VerticalAlignment="Center"
+                Opacity="0" RenderTransformOrigin="0.5,0.5">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="55" ShadowDepth="12" Direction="270" Color="#000000" Opacity="0.95"/>
+            </Border.Effect>
+
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="ModalCardTranslate" Y="30"/>
+            </Border.RenderTransform>
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                          Focusable="False" Padding="0,0,4,0">
+
+                <StackPanel x:Name="GuideContentHost">
+
+                    <!-- Header Row: Title + Progress Counter + Close '✕' Button -->
+                    <Grid Margin="0,0,0,18">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="You're almost there!" FontSize="25" FontWeight="Bold"
+                                       Foreground="#FFFFFF" FontFamily="pack://application:,,,/Fonts/#Poppins, Segoe UI, sans-serif"/>
+                            <TextBlock Text="Follow the 6-step gaming pipeline to eliminate stutters &amp; boost FPS."
+                                       FontSize="12" Foreground="#8A92A6" Margin="0,4,0,0"/>
+                        </StackPanel>
+
+                        <!-- Right: Completed Counter Pill & Close '✕' Button -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Border Background="#162524" BorderBrush="#1C3D37" BorderThickness="1"
+                                    CornerRadius="12" Padding="12,5" Margin="0,0,12,0" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" FontSize="11"
+                                               Foreground="#10B981" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBlock Text="{Binding GuideStepCounterText}" FontSize="12" FontWeight="Bold"
+                                               Foreground="#34D399" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Button Width="32" Height="32" Cursor="Hand" Background="Transparent" BorderThickness="0"
+                                    Click="CloseButton_Click"
+                                    ToolTip="Close Guide">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="CloseBox" Width="32" Height="28" CornerRadius="8"
+                                                Background="Transparent" BorderThickness="0">
+                                            <TextBlock x:Name="CloseIcon" Text="&#xE711;" FontFamily="Segoe MDL2 Assets"
+                                                       FontSize="11" Foreground="#94A3B8"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="CloseBox" Property="Background" Value="#EF4444"/>
+                                                <Setter TargetName="CloseIcon" Property="Foreground" Value="#FFFFFF"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="CloseBox" Property="Background" Value="#DC2626"/>
+                                                <Setter TargetName="CloseIcon" Property="Foreground" Value="#FFFFFF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Floating Speech Bubble Callout (Active Step Card) -->
+                    <StackPanel Margin="0,4,0,0">
+                        <Border x:Name="SpeechBubbleBox" CornerRadius="16"
+                                Background="#1A1E2B" BorderBrush="#2E354A" BorderThickness="1.2"
+                                Padding="20,16">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="25" ShadowDepth="6" Direction="270" Color="#000000" Opacity="0.5"/>
+                            </Border.Effect>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Left: Step Title + Subtitle -->
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <Border Background="#10B981" CornerRadius="6" Padding="7,2" Margin="0,0,8,0" VerticalAlignment="Center">
+                                            <TextBlock Text="ACTIVE" FontSize="9.5" FontWeight="Bold" Foreground="#0A1E14"/>
+                                        </Border>
+                                        <TextBlock Text="{Binding ActiveStepBubbleTitle}" FontSize="15" FontWeight="Bold"
+                                                   Foreground="#FFFFFF" VerticalAlignment="Center"
+                                                   FontFamily="pack://application:,,,/Fonts/#Poppins, Segoe UI, sans-serif"/>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding ActiveStepBubbleSubtitle}" FontSize="11.5" Foreground="#94A3B8"
+                                               TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                </StackPanel>
+
+                                <!-- Right: Action Button "Open Page ➔" -->
+                                <Button Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0" Cursor="Hand"
+                                        Click="BubbleActionButton_Click">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="BtnBox" Background="#10B981" CornerRadius="12" Padding="16,10">
+                                                <Border.Effect>
+                                                    <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#10B981" Opacity="0.35"/>
+                                                </Border.Effect>
+                                                <TextBlock x:Name="BtnText" Text="{Binding ActiveStepBubbleActionText}"
+                                                           FontSize="12.5" FontWeight="Bold" Foreground="#062817"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="BtnBox" Property="Background" Value="#34D399"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="BtnBox" Property="Background" Value="#059669"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <!-- Downward Pointer Notch -->
+                        <Canvas Height="9" ClipToBounds="False">
+                            <Path x:Name="BubbleNotch" Fill="#1A1E2B" Data="M 0,0 L 8,8 L 16,0 Z" Width="16" Height="8">
+                                <Path.RenderTransform>
+                                    <TranslateTransform x:Name="BubbleNotchTranslate" X="45" Y="-1"/>
+                                </Path.RenderTransform>
+                            </Path>
+                        </Canvas>
+                    </StackPanel>
+
+                    <!-- Stepper Track (The Continuous Horizontal Pill Bar) -->
+                    <Border x:Name="StepperTrackBorder" Height="52" CornerRadius="26"
+                            Background="#131622" BorderBrush="#252A3C" BorderThickness="1.2"
+                            ClipToBounds="True" Margin="0,10,0,0">
+                        <Grid>
+                            <!-- 1. The Continuous Gradient Progress Fill -->
+                            <Border x:Name="ProgressFillBar" HorizontalAlignment="Left" Height="52" CornerRadius="26" Width="0">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                        <GradientStop Color="#043D2D" Offset="0.0"/>
+                                        <GradientStop Color="#065F46" Offset="0.3"/>
+                                        <GradientStop Color="#059669" Offset="0.7"/>
+                                        <GradientStop Color="#10B981" Offset="1.0"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                            </Border>
+
+                            <!-- 2. Overlay 6 Step Nodes (Clickable) -->
+                            <Grid x:Name="StepNodesGrid">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Node 1: Drivers -->
+                                <Grid Grid.Column="0" Cursor="Hand" Background="Transparent" MouseLeftButtonDown="Step1_Click">
+                                    <Border Width="36" Height="36" CornerRadius="18" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#1E2333"/>
+                                                <Setter Property="BorderBrush" Value="#2F364C"/>
+                                                <Setter Property="BorderThickness" Value="1.5"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsGuideStep1Active}" Value="True">
+                                                        <Setter Property="Background" Value="#1E2D2A"/>
+                                                        <Setter Property="BorderBrush" Value="#34D399"/>
+                                                        <Setter Property="BorderThickness" Value="2.5"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsGuideStep1Done}" Value="True">
+                                                        <Setter Property="Background" Value="#10B981"/>
+                                                        <Setter Property="BorderBrush" Value="#059669"/>
+                                                        <Setter Property="BorderThickness" Value="1.5"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <Grid>
+                                            <TextBlock Text="✓" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsGuideStep1Done}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Text="1" FontSize="13" FontWeight="Bold"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#707990"/>
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsGuideStep1Done}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsGuideStep1Active}" Value="True">
+                                                                <Setter Property="Foreground" Value="#34D399"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Node 2: Services -->
+                                <Grid Grid.Column="1" Cursor="Hand" Background="Transparent" MouseLeftButtonDown="Step2_Click">
+                                    <Border Width="36" Height="36" CornerRadius="18" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#1E2333"/>
+                                                <Setter Property="BorderBrush" Value="#2F364C"/>
+                                                <Setter Property="BorderThickness" Value="1.5"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsGuideStep2Active}" Value="True">
+                                                        <Setter Property="Background" Value="#1E2D2A"/>
+                                                        <Setter Property="BorderBrush" Value="#34D399"/>
+                                                        <Setter Property="BorderThickness" Value="2.5"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsGuideStep2Done}" Value="True">
+                                                        <Setter Property="Background" Value="#10B981"/>
+                                                        <Setter Property="BorderBrush" Value="#059669"/>
+                                                        <Setter Property="BorderThickness" Value="1.5"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <Grid>
+                                            <TextBlock Text="✓" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsGuideStep2Done}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Text="2" FontSize="13" FontWeight="Bold"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#707990"/>
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsGuideStep2Done}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsGuideStep2Active}" Value="True">
+                                                                <Setter Property="Foreground" Value="#34D399"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Node 3: Advance -->
+                                <Grid Grid.Column="2" Cursor="Hand" Background="Transparent" MouseLeftButtonDown="Step3_Click">
+                                    <Border Width="36" Height="36" CornerRadius="18" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#1E2333"/>
+                                                <Setter Property="BorderBrush" Value="#2F364C"/>
+                                                <Setter Property="BorderThickness" Value="1.5"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsGuideStep3Active}" Value="True">
+                                                        <Setter Property="Background" Value="#1E2D2A"/>
+                                                        <Setter Property="BorderBrush" Value="#34D399"/>
+                                                        <Setter Property="BorderThickness" Value="2.5"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsGuideStep3Done}" Value="True">
+                                                        <Setter Property="Background" Value="#10B981"/>
+                                                        <Setter Property="BorderBrush" Value="#059669"/>
+                                                        <Setter Property="BorderThickness" Value="1.5"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <Grid>
+                                            <TextBlock Text="✓" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsGuideStep3Done}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Text="3" FontSize="13" FontWeight="Bold"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#707990"/>
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsGuideStep3Done}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsGuideStep3Active}" Value="True">
+                                                                <Setter Property="Foreground" Value="#34D399"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Node 4: Registry -->
+                                <Grid Grid.Column="3" Cursor="Hand" Background="Transparent" MouseLeftButtonDown="Step4_Click">
+                                    <Border Width="36" Height="36" CornerRadius="18" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#1E2333"/>
+                                                <Setter Property="BorderBrush" Value="#2F364C"/>
+                                                <Setter Property="BorderThickness" Value="1.5"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsGuideStep4Active}" Value="True">
+                                                        <Setter Property="Background" Value="#1E2D2A"/>
+                                                        <Setter Property="BorderBrush" Value="#34D399"/>
+                                                        <Setter Property="BorderThickness" Value="2.5"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsGuideStep4Done}" Value="True">
+                                                        <Setter Property="Background" Value="#10B981"/>
+                                                        <Setter Property="BorderBrush" Value="#059669"/>
+                                                        <Setter Property="BorderThickness" Value="1.5"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <Grid>
+                                            <TextBlock Text="✓" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsGuideStep4Done}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Text="4" FontSize="13" FontWeight="Bold"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#707990"/>
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsGuideStep4Done}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsGuideStep4Active}" Value="True">
+                                                                <Setter Property="Foreground" Value="#34D399"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Node 5: GameLoop -->
+                                <Grid Grid.Column="4" Cursor="Hand" Background="Transparent" MouseLeftButtonDown="Step5_Click">
+                                    <Border Width="36" Height="36" CornerRadius="18" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#1E2333"/>
+                                                <Setter Property="BorderBrush" Value="#2F364C"/>
+                                                <Setter Property="BorderThickness" Value="1.5"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsGuideStep5Active}" Value="True">
+                                                        <Setter Property="Background" Value="#1E2D2A"/>
+                                                        <Setter Property="BorderBrush" Value="#34D399"/>
+                                                        <Setter Property="BorderThickness" Value="2.5"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsGuideStep5Done}" Value="True">
+                                                        <Setter Property="Background" Value="#10B981"/>
+                                                        <Setter Property="BorderBrush" Value="#059669"/>
+                                                        <Setter Property="BorderThickness" Value="1.5"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <Grid>
+                                            <TextBlock Text="✓" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsGuideStep5Done}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Text="5" FontSize="13" FontWeight="Bold"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#707990"/>
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsGuideStep5Done}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsGuideStep5Active}" Value="True">
+                                                                <Setter Property="Foreground" Value="#34D399"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Node 6: Cleanup -->
+                                <Grid Grid.Column="5" Cursor="Hand" Background="Transparent" MouseLeftButtonDown="Step6_Click">
+                                    <Border Width="36" Height="36" CornerRadius="18" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#1E2333"/>
+                                                <Setter Property="BorderBrush" Value="#2F364C"/>
+                                                <Setter Property="BorderThickness" Value="1.5"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsGuideStep6Active}" Value="True">
+                                                        <Setter Property="Background" Value="#1E2D2A"/>
+                                                        <Setter Property="BorderBrush" Value="#34D399"/>
+                                                        <Setter Property="BorderThickness" Value="2.5"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsGuideStep6Done}" Value="True">
+                                                        <Setter Property="Background" Value="#10B981"/>
+                                                        <Setter Property="BorderBrush" Value="#059669"/>
+                                                        <Setter Property="BorderThickness" Value="1.5"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <Grid>
+                                            <TextBlock Text="✓" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsGuideStep6Done}" Value="True">
+                                                                <Setter Property="Visibility" Value="Visible"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Text="6" FontSize="13" FontWeight="Bold"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#707990"/>
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsGuideStep6Done}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsGuideStep6Active}" Value="True">
+                                                                <Setter Property="Foreground" Value="#34D399"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <!-- Stepper Labels Row -->
+                    <Grid x:Name="StepLabelsGrid" Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Label 1 -->
+                        <StackPanel Grid.Column="0" HorizontalAlignment="Center" Cursor="Hand" MouseLeftButtonDown="Step1_Click">
+                            <Border Width="18" Height="18" CornerRadius="9" HorizontalAlignment="Center" Margin="0,0,0,3">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#1E2333"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsGuideStep1Done}" Value="True">
+                                                <Setter Property="Background" Value="#10B981"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsGuideStep1Active}" Value="True">
+                                                <Setter Property="Background" Value="#34D399"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="1" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#707990"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsGuideStep1Done}" Value="True">
+                                                    <Setter Property="Foreground" Value="#062817"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsGuideStep1Active}" Value="True">
+                                                    <Setter Property="Foreground" Value="#062817"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                            <TextBlock Text="{Binding GuideStep1Label}" FontSize="11" HorizontalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#707990"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsGuideStep1Done}" Value="True">
+                                                <Setter Property="Foreground" Value="#94A3B8"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsGuideStep1Active}" Value="True">
+                                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+
+                        <!-- Label 2 -->
+                        <StackPanel Grid.Column="1" HorizontalAlignment="Center" Cursor="Hand" MouseLeftButtonDown="Step2_Click">
+                            <Border Width="18" Height="18" CornerRadius="9" HorizontalAlignment="Center" Margin="0,0,0,3">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#1E2333"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsGuideStep2Done}" Value="True">
+                                                <Setter Property="Background" Value="#10B981"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsGuideStep2Active}" Value="True">
+                                                <Setter Property="Background" Value="#34D399"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="2" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#707990"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsGuideStep2Done}" Value="True">
+                                                    <Setter Property="Foreground" Value="#062817"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsGuideStep2Active}" Value="True">
+                                                    <Setter Property="Foreground" Value="#062817"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                            <TextBlock Text="{Binding GuideStep2Label}" FontSize="11" HorizontalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#707990"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsGuideStep2Done}" Value="True">
+                                                <Setter Property="Foreground" Value="#94A3B8"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsGuideStep2Active}" Value="True">
+                                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+
+                        <!-- Label 3 -->
+                        <StackPanel Grid.Column="2" HorizontalAlignment="Center" Cursor="Hand" MouseLeftButtonDown="Step3_Click">
+                            <Border Width="18" Height="18" CornerRadius="9" HorizontalAlignment="Center" Margin="0,0,0,3">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#1E2333"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsGuideStep3Done}" Value="True">
+                                                <Setter Property="Background" Value="#10B981"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsGuideStep3Active}" Value="True">
+                                                <Setter Property="Background" Value="#34D399"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="3" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#707990"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsGuideStep3Done}" Value="True">
+                                                    <Setter Property="Foreground" Value="#062817"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsGuideStep3Active}" Value="True">
+                                                    <Setter Property="Foreground" Value="#062817"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                            <TextBlock Text="{Binding GuideStep3Label}" FontSize="11" HorizontalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#707990"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsGuideStep3Done}" Value="True">
+                                                <Setter Property="Foreground" Value="#94A3B8"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsGuideStep3Active}" Value="True">
+                                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+
+                        <!-- Label 4 -->
+                        <StackPanel Grid.Column="3" HorizontalAlignment="Center" Cursor="Hand" MouseLeftButtonDown="Step4_Click">
+                            <Border Width="18" Height="18" CornerRadius="9" HorizontalAlignment="Center" Margin="0,0,0,3">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#1E2333"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsGuideStep4Done}" Value="True">
+                                                <Setter Property="Background" Value="#10B981"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsGuideStep4Active}" Value="True">
+                                                <Setter Property="Background" Value="#34D399"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="4" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#707990"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsGuideStep4Done}" Value="True">
+                                                    <Setter Property="Foreground" Value="#062817"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsGuideStep4Active}" Value="True">
+                                                    <Setter Property="Foreground" Value="#062817"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                            <TextBlock Text="{Binding GuideStep4Label}" FontSize="11" HorizontalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#707990"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsGuideStep4Done}" Value="True">
+                                                <Setter Property="Foreground" Value="#94A3B8"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsGuideStep4Active}" Value="True">
+                                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+
+                        <!-- Label 5 -->
+                        <StackPanel Grid.Column="4" HorizontalAlignment="Center" Cursor="Hand" MouseLeftButtonDown="Step5_Click">
+                            <Border Width="18" Height="18" CornerRadius="9" HorizontalAlignment="Center" Margin="0,0,0,3">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#1E2333"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsGuideStep5Done}" Value="True">
+                                                <Setter Property="Background" Value="#10B981"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsGuideStep5Active}" Value="True">
+                                                <Setter Property="Background" Value="#34D399"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="5" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#707990"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsGuideStep5Done}" Value="True">
+                                                    <Setter Property="Foreground" Value="#062817"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsGuideStep5Active}" Value="True">
+                                                    <Setter Property="Foreground" Value="#062817"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                            <TextBlock Text="{Binding GuideStep5Label}" FontSize="11" HorizontalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#707990"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsGuideStep5Done}" Value="True">
+                                                <Setter Property="Foreground" Value="#94A3B8"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsGuideStep5Active}" Value="True">
+                                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+
+                        <!-- Label 6 -->
+                        <StackPanel Grid.Column="5" HorizontalAlignment="Center" Cursor="Hand" MouseLeftButtonDown="Step6_Click">
+                            <Border Width="18" Height="18" CornerRadius="9" HorizontalAlignment="Center" Margin="0,0,0,3">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#1E2333"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsGuideStep6Done}" Value="True">
+                                                <Setter Property="Background" Value="#10B981"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsGuideStep6Active}" Value="True">
+                                                <Setter Property="Background" Value="#34D399"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="6" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#707990"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsGuideStep6Done}" Value="True">
+                                                    <Setter Property="Foreground" Value="#062817"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsGuideStep6Active}" Value="True">
+                                                    <Setter Property="Foreground" Value="#062817"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                            <TextBlock Text="{Binding GuideStep6Label}" FontSize="11" HorizontalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#707990"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsGuideStep6Done}" Value="True">
+                                                <Setter Property="Foreground" Value="#94A3B8"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsGuideStep6Active}" Value="True">
+                                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Bottom Tip Pill (Centered) -->
+                    <Border Background="#141724" BorderBrush="#252A3C" BorderThickness="1"
+                            CornerRadius="16" Padding="18,8"
+                            HorizontalAlignment="Center" Margin="0,22,0,24">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="+" FontSize="13" FontWeight="Bold" Foreground="#10B981" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding ActiveStepTipText}" FontSize="11.5" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Bottom Action Buttons: Later + Continue -->
+                    <Grid Margin="0,0,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="1.5*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Grid.Column="0" Style="{StaticResource SecondaryButton}"
+                                Content="I'll Do This Later" Click="CloseButton_Click"
+                                Height="42" FontSize="12" FontWeight="SemiBold"/>
+
+                        <Button Grid.Column="2" Cursor="Hand" Click="ContinueButton_Click">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="ContBox" Background="#10B981" CornerRadius="12" Height="42">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="14" ShadowDepth="2" Direction="270" Color="#10B981" Opacity="0.3"/>
+                                        </Border.Effect>
+                                        <TextBlock x:Name="ContText" Text="Continue Optimization ➔" FontSize="13" FontWeight="Bold"
+                                                   Foreground="#062817" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="ContBox" Property="Background" Value="#34D399"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter TargetName="ContBox" Property="Background" Value="#059669"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+                    </Grid>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</UserControl>

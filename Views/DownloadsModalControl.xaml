@@ -1,0 +1,1352 @@
+<UserControl x:Class="XenomOptimizer.Views.DownloadsModalControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="clr-namespace:XenomOptimizer.Views">
+
+    <Grid>
+        <!-- Full-window Dark Dimming Backdrop (Dismiss on click outside) -->
+        <Border x:Name="BackdropBorder" Background="#D8000000"
+                MouseLeftButtonDown="Backdrop_MouseLeftButtonDown"/>
+
+        <!-- ═══ FIXED-SIZE BOX-STYLE DOWNLOADS MODAL CARD (Dark AAA Pass Palette) ═══ -->
+        <Border x:Name="ModalCard" RenderTransformOrigin="0.5,0.5"
+                Background="#0A0A0A" BorderBrush="#262626" BorderThickness="1.2"
+                HorizontalAlignment="Center" VerticalAlignment="Center">
+
+            <Border.Style>
+                <Style TargetType="Border">
+                    <!-- Default: Single Download / Idle / Downloading (470 x 350) -->
+                    <Setter Property="Width" Value="470"/>
+                    <Setter Property="Height" Value="350"/>
+                    <Setter Property="CornerRadius" Value="14"/>
+                    <Setter Property="Padding" Value="24,22"/>
+                    <Style.Triggers>
+                        <!-- Download Completed View (Single & Multi): Exact matching size & proportions (440 x 480) -->
+                        <DataTrigger Binding="{Binding IsDownloadCompleted}" Value="True">
+                            <Setter Property="Width" Value="440"/>
+                            <Setter Property="Height" Value="480"/>
+                            <Setter Property="CornerRadius" Value="26"/>
+                            <Setter Property="Padding" Value="22,18"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsMultiDownloadViewActive}" Value="True">
+                            <Setter Property="Width" Value="440"/>
+                            <Setter Property="Height" Value="480"/>
+                            <Setter Property="CornerRadius" Value="26"/>
+                            <Setter Property="Padding" Value="22,18"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="45" ShadowDepth="10" Opacity="0.95" Color="#000000"/>
+            </Border.Effect>
+
+            <Border.RenderTransform>
+                <ScaleTransform x:Name="ModalCardScale" ScaleX="1.0" ScaleY="1.0"/>
+            </Border.RenderTransform>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <!-- Row 0: Top Header (Title + Close Button) -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Row 1: Content Area -->
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- ── CARD HEADER: Prominent 'Downloads' Title + Red-Hover Close Button ── -->
+                <Grid Grid.Row="0" Margin="0,0,0,14">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Title & Subtitle: Large, Prominent "Downloads" at the Top -->
+                    <StackPanel Grid.Column="0" VerticalAlignment="Top">
+                        <TextBlock Text="Downloads" FontSize="21" FontWeight="Bold" Foreground="#FFFFFF"/>
+                        <TextBlock FontSize="11.5" FontWeight="SemiBold" Margin="0,2,0,0"
+                                   Text="{Binding DownloadSubtitleText}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#525252"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDownloadingDriverBooster}" Value="True">
+                                            <Setter Property="Foreground" Value="#D1FE29"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsDownloadCompleted}" Value="True">
+                                            <Setter Property="Foreground" Value="#D1FE29"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsDownloadPaused}" Value="True">
+                                            <Setter Property="Foreground" Value="#FACC15"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- ── CLOSE BUTTON: Normal X Style, Red Hover (Balanced vertical alignment with Downloads title) ── -->
+                    <Button Grid.Column="1" Width="32" Height="26" Cursor="Hand"
+                            Command="{Binding ToggleDownloadFlyoutCommand}"
+                            ToolTip="Close Downloads" VerticalAlignment="Top" Margin="0,3,0,0">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="CloseBox" Width="32" Height="26" CornerRadius="8"
+                                        Background="Transparent" BorderThickness="0">
+                                    <TextBlock x:Name="CloseIcon" Text="&#xE711;" FontFamily="Segoe MDL2 Assets"
+                                               FontSize="10.5" Foreground="#94A3B8"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="CloseBox" Property="Background" Value="#EF4444"/>
+                                        <Setter TargetName="CloseIcon" Property="Foreground" Value="#FFFFFF"/>
+                                    </Trigger>
+                                    <Trigger Property="IsPressed" Value="True">
+                                        <Setter TargetName="CloseBox" Property="Background" Value="#DC2626"/>
+                                        <Setter TargetName="CloseIcon" Property="Foreground" Value="#FFFFFF"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </Grid>
+
+
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!-- STATE 1: IDLE / NO ACTIVE DOWNLOAD                          -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <Grid x:Name="IdleView" Grid.Row="1" VerticalAlignment="Center">
+                    <Grid.Style>
+                        <Style TargetType="Grid">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsDownloadingDriverBooster}" Value="False"/>
+                                        <Condition Binding="{Binding IsDownloadCompleted}" Value="False"/>
+                                        <Condition Binding="{Binding IsMultiDownloadViewActive}" Value="False"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
+
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,10">
+                        <TextBlock Text="No Downloads" FontSize="16" FontWeight="SemiBold" Foreground="#525252"
+                                   HorizontalAlignment="Center"/>
+
+                        <TextBlock Text="There are currently no active downloads" FontSize="11.5" Foreground="#373737"
+                                   HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Grid>
+
+
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!-- STATE 2: ACTIVE DOWNLOADING (GREEN LIME THEME WIDGET)        -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <Grid x:Name="DownloadingView" Grid.Row="1" VerticalAlignment="Center"
+                      Visibility="{Binding IsDownloadingDriverBooster, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+
+                        <!-- 1. Speed Row Above The Bar with Plain White Clock Time -->
+                        <Grid Margin="0,0,0,8">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border Width="6" Height="6" CornerRadius="3" Margin="0,0,6,0" VerticalAlignment="Center">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#D1FE29"/>
+                                            <Setter Property="Effect">
+                                                <Setter.Value>
+                                                    <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#D1FE29" Opacity="0.9"/>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDownloadPaused}" Value="True">
+                                                    <Setter Property="Background" Value="#FACC15"/>
+                                                    <Setter Property="Effect">
+                                                        <Setter.Value>
+                                                            <DropShadowEffect BlurRadius="6" ShadowDepth="0" Color="#FACC15" Opacity="0.9"/>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                </Border>
+                                <TextBlock Text="SPEED: " FontSize="10" FontWeight="Bold" Foreground="#525252" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding DownloadSpeedText}" FontSize="12" FontWeight="Bold"
+                                           FontFamily="{StaticResource MonoFont}" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#D1FE29"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDownloadPaused}" Value="True">
+                                                    <Setter Property="Foreground" Value="#FACC15"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+
+                            <TextBlock HorizontalAlignment="Right" VerticalAlignment="Center"
+                                       Text="{Binding CurrentClockTimeText}"
+                                       FontSize="11.5" FontWeight="SemiBold" Foreground="#FFFFFF"
+                                       FontFamily="{StaticResource MonoFont}"/>
+                        </Grid>
+
+                        <!-- 2. Thick Rounded Progress Bar: Active = Xenom Green Gradient; Paused = Orange Gradient -->
+                        <Border Height="22" CornerRadius="8" Background="#000000" BorderBrush="#171717" BorderThickness="1" Margin="0,0,0,14" ClipToBounds="True">
+                            <Grid>
+                                <ProgressBar Height="22" Value="{Binding DownloadProgressPercent}" Minimum="0" Maximum="100"
+                                             BorderThickness="0" Background="Transparent" VerticalAlignment="Stretch">
+                                    <ProgressBar.Style>
+                                        <Style TargetType="ProgressBar">
+                                            <Setter Property="Foreground">
+                                                <Setter.Value>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                        <GradientStop Color="#D1FE29" Offset="0"/>
+                                                        <GradientStop Color="#D1FE29" Offset="0.65"/>
+                                                        <GradientStop Color="#E6FB1B" Offset="0.85"/>
+                                                        <GradientStop Color="#F4FF2B" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDownloadPaused}" Value="True">
+                                                    <Setter Property="Foreground">
+                                                        <Setter.Value>
+                                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                                <GradientStop Color="#FF4700" Offset="0"/>
+                                                                <GradientStop Color="#FF5700" Offset="0.4"/>
+                                                                <GradientStop Color="#FF7500" Offset="0.75"/>
+                                                                <GradientStop Color="#FF9A00" Offset="1"/>
+                                                            </LinearGradientBrush>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ProgressBar.Style>
+                                    <ProgressBar.Template>
+                                        <ControlTemplate TargetType="ProgressBar">
+                                            <Grid x:Name="PART_Track">
+                                                <Border x:Name="PART_Indicator" Background="{TemplateBinding Foreground}" CornerRadius="7" HorizontalAlignment="Left">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Effect">
+                                                                <Setter.Value>
+                                                                    <DropShadowEffect BlurRadius="12" ShadowDepth="0" Color="#D1FE29" Opacity="0.75"/>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsDownloadPaused}" Value="True">
+                                                                    <Setter Property="Effect">
+                                                                        <Setter.Value>
+                                                                            <DropShadowEffect BlurRadius="14" ShadowDepth="0" Color="#FF6200" Opacity="0.85"/>
+                                                                        </Setter.Value>
+                                                                    </Setter>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                </Border>
+                                            </Grid>
+                                        </ControlTemplate>
+                                    </ProgressBar.Template>
+                                </ProgressBar>
+                            </Grid>
+                        </Border>
+
+                        <!-- 3. Hero Number Row + Single Pause/Resume Action Button -->
+                        <Grid Margin="0,0,0,14">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding DownloadProgressPercent, StringFormat={}{0:F0}%}"
+                                           FontSize="36" FontWeight="ExtraBold" Foreground="#FFFFFF"
+                                           FontFamily="{StaticResource PrimaryFont}" VerticalAlignment="Center"/>
+
+                                <StackPanel Margin="10,4,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="Progress" FontSize="11" FontWeight="SemiBold" Foreground="#525252"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <Button HorizontalAlignment="Right" VerticalAlignment="Center"
+                                    Command="{Binding TogglePauseDownloadCommand}"
+                                    Cursor="Hand" ToolTip="{Binding DownloadPauseButtonText}"
+                                    Background="Transparent" BorderThickness="0">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="IconHitBox" Width="32" Height="28" CornerRadius="7"
+                                                Background="Transparent" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <TextBlock x:Name="BtnIcon" Text="{Binding DownloadPauseButtonIcon}"
+                                                       FontFamily="Segoe MDL2 Assets" FontSize="15"
+                                                       Foreground="#525252" RenderTransformOrigin="0.5,0.5"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsDownloadPaused}" Value="True">
+                                                <Setter TargetName="BtnIcon" Property="Foreground" Value="#D1FE29"/>
+                                                <Setter TargetName="BtnIcon" Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect BlurRadius="12" ShadowDepth="0" Color="#D1FE29" Opacity="0.85"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </DataTrigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="IconHitBox" Property="Background" Value="#262626"/>
+                                                <Setter TargetName="BtnIcon" Property="Foreground" Value="#D1FE29"/>
+                                                <Setter TargetName="BtnIcon" Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect BlurRadius="10" ShadowDepth="0" Color="#D1FE29" Opacity="0.75"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="IconHitBox" Property="Background" Value="#373737"/>
+                                                <Setter TargetName="BtnIcon" Property="RenderTransform">
+                                                    <Setter.Value>
+                                                        <ScaleTransform ScaleX="0.9" ScaleY="0.9"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </Grid>
+
+                        <!-- 4. Bottom 3-Column Pill (MB, Time Remaining, Total Package) -->
+                        <Border Background="#171717" BorderBrush="#262626" BorderThickness="1" CornerRadius="10" Padding="12,10" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding DownloadMbText}" FontSize="12.5" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Size" FontSize="9" Foreground="#525252" HorizontalAlignment="Center"/>
+                                </StackPanel>
+
+                                <Rectangle Grid.Column="1" Width="1" Height="22" Fill="#262626" VerticalAlignment="Center"/>
+
+                                <StackPanel Grid.Column="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding DownloadTimeText}" FontSize="12.5" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Time" FontSize="9" Foreground="#525252" HorizontalAlignment="Center"/>
+                                </StackPanel>
+
+                                <Rectangle Grid.Column="3" Width="1" Height="22" Fill="#262626" VerticalAlignment="Center"/>
+
+                                <StackPanel Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding DownloadTotalSizeText, FallbackValue='~32.6 MB'}" FontSize="12.5" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Total" FontSize="9" Foreground="#525252" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Cancel Button -->
+                        <Button Style="{StaticResource SecondaryButton}"
+                                Command="{Binding CancelDownloadCommand}"
+                                Content="Cancel Download" Padding="14,5" FontSize="11"
+                                HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+
+
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!-- COMPLETED DOWNLOADS VIEW (MODERN MODAL: SINGLE & MULTI)     -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <Grid x:Name="MultiCompletedView" Grid.Row="1" VerticalAlignment="Stretch" RenderTransformOrigin="0.5,0.5">
+                    <Grid.Style>
+                        <Style TargetType="Grid">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsMultiDownloadViewActive}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsDownloadCompleted}" Value="True"/>
+                                        <Condition Binding="{Binding IsDownloadingDriverBooster}" Value="False"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
+                    <Grid.RenderTransform>
+                        <ScaleTransform x:Name="MultiCompletedScale" ScaleX="1.0" ScaleY="1.0"/>
+                    </Grid.RenderTransform>
+
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <!-- Row 0: Content Area (Single Item View OR Multi Items List) -->
+                            <RowDefinition Height="*"/>
+                            <!-- Row 1: Floating Bottom Dock (Back + 3 Tabs + Recycle Bin FAB) -->
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- ══ CASE 1: SINGLE DOWNLOAD COMPLETED VIEW (Centered, Bumping Install, Action buttons) ══ -->
+                        <Grid Grid.Row="0" VerticalAlignment="Center">
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSingleDownloadCompletedView}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+
+                            <StackPanel VerticalAlignment="Center">
+                                <!-- 1. Single Download Item Card (Ready text, NO dots, NO install pill inside card) -->
+                                <Border Background="#171717" BorderBrush="#262626" BorderThickness="1.2"
+                                        CornerRadius="20" Padding="15,13" Margin="0,0,0,16">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <!-- 0: Circular Icon Capsule -->
+                                            <ColumnDefinition Width="Auto"/>
+                                            <!-- 1: Title & Details -->
+                                            <ColumnDefinition Width="*"/>
+                                            <!-- 2: Ready Status Text -->
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Circular Icon Container -->
+                                        <Border Grid.Column="0" Width="50" Height="50" CornerRadius="25"
+                                                Background="#262626" BorderBrush="#373737" BorderThickness="1"
+                                                VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding DownloadItemIconGlyph}" FontFamily="Segoe MDL2 Assets"
+                                                       FontSize="22" Foreground="{Binding DownloadItemIconColor}"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+
+                                        <!-- Title & Details -->
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="14,0,10,0">
+                                            <TextBlock Text="{Binding DownloadItemTitleText}" FontSize="15" FontWeight="Bold"
+                                                       Foreground="#FFFFFF" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding DownloadItemDetailsText}" FontSize="12" FontWeight="SemiBold"
+                                                       Foreground="#525252" Margin="0,4,0,0"/>
+                                        </StackPanel>
+
+                                        <!-- Right: Ready Text (Only Ready, No dots, No install button) -->
+                                        <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="Ready"
+                                                   FontSize="13.5" FontWeight="Bold" Foreground="#A3E635"
+                                                   Margin="0,0,12,0"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- 2. Primary Action: BUMPING Install Button -->
+                                <Button Command="{Binding InstallDownloadedItemCommand}"
+                                        Cursor="Hand" Margin="0,0,0,14" Height="44">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="SingleInstallPill" Height="44" CornerRadius="22"
+                                                    Background="#A3E635" SnapsToDevicePixels="True">
+                                                <Border.RenderTransform>
+                                                    <TranslateTransform x:Name="SingleInstallBtnTrans" Y="0"/>
+                                                </Border.RenderTransform>
+                                                <Border.Triggers>
+                                                    <EventTrigger RoutedEvent="Loaded">
+                                                        <BeginStoryboard>
+                                                            <Storyboard RepeatBehavior="Forever">
+                                                                <DoubleAnimationUsingKeyFrames Storyboard.TargetName="SingleInstallBtnTrans"
+                                                                                               Storyboard.TargetProperty="Y"
+                                                                                               Duration="0:0:1.6">
+                                                                    <LinearDoubleKeyFrame KeyTime="0:0:0.0" Value="0"/>
+                                                                    <SplineDoubleKeyFrame KeyTime="0:0:0.24" Value="-4.5" KeySpline="0.2,0.8,0.4,1.0"/>
+                                                                    <SplineDoubleKeyFrame KeyTime="0:0:0.48" Value="0" KeySpline="0.4,0.0,0.6,1.0"/>
+                                                                    <SplineDoubleKeyFrame KeyTime="0:0:0.68" Value="-2.0" KeySpline="0.2,0.8,0.4,1.0"/>
+                                                                    <SplineDoubleKeyFrame KeyTime="0:0:0.88" Value="0" KeySpline="0.4,0.0,0.6,1.0"/>
+                                                                    <LinearDoubleKeyFrame KeyTime="0:0:1.60" Value="0"/>
+                                                                </DoubleAnimationUsingKeyFrames>
+                                                            </Storyboard>
+                                                        </BeginStoryboard>
+                                                    </EventTrigger>
+                                                </Border.Triggers>
+                                                <TextBlock x:Name="SingleInstallTxt"
+                                                           Text="{Binding DownloadInstallButtonText, FallbackValue='Install Driver Booster'}"
+                                                           FontSize="14" FontWeight="Bold" Foreground="#08080B"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="SingleInstallPill" Property="Background" Value="#FFFFFF"/>
+                                                    <Setter TargetName="SingleInstallTxt" Property="Foreground" Value="#000000"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter TargetName="SingleInstallPill" Property="Background" Value="#171717"/>
+                                                    <Setter TargetName="SingleInstallTxt" Property="Foreground" Value="#A3E635"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+
+                                <!-- 3. Secondary Actions Row: Open File Location + Delete File -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Open File Location Button -->
+                                    <Button Grid.Column="0" Command="{Binding OpenDownloadedFolderCommand}"
+                                            Cursor="Hand" ToolTip="Open containing folder in Windows Explorer" Height="40">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="OpenFolderBox" Height="40" CornerRadius="12"
+                                                        Background="#171717" BorderBrush="#262626" BorderThickness="1.2" Padding="14,0">
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <TextBlock x:Name="FolderIcon" Text="&#xED25;" FontFamily="Segoe MDL2 Assets"
+                                                                   FontSize="14" Foreground="#E5E5E5" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="FolderText" Text="Open File Location" FontSize="12"
+                                                                   FontWeight="SemiBold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="OpenFolderBox" Property="Background" Value="#262626"/>
+                                                        <Setter TargetName="OpenFolderBox" Property="BorderBrush" Value="#373737"/>
+                                                        <Setter TargetName="FolderIcon" Property="Foreground" Value="#FFFFFF"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsPressed" Value="True">
+                                                        <Setter TargetName="OpenFolderBox" Property="Background" Value="#171717"/>
+                                                        <Setter TargetName="FolderIcon" Property="Foreground" Value="#A3E635"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                    <!-- Delete File Button -->
+                                    <Button Grid.Column="2" Command="{Binding DeleteDownloadedFileCommand}"
+                                            Cursor="Hand" ToolTip="Delete installer from PC to free disk space" Height="40">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="DelFileBox" Height="40" CornerRadius="12"
+                                                        Background="#171717" BorderBrush="#262626" BorderThickness="1.2" Padding="14,0">
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <TextBlock x:Name="DelIcon" Text="&#xE74D;" FontFamily="Segoe MDL2 Assets"
+                                                                   FontSize="13.5" Foreground="#EF4444" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="DelText" Text="Delete File" FontSize="12"
+                                                                   FontWeight="SemiBold" Foreground="#EF4444" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="DelFileBox" Property="Background" Value="#EF4444"/>
+                                                        <Setter TargetName="DelFileBox" Property="BorderBrush" Value="#EF4444"/>
+                                                        <Setter TargetName="DelIcon" Property="Foreground" Value="#FFFFFF"/>
+                                                        <Setter TargetName="DelText" Property="Foreground" Value="#FFFFFF"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsPressed" Value="True">
+                                                        <Setter TargetName="DelFileBox" Property="Background" Value="#DC2626"/>
+                                                        <Setter TargetName="DelFileBox" Property="BorderBrush" Value="#DC2626"/>
+                                                        <Setter TargetName="DelIcon" Property="Foreground" Value="#FFFFFF"/>
+                                                        <Setter TargetName="DelText" Property="Foreground" Value="#FFFFFF"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- ══ CASE 2: MULTI DOWNLOADS COMPLETED VIEW (Scrollable Items) ══ -->
+                        <ScrollViewer x:Name="CompletedDownloadsScrollViewer" Grid.Row="0"
+                                      VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                      Margin="0,0,-22,0" Padding="0"
+                                      ScrollChanged="CompletedDownloadsScrollViewer_ScrollChanged"
+                                      PreviewMouseWheel="CompletedDownloadsScrollViewer_PreviewMouseWheel"
+                                      Focusable="False">
+                            <ScrollViewer.Style>
+                                <Style TargetType="ScrollViewer">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ScrollViewer">
+                                                <Grid Background="Transparent">
+                                                    <Grid.ColumnDefinitions>
+                                                        <!-- Col 0: Content Area (exact 396px, perfectly centered in modal) -->
+                                                        <ColumnDefinition Width="*"/>
+                                                        <!-- Col 1: Right Gap (exact 22px matching modal left padding) -->
+                                                        <ColumnDefinition Width="22"/>
+                                                    </Grid.ColumnDefinitions>
+
+                                                    <Border x:Name="PART_ContentMaskBorder" Grid.Column="0">
+                                                        <Border.OpacityMask>
+                                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                                <GradientStop Color="#FF000000" Offset="0.0"/>
+                                                                <GradientStop Color="#FF000000" Offset="0.90"/>
+                                                                <GradientStop Color="#00000000" Offset="1.0"/>
+                                                            </LinearGradientBrush>
+                                                        </Border.OpacityMask>
+                                                        <ScrollContentPresenter x:Name="PART_ScrollContentPresenter"
+                                                                                CanContentScroll="{TemplateBinding CanContentScroll}"
+                                                                                Content="{TemplateBinding Content}"
+                                                                                ContentTemplate="{TemplateBinding ContentTemplate}"/>
+                                                    </Border>
+
+                                                    <!-- Scrollbar dead-center in the 22px right gap (6px space on left, 10px scrollbar, 6px space on right) -->
+                                                    <ScrollBar x:Name="PART_VerticalScrollBar"
+                                                               Grid.Column="1"
+                                                               Orientation="Vertical"
+                                                               HorizontalAlignment="Center"
+                                                               Width="10"
+                                                               Value="{TemplateBinding VerticalOffset}"
+                                                               Maximum="{TemplateBinding ScrollableHeight}"
+                                                               ViewportSize="{TemplateBinding ViewportHeight}"
+                                                               Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"/>
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSingleDownloadCompletedView}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ScrollViewer.Style>
+                            <ItemsControl x:Name="CompletedDownloadsItemsControl" ItemsSource="{Binding CompletedDownloads}" Margin="0,0,0,45">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,0,0,12">
+                                            <Grid.ColumnDefinitions>
+                                                <!-- Col 0: Main Card (Left stays flush, right pulls left) -->
+                                                <ColumnDefinition Width="*"/>
+                                                <!-- Col 1: Vacated Space for Actions (Folder + Delete) -->
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- MAIN ITEM CARD (Left side never crops/moves!) -->
+                                            <Border Grid.Column="0" x:Name="CardBorder" BorderThickness="1.2"
+                                                    CornerRadius="20" Padding="0" ClipToBounds="True"
+                                                    Cursor="Hand" MouseLeftButtonDown="ItemCard_MouseLeftButtonDown"
+                                                    RenderTransformOrigin="0.5,0.5">
+                                                <Border.Background>
+                                                    <LinearGradientBrush x:Name="CardBgBrush" StartPoint="0,0" EndPoint="1,0.2">
+                                                        <LinearGradientBrush.RelativeTransform>
+                                                            <TranslateTransform x:Name="WaveTrans" X="-2.2"/>
+                                                        </LinearGradientBrush.RelativeTransform>
+                                                        <GradientStop Color="#171717" Offset="0.0"/>
+                                                        <GradientStop Color="#171717" Offset="0.10"/>
+                                                        <GradientStop Color="#242424" Offset="0.30"/>
+                                                        <GradientStop Color="#2E2E2E" Offset="0.50"/>
+                                                        <GradientStop Color="#242424" Offset="0.70"/>
+                                                        <GradientStop Color="#171717" Offset="0.90"/>
+                                                        <GradientStop Color="#171717" Offset="1.0"/>
+                                                    </LinearGradientBrush>
+                                                </Border.Background>
+                                                <Border.BorderBrush>
+                                                    <SolidColorBrush x:Name="CardStrokeBrush" Color="#262626"/>
+                                                </Border.BorderBrush>
+                                                <Border.RenderTransform>
+                                                    <TransformGroup>
+                                                        <TranslateTransform x:Name="CardVibrateTrans" X="0" Y="0"/>
+                                                        <ScaleTransform x:Name="CardScaleTrans" ScaleX="1.0" ScaleY="1.0"/>
+                                                    </TransformGroup>
+                                                </Border.RenderTransform>
+
+                                                <Grid>
+                                                    <!-- LAYER 1: BASE CARD CONTENT (Padding 15,13) -->
+                                                    <Grid Margin="15,13">
+                                                        <Grid.ColumnDefinitions>
+                                                            <!-- 0: Icon Capsule -->
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <!-- 1: Title & Details -->
+                                                            <ColumnDefinition Width="*"/>
+                                                            <!-- 2: Live Download Speed OR Install/Installed Button -->
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <!-- 3: 3 Dots Menu Button -->
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <!-- Left Circular Icon Container -->
+                                                        <Border Grid.Column="0" Width="50" Height="50" CornerRadius="25"
+                                                                Background="#262626" BorderBrush="#373737" BorderThickness="1"
+                                                                VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding IconGlyph}" FontFamily="Segoe MDL2 Assets"
+                                                                       FontSize="22" Foreground="{Binding IconColor}"
+                                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+
+                                                        <!-- Title and Subtitle (Time • Size) -->
+                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="14,0,10,0">
+                                                            <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="Bold"
+                                                                       Foreground="#FFFFFF" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{Binding DetailsText}" FontSize="12" FontWeight="SemiBold"
+                                                                       Foreground="#525252" Margin="0,4,0,0"/>
+                                                        </StackPanel>
+
+                                                        <!-- Live Download Speed text when IsDownloading == True -->
+                                                        <Border Grid.Column="2" VerticalAlignment="Center" Margin="6,0,8,0"
+                                                                Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVis}}">
+                                                            <StackPanel HorizontalAlignment="Right">
+                                                                <TextBlock Text="{Binding SpeedText, FallbackValue='8.4 MB/s'}"
+                                                                           FontSize="13" FontWeight="Bold" Foreground="#D1FE29" HorizontalAlignment="Right"/>
+                                                                <TextBlock Text="{Binding DownloadProgressPercent, StringFormat={}{0:F0}%}"
+                                                                           FontSize="10.5" FontWeight="SemiBold" Foreground="#8E95A5" HorizontalAlignment="Right" Margin="0,2,0,0"/>
+                                                            </StackPanel>
+                                                        </Border>
+
+                                                        <!-- Right: Install or Installed Button when IsDownloading == False -->
+                                                        <Button x:Name="InstallBtn" Grid.Column="2" VerticalAlignment="Center" Cursor="Hand"
+                                                                Command="{Binding InstallCommand}" Height="36" MaxWidth="120"
+                                                                Visibility="{Binding IsDownloading, Converter={StaticResource InvBoolToVis}}">
+                                                            <Button.Style>
+                                                                <Style TargetType="Button">
+                                                                    <Setter Property="Template">
+                                                                        <Setter.Value>
+                                                                            <ControlTemplate TargetType="Button">
+                                                                                <Border x:Name="InstallPill" Height="36" CornerRadius="18"
+                                                                                        Background="#A3E635" Padding="18,0"
+                                                                                        SnapsToDevicePixels="True" UseLayoutRounding="True"
+                                                                                        Effect="{x:Null}">
+                                                                                    <TextBlock x:Name="InstallTxt" Text="Install" FontSize="12.5"
+                                                                                               FontWeight="Bold" Foreground="#08080B"
+                                                                                               VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                                                </Border>
+                                                                                <ControlTemplate.Triggers>
+                                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                                        <Setter TargetName="InstallPill" Property="Background" Value="#FFFFFF"/>
+                                                                                        <Setter TargetName="InstallTxt" Property="Foreground" Value="#000000"/>
+                                                                                    </Trigger>
+                                                                                    <Trigger Property="IsPressed" Value="True">
+                                                                                        <Setter TargetName="InstallPill" Property="Background" Value="#171717"/>
+                                                                                        <Setter TargetName="InstallTxt" Property="Foreground" Value="#A3E635"/>
+                                                                                    </Trigger>
+                                                                                </ControlTemplate.Triggers>
+                                                                            </ControlTemplate>
+                                                                        </Setter.Value>
+                                                                    </Setter>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsInstalling}" Value="True">
+                                                                            <Setter Property="Cursor" Value="Arrow"/>
+                                                                            <Setter Property="IsHitTestVisible" Value="False"/>
+                                                                            <Setter Property="Template">
+                                                                                <Setter.Value>
+                                                                                    <ControlTemplate TargetType="Button">
+                                                                                        <Border Height="36" CornerRadius="18"
+                                                                                                Background="#202227" BorderBrush="#2C2F38" BorderThickness="1"
+                                                                                                Padding="16,0" SnapsToDevicePixels="True" VerticalAlignment="Center">
+                                                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                                                                <Border Width="5" Height="5" CornerRadius="2.5" Background="#D1FE29" Margin="0,0,4,0">
+                                                                                                    <Border.RenderTransform>
+                                                                                                        <TranslateTransform x:Name="FlyoutInstDot1" Y="0"/>
+                                                                                                    </Border.RenderTransform>
+                                                                                                </Border>
+                                                                                                <Border Width="5" Height="5" CornerRadius="2.5" Background="#D1FE29" Margin="0,0,4,0">
+                                                                                                    <Border.RenderTransform>
+                                                                                                        <TranslateTransform x:Name="FlyoutInstDot2" Y="0"/>
+                                                                                                    </Border.RenderTransform>
+                                                                                                </Border>
+                                                                                                <Border Width="5" Height="5" CornerRadius="2.5" Background="#D1FE29">
+                                                                                                    <Border.RenderTransform>
+                                                                                                        <TranslateTransform x:Name="FlyoutInstDot3" Y="0"/>
+                                                                                                    </Border.RenderTransform>
+                                                                                                </Border>
+                                                                                            </StackPanel>
+                                                                                        </Border>
+                                                                                        <ControlTemplate.Triggers>
+                                                                                            <EventTrigger RoutedEvent="Loaded">
+                                                                                                <BeginStoryboard>
+                                                                                                    <Storyboard RepeatBehavior="Forever">
+                                                                                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="FlyoutInstDot1" Storyboard.TargetProperty="Y" Duration="0:0:0.7">
+                                                                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.00" Value="0"/>
+                                                                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.18" Value="-5" KeySpline="0.25,0.1,0.25,1.0"/>
+                                                                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.36" Value="0" KeySpline="0.25,0.1,0.25,1.0"/>
+                                                                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.70" Value="0"/>
+                                                                                                        </DoubleAnimationUsingKeyFrames>
+                                                                                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="FlyoutInstDot2" Storyboard.TargetProperty="Y" Duration="0:0:0.7">
+                                                                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.00" Value="0"/>
+                                                                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.12" Value="0"/>
+                                                                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.30" Value="-5" KeySpline="0.25,0.1,0.25,1.0"/>
+                                                                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.48" Value="0" KeySpline="0.25,0.1,0.25,1.0"/>
+                                                                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.70" Value="0"/>
+                                                                                                        </DoubleAnimationUsingKeyFrames>
+                                                                                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="FlyoutInstDot3" Storyboard.TargetProperty="Y" Duration="0:0:0.7">
+                                                                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.00" Value="0"/>
+                                                                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.24" Value="0"/>
+                                                                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.42" Value="-5" KeySpline="0.25,0.1,0.25,1.0"/>
+                                                                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.60" Value="0" KeySpline="0.25,0.1,0.25,1.0"/>
+                                                                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.70" Value="0"/>
+                                                                                                        </DoubleAnimationUsingKeyFrames>
+                                                                                                    </Storyboard>
+                                                                                                </BeginStoryboard>
+                                                                                            </EventTrigger>
+                                                                                        </ControlTemplate.Triggers>
+                                                                                    </ControlTemplate>
+                                                                                </Setter.Value>
+                                                                            </Setter>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding IsInstalled}" Value="True">
+                                                                            <Setter Property="Cursor" Value="Arrow"/>
+                                                                            <Setter Property="IsHitTestVisible" Value="False"/>
+                                                                            <Setter Property="Template">
+                                                                                <Setter.Value>
+                                                                                    <ControlTemplate TargetType="Button">
+                                                                                        <TextBlock Text="Installed" FontSize="12.5" FontWeight="SemiBold"
+                                                                                                   Foreground="#E5E5E5" VerticalAlignment="Center"
+                                                                                                   HorizontalAlignment="Right" Margin="6,0,10,0"/>
+                                                                                    </ControlTemplate>
+                                                                                </Setter.Value>
+                                                                            </Setter>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Button.Style>
+                                                        </Button>
+
+                                                        <!-- Right: 3 Dots Menu Button (hidden while downloading) -->
+                                                        <Button x:Name="DotsBtn" Grid.Column="3" Width="30" Height="36" MaxWidth="30" Margin="6,0,0,0"
+                                                                VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                                Cursor="Hand" Background="Transparent" BorderThickness="0"
+                                                                Command="{Binding ToggleActionsCommand}" ToolTip="Options"
+                                                                Visibility="{Binding IsDownloading, Converter={StaticResource InvBoolToVis}}">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border x:Name="DotsBox" Width="30" Height="36" CornerRadius="8" Background="Transparent">
+                                                                        <StackPanel Orientation="Vertical" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                                            <Ellipse x:Name="Dot1" Width="3.6" Height="3.6" Fill="#525252" Margin="0,0,0,3"/>
+                                                                            <Ellipse x:Name="Dot2" Width="3.6" Height="3.6" Fill="#525252" Margin="0,0,0,3"/>
+                                                                            <Ellipse x:Name="Dot3" Width="3.6" Height="3.6" Fill="#525252"/>
+                                                                        </StackPanel>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                                            <Setter TargetName="DotsBox" Property="Background" Value="#262626"/>
+                                                                            <Setter TargetName="Dot1" Property="Fill" Value="#FFFFFF"/>
+                                                                            <Setter TargetName="Dot2" Property="Fill" Value="#FFFFFF"/>
+                                                                            <Setter TargetName="Dot3" Property="Fill" Value="#FFFFFF"/>
+                                                                        </Trigger>
+                                                                        <Trigger Property="IsPressed" Value="True">
+                                                                            <Setter TargetName="DotsBox" Property="Background" Value="#373737"/>
+                                                                        </Trigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                        </Button>
+                                                    </Grid>
+
+                                                    <!-- LAYER 2: FULL-BLEED VIBRANT GREEN PROGRESS FILL & DONE OVERLAY -->
+                                                    <Border HorizontalAlignment="Left" VerticalAlignment="Stretch"
+                                                            Width="{Binding DownloadProgressWidth}"
+                                                            Opacity="{Binding DownloadOverlayOpacity}"
+                                                            ClipToBounds="True"
+                                                            Background="#A3E635"
+                                                            BorderBrush="#D1FE29"
+                                                            Visibility="{Binding IsDownloading, Converter={StaticResource BoolToVis}}"
+                                                            IsHitTestVisible="False">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border">
+                                                                <Setter Property="CornerRadius" Value="19,0,0,19"/>
+                                                                <Setter Property="BorderThickness" Value="0,0,2.5,0"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsDownloadCompletedFlash}" Value="True">
+                                                                        <Setter Property="CornerRadius" Value="19"/>
+                                                                        <Setter Property="BorderThickness" Value="0"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
+
+                                                        <Grid>
+                                                            <!-- SUB-VIEW A: ACTIVE DOWNLOADING CONTENT (Icon, Title, Details, Speed) -->
+                                                            <Grid Width="396" HorizontalAlignment="Left" Margin="15,13"
+                                                                  Visibility="{Binding IsDownloadCompletedFlash, Converter={StaticResource InvBoolToVis}}">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <!-- 0: Icon Capsule -->
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <!-- 1: Title & Details -->
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <!-- 2: Live Download Speed -->
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <!-- 3: Spacer for Dots -->
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+
+                                                                <!-- Inverted Icon Capsule: Dark on Green -->
+                                                                <Border Grid.Column="0" Width="50" Height="50" CornerRadius="25"
+                                                                        Background="#08080B" BorderBrush="#171717" BorderThickness="1"
+                                                                        VerticalAlignment="Center">
+                                                                    <TextBlock Text="{Binding IconGlyph}" FontFamily="Segoe MDL2 Assets"
+                                                                               FontSize="22" Foreground="#D1FE29"
+                                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Border>
+
+                                                                <!-- Inverted Title & Details: Crisp Dark/Black on Green -->
+                                                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="14,0,10,0">
+                                                                    <TextBlock Text="{Binding Title}" FontSize="15" FontWeight="Bold"
+                                                                               Foreground="#08080B" TextTrimming="CharacterEllipsis"/>
+                                                                    <TextBlock Text="{Binding DetailsText}" FontSize="12" FontWeight="SemiBold"
+                                                                               Foreground="#171717" Margin="0,4,0,0"/>
+                                                                </StackPanel>
+
+                                                                <!-- Inverted Live Download Speed: Crisp Dark/Black on Green -->
+                                                                <Border Grid.Column="2" VerticalAlignment="Center" Margin="6,0,8,0">
+                                                                    <StackPanel HorizontalAlignment="Right">
+                                                                        <TextBlock Text="{Binding SpeedText, FallbackValue='8.4 MB/s'}"
+                                                                                   FontSize="13" FontWeight="Bold" Foreground="#08080B" HorizontalAlignment="Right"/>
+                                                                        <TextBlock Text="{Binding DownloadProgressPercent, StringFormat={}{0:F0}%}"
+                                                                                   FontSize="10.5" FontWeight="Bold" Foreground="#171717" HorizontalAlignment="Right" Margin="0,2,0,0"/>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </Grid>
+
+                                                            <!-- SUB-VIEW B: "DONE" FLASH STATE (Icon removed per user request: pure crisp bold 'Done' centered) -->
+                                                            <Grid Width="396" HorizontalAlignment="Left"
+                                                                  Visibility="{Binding IsDownloadCompletedFlash, Converter={StaticResource BoolToVis}}">
+                                                                <TextBlock Text="Done" FontSize="17.5" FontWeight="Bold"
+                                                                           Foreground="#08080B" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Grid>
+                                                        </Grid>
+                                                    </Border>
+                                                </Grid>
+                                            </Border>
+
+                                            <!-- Column 1: The Vacated Space on the Right (Folder on top, Delete on bottom) -->
+                                            <Grid Grid.Column="1" x:Name="ActionsTray" Width="0" Opacity="0" ClipToBounds="True" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Vertical" Width="44" Margin="10,0,0,0">
+                                                    <!-- Top: Folder Button -->
+                                                    <Button x:Name="FolderBtn" Width="44" Height="34" Margin="0,0,0,6"
+                                                            Command="{Binding OpenLocationCommand}" ToolTip="Open File Location" Cursor="Hand">
+                                                        <Button.Template>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border x:Name="BtnBox" CornerRadius="12" Background="#171717" BorderBrush="#262626" BorderThickness="1.2">
+                                                                    <TextBlock x:Name="BtnIcon" Text="&#xED25;" FontFamily="Segoe MDL2 Assets"
+                                                                               FontSize="14" Foreground="#E5E5E5"
+                                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="BtnBox" Property="Background" Value="#262626"/>
+                                                                        <Setter TargetName="BtnBox" Property="BorderBrush" Value="#373737"/>
+                                                                        <Setter TargetName="BtnIcon" Property="Foreground" Value="#FFFFFF"/>
+                                                                    </Trigger>
+                                                                    <Trigger Property="IsPressed" Value="True">
+                                                                        <Setter TargetName="BtnBox" Property="Background" Value="#171717"/>
+                                                                        <Setter TargetName="BtnIcon" Property="Foreground" Value="#A3E635"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Button.Template>
+                                                    </Button>
+
+                                                    <!-- Bottom: Delete Button -->
+                                                    <Button x:Name="DeleteBtn" Width="44" Height="34"
+                                                            Command="{Binding DeleteCommand}" ToolTip="Delete File" Cursor="Hand">
+                                                        <Button.Template>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border x:Name="BtnBox" CornerRadius="12" Background="#171717" BorderBrush="#262626" BorderThickness="1.2">
+                                                                    <TextBlock x:Name="BtnIcon" Text="&#xE74D;" FontFamily="Segoe MDL2 Assets"
+                                                                               FontSize="13.5" Foreground="#EF4444"
+                                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Border>
+                                                                <ControlTemplate.Triggers>
+                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                        <Setter TargetName="BtnBox" Property="Background" Value="#EF4444"/>
+                                                                        <Setter TargetName="BtnBox" Property="BorderBrush" Value="#EF4444"/>
+                                                                        <Setter TargetName="BtnIcon" Property="Foreground" Value="#FFFFFF"/>
+                                                                    </Trigger>
+                                                                    <Trigger Property="IsPressed" Value="True">
+                                                                        <Setter TargetName="BtnBox" Property="Background" Value="#DC2626"/>
+                                                                        <Setter TargetName="BtnBox" Property="BorderBrush" Value="#DC2626"/>
+                                                                        <Setter TargetName="BtnIcon" Property="Foreground" Value="#FFFFFF"/>
+                                                                    </Trigger>
+                                                                </ControlTemplate.Triggers>
+                                                            </ControlTemplate>
+                                                        </Button.Template>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Grid>
+
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsActionsRevealed}" Value="True">
+                                                <DataTrigger.EnterActions>
+                                                    <BeginStoryboard x:Name="OpenActionsStory">
+                                                        <Storyboard>
+                                                            <!-- 1. Vibrate / Haptic Click Effect (Micro-Shake + Micro-Press) -->
+                                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="CardVibrateTrans"
+                                                                                           Storyboard.TargetProperty="X"
+                                                                                           Duration="0:0:0.18">
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:0.00" Value="0"/>
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:0.03" Value="-2.5"/>
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:0.06" Value="2.5"/>
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:0.09" Value="-1.5"/>
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:0.12" Value="1.5"/>
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:0.15" Value="-0.5"/>
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:0.18" Value="0"/>
+                                                            </DoubleAnimationUsingKeyFrames>
+                                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="CardScaleTrans"
+                                                                                           Storyboard.TargetProperty="ScaleX"
+                                                                                           Duration="0:0:0.18">
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:0.00" Value="1.0"/>
+                                                                <SplineDoubleKeyFrame KeyTime="0:0:0.06" Value="0.985" KeySpline="0.2,0.8,0.4,1.0"/>
+                                                                <SplineDoubleKeyFrame KeyTime="0:0:0.18" Value="1.0" KeySpline="0.4,0.0,0.6,1.0"/>
+                                                            </DoubleAnimationUsingKeyFrames>
+                                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="CardScaleTrans"
+                                                                                           Storyboard.TargetProperty="ScaleY"
+                                                                                           Duration="0:0:0.18">
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:0.00" Value="1.0"/>
+                                                                <SplineDoubleKeyFrame KeyTime="0:0:0.06" Value="0.985" KeySpline="0.2,0.8,0.4,1.0"/>
+                                                                <SplineDoubleKeyFrame KeyTime="0:0:0.18" Value="1.0" KeySpline="0.4,0.0,0.6,1.0"/>
+                                                            </DoubleAnimationUsingKeyFrames>
+
+                                                            <!-- 2. Dark Gray Wave flows smoothly inside the card (Slower & Broader) -->
+                                                            <DoubleAnimation Storyboard.TargetName="WaveTrans"
+                                                                             Storyboard.TargetProperty="X"
+                                                                             From="-2.2" To="2.2"
+                                                                             Duration="0:0:3.2"
+                                                                             RepeatBehavior="Forever"/>
+                                                            <ColorAnimation Storyboard.TargetName="CardStrokeBrush"
+                                                                            Storyboard.TargetProperty="Color"
+                                                                            From="#262626" To="#383838"
+                                                                            Duration="0:0:0.18"/>
+
+                                                            <!-- 3. ActionsTray expands width from 0 to 54, pulling the card's right edge left -->
+                                                            <DoubleAnimation Storyboard.TargetName="ActionsTray"
+                                                                             Storyboard.TargetProperty="Width"
+                                                                             From="0" To="54"
+                                                                             Duration="0:0:0.25">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                            <DoubleAnimation Storyboard.TargetName="ActionsTray"
+                                                                             Storyboard.TargetProperty="Opacity"
+                                                                             From="0" To="1"
+                                                                             Duration="0:0:0.20"/>
+
+                                                            <!-- 4. Install / Installed button fades & collapses -->
+                                                            <DoubleAnimation Storyboard.TargetName="InstallBtn"
+                                                                             Storyboard.TargetProperty="Opacity"
+                                                                             From="1" To="0"
+                                                                             Duration="0:0:0.12"/>
+                                                            <DoubleAnimation Storyboard.TargetName="InstallBtn"
+                                                                             Storyboard.TargetProperty="MaxWidth"
+                                                                             From="120" To="0"
+                                                                             Duration="0:0:0.18">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseIn"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+
+                                                            <!-- 5. Dots fade and collapse -->
+                                                            <DoubleAnimation Storyboard.TargetName="DotsBtn"
+                                                                             Storyboard.TargetProperty="Opacity"
+                                                                             From="1" To="0"
+                                                                             Duration="0:0:0.12"/>
+                                                            <DoubleAnimation Storyboard.TargetName="DotsBtn"
+                                                                             Storyboard.TargetProperty="MaxWidth"
+                                                                             From="30" To="0"
+                                                                             Duration="0:0:0.15">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseIn"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </DataTrigger.EnterActions>
+                                                <DataTrigger.ExitActions>
+                                                    <StopStoryboard BeginStoryboardName="OpenActionsStory"/>
+                                                    <BeginStoryboard x:Name="CloseActionsStory">
+                                                        <Storyboard>
+                                                            <!-- 1. Wave resets to off-screen (-2.2) so card is pure #171717 -->
+                                                            <DoubleAnimation Storyboard.TargetName="WaveTrans"
+                                                                             Storyboard.TargetProperty="X"
+                                                                             To="-2.2"
+                                                                             Duration="0:0:0.18"/>
+                                                            <ColorAnimation Storyboard.TargetName="CardStrokeBrush"
+                                                                            Storyboard.TargetProperty="Color"
+                                                                            From="#383838" To="#262626"
+                                                                            Duration="0:0:0.18"/>
+
+                                                            <!-- 2. Tactile release bounce -->
+                                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="CardScaleTrans"
+                                                                                           Storyboard.TargetProperty="ScaleX"
+                                                                                           Duration="0:0:0.16">
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:0.00" Value="1.0"/>
+                                                                <SplineDoubleKeyFrame KeyTime="0:0:0.06" Value="0.99" KeySpline="0.2,0.8,0.4,1.0"/>
+                                                                <SplineDoubleKeyFrame KeyTime="0:0:0.16" Value="1.0" KeySpline="0.4,0.0,0.6,1.0"/>
+                                                            </DoubleAnimationUsingKeyFrames>
+                                                            <DoubleAnimationUsingKeyFrames Storyboard.TargetName="CardScaleTrans"
+                                                                                           Storyboard.TargetProperty="ScaleY"
+                                                                                           Duration="0:0:0.16">
+                                                                <LinearDoubleKeyFrame KeyTime="0:0:0.00" Value="1.0"/>
+                                                                <SplineDoubleKeyFrame KeyTime="0:0:0.06" Value="0.99" KeySpline="0.2,0.8,0.4,1.0"/>
+                                                                <SplineDoubleKeyFrame KeyTime="0:0:0.16" Value="1.0" KeySpline="0.4,0.0,0.6,1.0"/>
+                                                            </DoubleAnimationUsingKeyFrames>
+
+                                                            <!-- 3. ActionsTray shrinks from 54 back to 0, smoothly extending card's right edge -->
+                                                            <DoubleAnimation Storyboard.TargetName="ActionsTray"
+                                                                             Storyboard.TargetProperty="Width"
+                                                                             From="54" To="0"
+                                                                             Duration="0:0:0.22">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                            <DoubleAnimation Storyboard.TargetName="ActionsTray"
+                                                                             Storyboard.TargetProperty="Opacity"
+                                                                             From="1" To="0"
+                                                                             Duration="0:0:0.15"/>
+
+                                                            <!-- 4. Install button returns -->
+                                                            <DoubleAnimation Storyboard.TargetName="InstallBtn"
+                                                                             Storyboard.TargetProperty="MaxWidth"
+                                                                             From="0" To="120"
+                                                                             Duration="0:0:0.20">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                            <DoubleAnimation Storyboard.TargetName="InstallBtn"
+                                                                             Storyboard.TargetProperty="Opacity"
+                                                                             From="0" To="1"
+                                                                             Duration="0:0:0.18"/>
+
+                                                            <!-- 5. Dots return -->
+                                                            <DoubleAnimation Storyboard.TargetName="DotsBtn"
+                                                                             Storyboard.TargetProperty="MaxWidth"
+                                                                             From="0" To="30"
+                                                                             Duration="0:0:0.18">
+                                                                <DoubleAnimation.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                </DoubleAnimation.EasingFunction>
+                                                            </DoubleAnimation>
+                                                            <DoubleAnimation Storyboard.TargetName="DotsBtn"
+                                                                             Storyboard.TargetProperty="Opacity"
+                                                                             From="0" To="1"
+                                                                             Duration="0:0:0.18"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </DataTrigger.ExitActions>
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+
+                        <!-- FLOATING BOTTOM DOCK (EXACT PROPORTIONS & DARK AAA PALETTE) -->
+                        <Grid Grid.Row="1" Margin="0,14,0,2">
+                            <Grid.ColumnDefinitions>
+                                <!-- Capsule Nav Bar -->
+                                <ColumnDefinition Width="*"/>
+                                <!-- Gap -->
+                                <ColumnDefinition Width="12"/>
+                                <!-- Clear / Trash Circular Button -->
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- LEFT CAPSULE DOCK (Height 68 matching Demo) -->
+                            <Border Grid.Column="0" Height="68" CornerRadius="34"
+                                    Background="#171717" BorderBrush="#262626" BorderThickness="1.2"
+                                    Padding="6,5">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <!-- Back Pill Button -->
+                                        <ColumnDefinition Width="Auto"/>
+                                        <!-- 3 Tab Icons centered -->
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Back Button Pill with Hover Animation on BackIcon -->
+                                    <Button Grid.Column="0" Command="{Binding CloseDownloadsModalCommand}"
+                                            Cursor="Hand" Height="54" VerticalAlignment="Center">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="BackPill" Height="54" CornerRadius="27"
+                                                        Background="#262626" BorderBrush="#373737" BorderThickness="1"
+                                                        Padding="20,0" VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock x:Name="BackIcon" Text="&#xE72B;" FontFamily="Segoe MDL2 Assets"
+                                                                   FontSize="16" Foreground="#FFFFFF" Margin="0,0,8,0" VerticalAlignment="Center"
+                                                                   RenderTransformOrigin="0.5,0.5">
+                                                            <TextBlock.RenderTransform>
+                                                                <TranslateTransform X="0" Y="0"/>
+                                                            </TextBlock.RenderTransform>
+                                                        </TextBlock>
+                                                        <TextBlock x:Name="BackTxt" Text="Back" FontSize="13.5" FontWeight="Bold"
+                                                                   Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="BackPill" Property="Background" Value="#373737"/>
+                                                        <Trigger.EnterActions>
+                                                            <BeginStoryboard x:Name="BackIconHoverBegin">
+                                                                <Storyboard RepeatBehavior="Forever">
+                                                                    <DoubleAnimationUsingKeyFrames Storyboard.TargetName="BackIcon"
+                                                                                                   Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                                                   Duration="0:0:0.85">
+                                                                        <LinearDoubleKeyFrame KeyTime="0:0:0.0" Value="0"/>
+                                                                        <SplineDoubleKeyFrame KeyTime="0:0:0.24" Value="-5.5" KeySpline="0.2,0.8,0.4,1.0"/>
+                                                                        <SplineDoubleKeyFrame KeyTime="0:0:0.50" Value="0" KeySpline="0.4,0.0,0.6,1.0"/>
+                                                                        <LinearDoubleKeyFrame KeyTime="0:0:0.85" Value="0"/>
+                                                                    </DoubleAnimationUsingKeyFrames>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </Trigger.EnterActions>
+                                                        <Trigger.ExitActions>
+                                                            <StopStoryboard BeginStoryboardName="BackIconHoverBegin"/>
+                                                            <BeginStoryboard>
+                                                                <Storyboard>
+                                                                    <DoubleAnimation Storyboard.TargetName="BackIcon"
+                                                                                     Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                                                     To="0" Duration="0:0:0.15">
+                                                                        <DoubleAnimation.EasingFunction>
+                                                                            <QuadraticEase EasingMode="EaseOut"/>
+                                                                        </DoubleAnimation.EasingFunction>
+                                                                    </DoubleAnimation>
+                                                                </Storyboard>
+                                                            </BeginStoryboard>
+                                                        </Trigger.ExitActions>
+                                                    </Trigger>
+                                                    <Trigger Property="IsPressed" Value="True">
+                                                        <Setter TargetName="BackPill" Property="Background" Value="#171717"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                    <!-- 3 Slide Navigation Tab Icons (Drivers Hub, Services, Advance - Larger Icons matching Demo) -->
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <!-- Tab 1: Drivers Hub (Slide 0) -->
+                                        <Button Width="50" Height="50" Cursor="Hand" Margin="4,0"
+                                                Command="{Binding NavigateToSlideFromDownloadsCommand}" CommandParameter="0"
+                                                ToolTip="Drivers Hub">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="TabBorder" Width="50" Height="50" CornerRadius="25" Background="Transparent">
+                                                        <TextBlock x:Name="TabIcon" Text="&#xE74C;" FontFamily="Segoe MDL2 Assets"
+                                                                   FontSize="22" Foreground="#525252"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="TabBorder" Property="Background" Value="#262626"/>
+                                                            <Setter TargetName="TabIcon" Property="Foreground" Value="#FFFFFF"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter TargetName="TabBorder" Property="Background" Value="#262626"/>
+                                                            <Setter TargetName="TabIcon" Property="Foreground" Value="#D1FE29"/>
+                                                        </Trigger>
+                                                        <DataTrigger Binding="{Binding SelectedDownloadNavTab}" Value="0">
+                                                            <Setter TargetName="TabIcon" Property="Foreground" Value="#D1FE29"/>
+                                                            <Setter TargetName="TabBorder" Property="Background" Value="#262626"/>
+                                                        </DataTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+
+                                        <!-- Tab 2: System Services (Slide 1) -->
+                                        <Button Width="50" Height="50" Cursor="Hand" Margin="4,0"
+                                                Command="{Binding NavigateToSlideFromDownloadsCommand}" CommandParameter="1"
+                                                ToolTip="System Services">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="TabBorder" Width="50" Height="50" CornerRadius="25" Background="Transparent">
+                                                        <TextBlock x:Name="TabIcon" Text="&#xE713;" FontFamily="Segoe MDL2 Assets"
+                                                                   FontSize="22" Foreground="#525252"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="TabBorder" Property="Background" Value="#262626"/>
+                                                            <Setter TargetName="TabIcon" Property="Foreground" Value="#FFFFFF"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter TargetName="TabBorder" Property="Background" Value="#262626"/>
+                                                            <Setter TargetName="TabIcon" Property="Foreground" Value="#D1FE29"/>
+                                                        </Trigger>
+                                                        <DataTrigger Binding="{Binding SelectedDownloadNavTab}" Value="1">
+                                                            <Setter TargetName="TabIcon" Property="Foreground" Value="#D1FE29"/>
+                                                            <Setter TargetName="TabBorder" Property="Background" Value="#262626"/>
+                                                        </DataTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+
+                                        <!-- Tab 3: Advance Optimization (Slide 2) -->
+                                        <Button Width="50" Height="50" Cursor="Hand" Margin="4,0"
+                                                Command="{Binding NavigateToSlideFromDownloadsCommand}" CommandParameter="2"
+                                                ToolTip="Advance Optimization">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="TabBorder" Width="50" Height="50" CornerRadius="25" Background="Transparent">
+                                                        <TextBlock x:Name="TabIcon" Text="&#xE9D9;" FontFamily="Segoe MDL2 Assets"
+                                                                   FontSize="22" Foreground="#525252"
+                                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="TabBorder" Property="Background" Value="#262626"/>
+                                                            <Setter TargetName="TabIcon" Property="Foreground" Value="#FFFFFF"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter TargetName="TabBorder" Property="Background" Value="#262626"/>
+                                                            <Setter TargetName="TabIcon" Property="Foreground" Value="#D1FE29"/>
+                                                        </Trigger>
+                                                        <DataTrigger Binding="{Binding SelectedDownloadNavTab}" Value="2">
+                                                            <Setter TargetName="TabIcon" Property="Foreground" Value="#D1FE29"/>
+                                                            <Setter TargetName="TabBorder" Property="Background" Value="#262626"/>
+                                                        </DataTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- RIGHT CIRCULAR FAB: RECYCLE BIN / CLEAR HISTORY (Diameter 68 matching Dock Height) -->
+                            <Button Grid.Column="2" Width="68" Height="68" Cursor="Hand"
+                                    Command="{Binding ClearDownloadHistoryCommand}"
+                                    ToolTip="Clear All Download History" VerticalAlignment="Center">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="TrashCircle" Width="68" Height="68" CornerRadius="34"
+                                                Background="#171717" BorderBrush="#262626" BorderThickness="1.2">
+                                            <TextBlock x:Name="TrashIcon" Text="&#xE74D;" FontFamily="Segoe MDL2 Assets"
+                                                       FontSize="25" Foreground="#EF4444"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="TrashCircle" Property="Background" Value="#EF4444"/>
+                                                <Setter TargetName="TrashCircle" Property="BorderBrush" Value="#EF4444"/>
+                                                <Setter TargetName="TrashIcon" Property="Foreground" Value="#FFFFFF"/>
+                                            </Trigger>
+                                            <Trigger Property="IsPressed" Value="True">
+                                                <Setter TargetName="TrashCircle" Property="Background" Value="#DC2626"/>
+                                                <Setter TargetName="TrashCircle" Property="BorderBrush" Value="#DC2626"/>
+                                                <Setter TargetName="TrashIcon" Property="Foreground" Value="#FFFFFF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </Grid>
+
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
