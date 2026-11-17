@@ -573,9 +573,27 @@
                                                                 <DataTrigger Binding="{Binding IsDownloadCompleted}" Value="True">
                                                                     <Setter Property="Foreground" Value="#D1FE29"/>
                                                                 </DataTrigger>
-                                                                <!-- App Update Available: Arrow turns Dark for contrast on Green -->
+                                                                <!-- App Update Available: Arrow turns Dark for contrast on Green & Bumps -->
                                                                 <DataTrigger Binding="{Binding IsAppUpdateAvailable}" Value="True">
                                                                     <Setter Property="Foreground" Value="#0D1107"/>
+                                                                    <DataTrigger.EnterActions>
+                                                                        <BeginStoryboard x:Name="UpdateArrowBumpStoryboard">
+                                                                            <Storyboard RepeatBehavior="Forever">
+                                                                                <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                                                                               Duration="0:0:1.6">
+                                                                                    <LinearDoubleKeyFrame KeyTime="0:0:0.0" Value="0"/>
+                                                                                    <SplineDoubleKeyFrame KeyTime="0:0:0.24" Value="-3" KeySpline="0.2,0.8,0.4,1.0"/>
+                                                                                    <SplineDoubleKeyFrame KeyTime="0:0:0.48" Value="0" KeySpline="0.4,0.0,0.6,1.0"/>
+                                                                                    <SplineDoubleKeyFrame KeyTime="0:0:0.68" Value="-1.5" KeySpline="0.2,0.8,0.4,1.0"/>
+                                                                                    <SplineDoubleKeyFrame KeyTime="0:0:0.88" Value="0" KeySpline="0.4,0.0,0.6,1.0"/>
+                                                                                    <LinearDoubleKeyFrame KeyTime="0:0:1.60" Value="0"/>
+                                                                                </DoubleAnimationUsingKeyFrames>
+                                                                            </Storyboard>
+                                                                        </BeginStoryboard>
+                                                                    </DataTrigger.EnterActions>
+                                                                    <DataTrigger.ExitActions>
+                                                                        <StopStoryboard BeginStoryboardName="UpdateArrowBumpStoryboard"/>
+                                                                    </DataTrigger.ExitActions>
                                                                 </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>

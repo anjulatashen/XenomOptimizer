@@ -36,9 +36,9 @@
                         </DataTrigger>
                         <DataTrigger Binding="{Binding IsAppUpdateAvailable}" Value="True">
                             <Setter Property="Width" Value="450"/>
-                            <Setter Property="Height" Value="590"/>
-                            <Setter Property="CornerRadius" Value="24"/>
-                            <Setter Property="Padding" Value="22,16"/>
+                            <Setter Property="Height" Value="570"/>
+                            <Setter Property="CornerRadius" Value="20"/>
+                            <Setter Property="Padding" Value="20,16"/>
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
@@ -170,56 +170,80 @@
                         </Style>
                     </Grid.Style>
 
-                    <!-- Clean Neo-Minimalist Card Matching Reference (Zero AI glow, pure crisp structure) -->
-                    <Border Background="#13161F" BorderBrush="#222838" BorderThickness="1"
-                            CornerRadius="20" Padding="20,18" Margin="0,0,0,4">
+                    <!-- Clean Neo-Minimalist Card Matching Reference (Zero AI glow, neutral dark palette) -->
+                    <Border Background="#121215" BorderBrush="#242429" BorderThickness="1"
+                            CornerRadius="16" Padding="20,18" Margin="0,0,0,4">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel>
                                 <!-- 1. Category Pill + Header -->
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                    <Border CornerRadius="12" Background="#1B2538" BorderBrush="#2A3854" BorderThickness="1"
-                                            Padding="10,3.5">
-                                        <TextBlock Text="Software Update" FontSize="11" FontWeight="SemiBold" Foreground="#38BDF8"/>
+                                    <Border CornerRadius="8" Background="#1C1C22" BorderBrush="#2C2C35" BorderThickness="1"
+                                            Padding="9,3.5">
+                                        <TextBlock Text="Software Update" FontSize="10.5" FontWeight="SemiBold" Foreground="#A1A1AA"/>
                                     </Border>
                                 </StackPanel>
 
                                 <TextBlock Text="Xenom Optimizer" FontSize="20" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,4,0,2"/>
                                 <TextBlock Text="Major performance &amp; GameLoop Pro suite optimizations are ready to install."
-                                           FontSize="12" Foreground="#94A3B8" TextWrapping="Wrap"/>
+                                           FontSize="12" Foreground="#71717A" TextWrapping="Wrap"/>
 
                                 <!-- Divider -->
-                                <Border Height="1" Background="#1D2333" Margin="0,12,0,12"/>
+                                <Border Height="1" Background="#222226" Margin="0,12,0,12"/>
 
                                 <!-- 2. Large Version Display (Clean Reference Style: e.g. $34 /user/mo) -->
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <TextBlock Text="{Binding AppUpdateVersion, FallbackValue='v1.0.1'}"
                                                FontSize="28" FontWeight="Bold" Foreground="#FFFFFF"/>
-                                    <TextBlock Text="/ latest release" FontSize="12" Foreground="#64748B"
+                                    <TextBlock Text="/ latest release" FontSize="12" Foreground="#52525B"
                                                VerticalAlignment="Bottom" Margin="8,0,0,4"/>
                                 </StackPanel>
 
-                                <!-- 3. Clean Flat Action Button (NO GLOW, NO ICON, Flat Lime Green Pill) -->
+                                <!-- 3. Clean Flat Rectangular Action Button (WHITE WITH BLACK TEXT, NO ICONS, BUMPING TEXT) -->
                                 <Button Command="{Binding InstallAppUpdateCommand}"
                                         Cursor="Hand" Height="42" Margin="0,14,0,0">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
-                                            <Border x:Name="UpdateBtnBox" Background="#D1FE29" CornerRadius="21"
+                                            <Border x:Name="UpdateBtnBox" Background="#FFFFFF" CornerRadius="8"
                                                     BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                                                 <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <TextBlock Text="Download Software Update"
-                                                               FontSize="13" FontWeight="Bold" Foreground="#0A0E06"
-                                                               Visibility="{Binding IsDownloadingAppUpdate, Converter={StaticResource InvBoolToVis}}"/>
+                                                    <!-- Bumping Download Text -->
+                                                    <TextBlock x:Name="UpdateBtnText" Text="Download Software Update"
+                                                               FontSize="13" FontWeight="Bold" Foreground="#000000"
+                                                               RenderTransformOrigin="0.5,0.5"
+                                                               Visibility="{Binding IsDownloadingAppUpdate, Converter={StaticResource InvBoolToVis}}">
+                                                        <TextBlock.RenderTransform>
+                                                            <TranslateTransform x:Name="UpdateBtnTextTrans" Y="0"/>
+                                                        </TextBlock.RenderTransform>
+                                                        <TextBlock.Triggers>
+                                                            <EventTrigger RoutedEvent="Loaded">
+                                                                <BeginStoryboard>
+                                                                    <Storyboard RepeatBehavior="Forever">
+                                                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="UpdateBtnTextTrans"
+                                                                                                       Storyboard.TargetProperty="Y"
+                                                                                                       Duration="0:0:1.6">
+                                                                            <LinearDoubleKeyFrame KeyTime="0:0:0.0" Value="0"/>
+                                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.24" Value="-3.5" KeySpline="0.2,0.8,0.4,1.0"/>
+                                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.48" Value="0" KeySpline="0.4,0.0,0.6,1.0"/>
+                                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.68" Value="-1.5" KeySpline="0.2,0.8,0.4,1.0"/>
+                                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.88" Value="0" KeySpline="0.4,0.0,0.6,1.0"/>
+                                                                            <LinearDoubleKeyFrame KeyTime="0:0:1.60" Value="0"/>
+                                                                        </DoubleAnimationUsingKeyFrames>
+                                                                    </Storyboard>
+                                                                </BeginStoryboard>
+                                                            </EventTrigger>
+                                                        </TextBlock.Triggers>
+                                                    </TextBlock>
                                                     <TextBlock Text="Downloading Software Update... Please wait"
-                                                               FontSize="12.5" FontWeight="Bold" Foreground="#0A0E06"
+                                                               FontSize="12.5" FontWeight="Bold" Foreground="#000000"
                                                                Visibility="{Binding IsDownloadingAppUpdate, Converter={StaticResource BoolToVis}}"/>
                                                 </Grid>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="UpdateBtnBox" Property="Background" Value="#BEEA25"/>
+                                                    <Setter TargetName="UpdateBtnBox" Property="Background" Value="#E5E7EB"/>
                                                 </Trigger>
                                                 <Trigger Property="IsPressed" Value="True">
-                                                    <Setter TargetName="UpdateBtnBox" Property="Background" Value="#ACD51E"/>
+                                                    <Setter TargetName="UpdateBtnBox" Property="Background" Value="#D1D5DB"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
@@ -227,88 +251,88 @@
                                 </Button>
 
                                 <!-- Divider -->
-                                <Border Height="1" Background="#1D2333" Margin="0,14,0,12"/>
+                                <Border Height="1" Background="#222226" Margin="0,14,0,12"/>
 
-                                <!-- 4. Feature Highlights List (Clean icons + crisp labels matching reference) -->
+                                <!-- 4. Feature Highlights List (Clean dashes '-', no emojis, distinct feature naming) -->
                                 <TextBlock Text="What's included in this update:" FontSize="12" FontWeight="SemiBold"
-                                           Foreground="#CBD5E1" Margin="0,0,0,10"/>
+                                           Foreground="#D4D4D8" Margin="0,0,0,10"/>
 
                                 <StackPanel>
                                     <!-- Feature 1: 120 FPS -->
                                     <Grid Margin="0,0,0,6">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="14"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="⚡" FontSize="11" Foreground="#34D399" VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="1" Text="GameLoop 120 FPS &amp; Ultra Extreme safe unlocker"
-                                                   FontSize="11.5" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                        <TextBlock Text="—" FontSize="11" Foreground="#71717A" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="In-Game 120 FPS &amp; Ultra Extreme Graphics"
+                                                   FontSize="11.5" Foreground="#A1A1AA" VerticalAlignment="Center"/>
                                     </Grid>
 
-                                    <!-- Feature 2: iPad View & 2K/4K -->
+                                    <!-- Feature 2: iPad View & Resolutions -->
                                     <Grid Margin="0,0,0,6">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="14"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="🖥" FontSize="11" Foreground="#38BDF8" VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="1" Text="iPad View 4:3 Wide FOV &amp; 2K / 4K resolution presets"
-                                                   FontSize="11.5" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                        <TextBlock Text="—" FontSize="11" Foreground="#71717A" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="Custom Resolutions &amp; 4:3 iPad View Mode"
+                                                   FontSize="11.5" Foreground="#A1A1AA" VerticalAlignment="Center"/>
                                     </Grid>
 
-                                    <!-- Feature 3: Device Spoofing -->
+                                    <!-- Feature 3: Flagship Profiles -->
                                     <Grid Margin="0,0,0,6">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="14"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="📱" FontSize="11" Foreground="#A78BFA" VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="1" Text="ROG Phone 8 &amp; Galaxy Tab S9 flagship spoofing"
-                                                   FontSize="11.5" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                        <TextBlock Text="—" FontSize="11" Foreground="#71717A" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="ROG Phone 8 &amp; Flagship Device Profiles"
+                                                   FontSize="11.5" Foreground="#A1A1AA" VerticalAlignment="Center"/>
                                     </Grid>
 
-                                    <!-- Feature 4: Engine Switcher -->
+                                    <!-- Feature 4: Graphics Engine -->
                                     <Grid Margin="0,0,0,6">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="14"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="⚙" FontSize="11" Foreground="#F59E0B" VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="1" Text="DirectX+, OpenGL+ &amp; Vulkan engine API selector"
-                                                   FontSize="11.5" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                        <TextBlock Text="—" FontSize="11" Foreground="#71717A" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="DirectX+, OpenGL+ &amp; Vulkan Rendering Backend"
+                                                   FontSize="11.5" Foreground="#A1A1AA" VerticalAlignment="Center"/>
                                     </Grid>
 
-                                    <!-- Feature 5: Cores & RAM -->
+                                    <!-- Feature 5: CPU Cores & Memory -->
                                     <Grid Margin="0,0,0,6">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="14"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="🧠" FontSize="11" Foreground="#38BDF8" VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="1" Text="Dedicated host CPU cores &amp; 12GB RAM allocator"
-                                                   FontSize="11.5" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                        <TextBlock Text="—" FontSize="11" Foreground="#71717A" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="Host CPU Cores &amp; System Memory Allocator"
+                                                   FontSize="11.5" Foreground="#A1A1AA" VerticalAlignment="Center"/>
                                     </Grid>
 
-                                    <!-- Feature 6: HVCI bypass -->
+                                    <!-- Feature 6: PC Doctor & HVCI -->
                                     <Grid Margin="0,0,0,6">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="14"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="🩺" FontSize="11" Foreground="#34D399" VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="1" Text="Core Isolation (HVCI) zero-stutter latency bypass"
-                                                   FontSize="11.5" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                        <TextBlock Text="—" FontSize="11" Foreground="#71717A" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="One-Click PC Doctor &amp; HVCI Bypass"
+                                                   FontSize="11.5" Foreground="#A1A1AA" VerticalAlignment="Center"/>
                                     </Grid>
 
-                                    <!-- Feature 7: Safe Close -->
+                                    <!-- Feature 7: Safe Close & Cache Purge -->
                                     <Grid Margin="0,0,0,2">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="14"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="🧹" FontSize="11" Foreground="#94A3B8" VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="1" Text="Safe close emulator &amp; purge DirectX shader cache"
-                                                   FontSize="11.5" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                        <TextBlock Text="—" FontSize="11" Foreground="#71717A" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="Safe Emulator Close &amp; Shader Cache Cleaner"
+                                                   FontSize="11.5" Foreground="#A1A1AA" VerticalAlignment="Center"/>
                                     </Grid>
                                 </StackPanel>
                             </StackPanel>
