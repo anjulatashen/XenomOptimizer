@@ -77,6 +77,11 @@ public partial class MainWindow : Window
         {
             vm.PropertyChanged += Vm_PropertyChanged;
         }
+
+        // Check for updates in the background without blocking the UI
+        XenomOptimizer.Services.UpdateService.CheckForUpdatesInBackground(
+            "https://raw.githubusercontent.com/anjulatashen/XenomOptimizer/main/update.json"
+        );
     }
 
     private void Vm_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
