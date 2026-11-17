@@ -8,6 +8,7 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using XenomOptimizer.Services;
 using XenomOptimizer.ViewModels;
 
 namespace XenomOptimizer;
@@ -19,22 +20,25 @@ public partial class MainWindow : Window
     {
         { "Dashboard", 0 },
         { "Windows", 1 },
-        { "Registry", 2 },
-        { "GameLoop", 3 },
-        { "PUBG", 4 },
-        { "Network", 5 },
-        { "Cleanup", 6 },
-        { "Backup", 7 },
-        { "System", 8 },
-        { "Settings", 9 }
+        { "Optimizer", 2 },
+        { "Registry", 3 },
+        { "GameLoop", 4 },
+        { "PUBG", 5 },
+        { "Network", 6 },
+        { "Cleanup", 7 },
+        { "Backup", 8 },
+        { "System", 9 },
+        { "Settings", 10 }
     };
     private int _currentIndex = 0;
+    private SystemTrayService? _trayService;
 
     public MainWindow()
     {
         InitializeComponent();
         StateChanged += MainWindow_StateChanged;
         Loaded += MainWindow_Loaded;
+        Closing += MainWindow_Closing;
     }
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -54,6 +58,7 @@ public partial class MainWindow : Window
         {
             NavDashboard,
             NavWindows,
+            NavOptimizer,
             NavRegistry,
             NavGameLoop,
             NavPubg,
@@ -63,6 +68,9 @@ public partial class MainWindow : Window
             NavSystem,
             NavSettings
         });
+
+        var optVm = App.Services.GetService(typeof(OptimizerFrameGenViewModel)) as OptimizerFrameGenViewModel;
+        _trayService = new SystemTrayService(this, optVm);
 
         // Initialize button states: Dashboard is active by default
         for (int i = 0; i < _navButtons.Count; i++)
@@ -621,6 +629,17 @@ public partial class MainWindow : Window
         {
             WindowState = WindowState.Normal;
         }
+        else if (WindowState == WindowState.Minimized)
+        {
+            _trayService?.MinimizeToTray();
+        }
+    }
+
+    private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        var optVm = App.Services.GetService(typeof(OptimizerFrameGenViewModel)) as OptimizerFrameGenViewModel;
+        optVm?.CleanExit();
+        _trayService?.Dispose();
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

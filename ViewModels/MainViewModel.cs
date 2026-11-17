@@ -19,6 +19,7 @@ public partial class MainViewModel : ObservableObject
 
     public bool IsDashboardActive => CurrentPageTitle == "Dashboard";
     public bool IsWindowsActive => CurrentPageTitle == "Windows";
+    public bool IsOptimizerActive => CurrentPageTitle == "Optimizer";
     public bool IsGameLoopActive => CurrentPageTitle == "GameLoop";
     public bool IsRegistryActive => CurrentPageTitle == "Registry";
     public bool IsPubgActive => CurrentPageTitle == "PUBG";
@@ -32,6 +33,7 @@ public partial class MainViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(IsDashboardActive));
         OnPropertyChanged(nameof(IsWindowsActive));
+        OnPropertyChanged(nameof(IsOptimizerActive));
         OnPropertyChanged(nameof(IsGameLoopActive));
         OnPropertyChanged(nameof(IsRegistryActive));
         OnPropertyChanged(nameof(IsPubgActive));
@@ -148,6 +150,7 @@ public partial class MainViewModel : ObservableObject
             {
                 "Dashboard" => App.Services.GetService(typeof(DashboardViewModel)) as ObservableObject,
                 "Windows" => WindowsVm,
+                "Optimizer" => App.Services.GetService(typeof(OptimizerFrameGenViewModel)) as ObservableObject,
                 "GameLoop" => App.Services.GetService(typeof(GameLoopOptimizationViewModel)) as ObservableObject,
                 "Registry" => App.Services.GetService(typeof(RegistryOptimizationViewModel)) as ObservableObject,
                 "PUBG" => App.Services.GetService(typeof(PubgOptimizationViewModel)) as ObservableObject,

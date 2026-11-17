@@ -29,6 +29,9 @@
         <DataTemplate DataType="{x:Type vm:WindowsOptimizationViewModel}">
             <views:WindowsOptimizationView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:OptimizerFrameGenViewModel}">
+            <views:OptimizerFrameGenView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:GameLoopOptimizationViewModel}">
             <views:GameLoopOptimizationView/>
         </DataTemplate>
@@ -225,6 +228,11 @@
                                     <RadioButton x:Name="NavWindows" Style="{StaticResource HaulixSidebarButton}" Content="Windows Tweaks" Tag="&#xE770;"
                                                  IsChecked="{Binding IsWindowsActive, Mode=OneWay}"
                                                  Command="{Binding NavigateToCommand}" CommandParameter="Windows"/>
+
+                                    <RadioButton x:Name="NavOptimizer" Style="{StaticResource HaulixSidebarButton}" Content="Optimizer &amp; Frame Gen" Tag="&#xE768;"
+                                                 IsChecked="{Binding IsOptimizerActive, Mode=OneWay}"
+                                                 PreviewMouseLeftButtonDown="NavButton_PreviewMouseLeftButtonDown"
+                                                 Command="{Binding NavigateToCommand}" CommandParameter="Optimizer"/>
 
                                     <RadioButton x:Name="NavRegistry" Style="{StaticResource HaulixSidebarButton}" Content="Registry Tweaks" Tag="&#xE74C;"
                                                  IsChecked="{Binding IsRegistryActive, Mode=OneWay}"

@@ -963,6 +963,8 @@ public partial class App : Application
 
         services.AddTransient<SettingsViewModel>();
 
+        services.AddSingleton<OptimizerFrameGenViewModel>();
+
     }
 
 }
