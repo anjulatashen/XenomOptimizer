@@ -105,16 +105,16 @@ public static class UpdateService
         }
 
         var currentVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0);
+        AvailableUpdate = updateInfo;
+        Application.Current?.Dispatcher?.Invoke(() =>
+        {
+            UpdateDetected?.Invoke(updateInfo);
+        });
+
         if (Version.TryParse(updateInfo.Version, out var remoteVersion))
         {
             if (remoteVersion > currentVersion)
             {
-                AvailableUpdate = updateInfo;
-                Application.Current?.Dispatcher?.Invoke(() =>
-                {
-                    UpdateDetected?.Invoke(updateInfo);
-                });
-
                 if (!silentIfUpToDate)
                 {
                     // If manually checked, switch to UI thread to show prompt
