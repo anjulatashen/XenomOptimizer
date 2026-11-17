@@ -191,7 +191,13 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 	private bool _isDownloadingAppUpdate;
 
 	[ObservableProperty]
-	private double _appUpdateProgressPercent = 85.0;
+	private bool _isAppUpdateFinished;
+
+	[ObservableProperty]
+	private double _appUpdateProgressPercent = 0.0;
+
+	[ObservableProperty]
+	private double _appUpdateIndicatorOffset = -53.0;
 
 	[ObservableProperty]
 	private string _appUpdateStatusText = "Preparation";
@@ -201,6 +207,24 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 
 	[ObservableProperty]
 	private int _appUpdateStep = 1;
+
+	[ObservableProperty]
+	private bool _isBox1Active;
+
+	[ObservableProperty]
+	private bool _isBox2Active;
+
+	[ObservableProperty]
+	private bool _isBox3Active;
+
+	[ObservableProperty]
+	private bool _isBox4Active;
+
+	[ObservableProperty]
+	private string _appUpdateBottomBaseText = "Downloading Xenom Optimizer v1.0.1";
+
+	[ObservableProperty]
+	private string _appUpdateAnimatedDots = "...";
 
 	[ObservableProperty]
 	private string _downloadSpeedText = "";
@@ -1986,42 +2010,85 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 		};
 
 		IsDownloadingAppUpdate = true;
+		IsAppUpdateFinished = false;
+		AppUpdateProgressPercent = 0;
+		AppUpdateIndicatorOffset = -53.0;
 		AppUpdateStep = 1;
 		AppUpdateStatusText = "Preparation";
-		AppUpdateProgressSubtitle = "Preparing update package...";
-		AppUpdateProgressPercent = 15;
+		AppUpdateBottomBaseText = $"Downloading Xenom Optimizer v{update.Version}";
+		IsBox1Active = false;
+		IsBox2Active = false;
+		IsBox3Active = false;
+		IsBox4Active = false;
+
+		using var cts = new CancellationTokenSource();
+
+		// Background dots animation loop (cycles 1 to 3 dots: . -> .. -> ...)
+		var dotsTask = Task.Run(async () =>
+		{
+			int dotCount = 1;
+			while (!cts.Token.IsCancellationRequested)
+			{
+				var dots = new string('.', dotCount);
+				await Application.Current.Dispatcher.InvokeAsync(() =>
+				{
+					AppUpdateAnimatedDots = dots;
+				});
+				dotCount = (dotCount % 3) + 1;
+				try
+				{
+					await Task.Delay(350, cts.Token).ConfigureAwait(false);
+				}
+				catch (TaskCanceledException)
+				{
+					break;
+				}
+			}
+		}, cts.Token);
 
 		var progress = new Progress<double>(p =>
 		{
 			AppUpdateProgressPercent = Math.Clamp(p, 0, 100);
-			if (p < 25)
+
+			// Calculate smooth travel from left edge of box 1 (-53) to right edge of box 4 (279)
+			AppUpdateIndicatorOffset = -53.0 + (AppUpdateProgressPercent / 100.0) * 332.0;
+
+			// Box activations as line reaches each box
+			IsBox1Active = AppUpdateProgressPercent >= 2;
+			IsBox2Active = AppUpdateProgressPercent >= 25;
+			IsBox3Active = AppUpdateProgressPercent >= 50;
+			IsBox4Active = AppUpdateProgressPercent >= 75;
+
+			if (p <= 50)
 			{
 				AppUpdateStep = 1;
 				AppUpdateStatusText = "Preparation";
-				AppUpdateProgressSubtitle = "Connecting to server & preparing...";
+				AppUpdateBottomBaseText = $"Downloading Xenom Optimizer v{update.Version}";
 			}
-			else if (p < 60)
+			else if (p < 100)
 			{
 				AppUpdateStep = 2;
-				AppUpdateStatusText = "Downloading";
-				AppUpdateProgressSubtitle = $"Downloading binaries ({p:F0}%)...";
-			}
-			else if (p < 85)
-			{
-				AppUpdateStep = 3;
-				AppUpdateStatusText = "Extracting";
-				AppUpdateProgressSubtitle = $"Extracting & verifying binaries ({p:F0}%)...";
+				AppUpdateStatusText = "Installing";
+				AppUpdateBottomBaseText = $"Installing Xenom Optimizer v{update.Version}";
 			}
 			else
 			{
-				AppUpdateStep = 4;
+				AppUpdateStep = 2;
 				AppUpdateStatusText = "Installing";
-				AppUpdateProgressSubtitle = "Installing Xenom Optimizer v1.0.1...";
+				AppUpdateBottomBaseText = $"Restarting Xenom Optimizer v{update.Version}";
+				IsAppUpdateFinished = true;
 			}
 		});
 
-		await UpdateService.DownloadAndApplyUpdateAsync(update, progress);
-		IsDownloadingAppUpdate = false;
+		try
+		{
+			await UpdateService.DownloadAndApplyUpdateAsync(update, progress);
+		}
+		finally
+		{
+			cts.Cancel();
+			IsDownloadingAppUpdate = false;
+		}
 	}
 
 	[RelayCommand]

@@ -241,8 +241,8 @@ public static class UpdateService
             {
                 try
                 {
-                    progress?.Report(12.0); // Stage 1: Preparation
-                    await Task.Delay(400);
+                    progress?.Report(2.0); // Stage 1: Preparation begins
+                    await Task.Delay(300);
 
                     using var response = await HttpClient.GetAsync(updateInfo.DownloadUrl, HttpCompletionOption.ResponseHeadersRead);
                     if (response.IsSuccessStatusCode)
@@ -261,10 +261,19 @@ public static class UpdateService
                             totalRead += bytesRead;
                             if (totalBytes > 0 && progress != null)
                             {
-                                var pct = 20.0 + ((double)totalRead / totalBytes * 75.0);
+                                // Download covers 2% to 50% (Boxes 1 and 2)
+                                var pct = 2.0 + ((double)totalRead / totalBytes * 48.0);
                                 progress.Report(pct);
                             }
                         }
+
+                        // Extraction & Installation covers 51% to 100% (Boxes 3 and 4)
+                        for (double p = 51.0; p <= 100.0; p += 1.0)
+                        {
+                            progress?.Report(p);
+                            await Task.Delay(40);
+                        }
+
                         downloadSuccess = true;
                     }
                     else
@@ -301,20 +310,25 @@ public static class UpdateService
 
                 if (foundLocalZip != null)
                 {
-                    // Animate through all stages so the user sees the full Apple widget animation
-                    progress?.Report(15.0); // Stage 1: Preparation
-                    await Task.Delay(700);
+                    // Animate through all stages continuously so the white line travels like a progress bar
+                    for (double p = 1.0; p <= 100.0; p += 1.0)
+                    {
+                        progress?.Report(p);
 
-                    progress?.Report(45.0); // Stage 2: Downloading
-                    await Task.Delay(800);
+                        if (p == 45.0)
+                        {
+                            File.Copy(foundLocalZip, downloadedFilePath, true);
+                        }
 
-                    File.Copy(foundLocalZip, downloadedFilePath, true);
-
-                    progress?.Report(75.0); // Stage 3: Extracting
-                    await Task.Delay(800);
-
-                    progress?.Report(95.0); // Stage 4: Installing
-                    await Task.Delay(700);
+                        if (p == 50.0)
+                        {
+                            await Task.Delay(250); // subtle pause at 50% transition
+                        }
+                        else
+                        {
+                            await Task.Delay(40); // 40ms * 100 = 4 seconds smooth travel
+                        }
+                    }
 
                     downloadSuccess = true;
                 }
@@ -325,7 +339,7 @@ public static class UpdateService
             }
 
             progress?.Report(100.0);
-            await Task.Delay(900);
+            await Task.Delay(1400); // Allow user to see completed checkmark and filled bar
 
             // Launch updater script: terminates current process, unzips update, relaunches app
             LaunchUpdater(downloadedFilePath);
