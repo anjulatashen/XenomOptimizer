@@ -515,27 +515,37 @@
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
                                     <Border x:Name="DownloadBtnBorder" Height="36" Width="98" Padding="12,0,14,0"
-                                            Background="#1C1E22" BorderBrush="#282B33" BorderThickness="1"
                                             CornerRadius="8" ClipToBounds="True">
                                         <Border.Style>
                                             <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#1C1E22"/>
+                                                <Setter Property="BorderBrush" Value="#282B33"/>
+                                                <Setter Property="BorderThickness" Value="1"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsDownloadFlyoutOpen}" Value="True">
                                                         <Setter Property="Background" Value="#16233B"/>
                                                         <Setter Property="BorderBrush" Value="#0284C7"/>
                                                     </DataTrigger>
-                                                    <!-- When Major App Update Available: Green Border & Subtle Glow -->
+                                                    <!-- When Major App Update Available: Solid Vibrant Lime Green Pill -->
                                                     <DataTrigger Binding="{Binding IsAppUpdateAvailable}" Value="True">
-                                                        <Setter Property="Background" Value="#122116"/>
-                                                        <Setter Property="BorderBrush" Value="#D1FE29"/>
-                                                        <Setter Property="BorderThickness" Value="1.2"/>
+                                                        <Setter Property="Background" Value="#D1FE29"/>
+                                                        <Setter Property="BorderBrush" Value="#BCEB23"/>
+                                                        <Setter Property="BorderThickness" Value="1"/>
                                                     </DataTrigger>
-                                                    <!-- Hover: Solid Black, No outline, BorderThickness stays 1 so NO layout shift -->
+                                                    <!-- Hover: Normal state turns black; when update available stays lime green -->
                                                     <Trigger Property="IsMouseOver" Value="True">
                                                         <Setter Property="Background" Value="#000000"/>
                                                         <Setter Property="BorderBrush" Value="Transparent"/>
                                                         <Setter Property="BorderThickness" Value="1"/>
                                                     </Trigger>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding RelativeSource={RelativeSource Self}, Path=IsMouseOver}" Value="True"/>
+                                                            <Condition Binding="{Binding IsAppUpdateAvailable}" Value="True"/>
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Background" Value="#BEEA25"/>
+                                                        <Setter Property="BorderBrush" Value="#BEEA25"/>
+                                                    </MultiDataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </Border.Style>
@@ -563,9 +573,9 @@
                                                                 <DataTrigger Binding="{Binding IsDownloadCompleted}" Value="True">
                                                                     <Setter Property="Foreground" Value="#D1FE29"/>
                                                                 </DataTrigger>
-                                                                <!-- App Update Available: Arrow turns Green -->
+                                                                <!-- App Update Available: Arrow turns Dark for contrast on Green -->
                                                                 <DataTrigger Binding="{Binding IsAppUpdateAvailable}" Value="True">
-                                                                    <Setter Property="Foreground" Value="#D1FE29"/>
+                                                                    <Setter Property="Foreground" Value="#0D1107"/>
                                                                 </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
@@ -577,8 +587,24 @@
 
                                                 <!-- Animatable Container for "Download" Text (Smoothly collapses width & opacity) -->
                                                 <Border x:Name="DownloadTextClip" ClipToBounds="True" VerticalAlignment="Center">
-                                                    <TextBlock x:Name="DownloadBtnText" Text="Download" FontSize="11.5" FontWeight="SemiBold"
-                                                               Foreground="#FFFFFF" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                                    <TextBlock x:Name="DownloadBtnText" FontSize="11.5"
+                                                               Margin="6,0,0,0" VerticalAlignment="Center">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Text" Value="Download"/>
+                                                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                <Style.Triggers>
+                                                                    <!-- App Update Available: Button displays "Update" in bold dark text -->
+                                                                    <DataTrigger Binding="{Binding IsAppUpdateAvailable}" Value="True">
+                                                                        <Setter Property="Foreground" Value="#0D1107"/>
+                                                                        <Setter Property="FontWeight" Value="Bold"/>
+                                                                        <Setter Property="Text" Value="Update"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
                                                 </Border>
                                             </StackPanel>
 

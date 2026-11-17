@@ -35,10 +35,10 @@
                             <Setter Property="Padding" Value="22,18"/>
                         </DataTrigger>
                         <DataTrigger Binding="{Binding IsAppUpdateAvailable}" Value="True">
-                            <Setter Property="Width" Value="460"/>
-                            <Setter Property="Height" Value="440"/>
+                            <Setter Property="Width" Value="450"/>
+                            <Setter Property="Height" Value="590"/>
                             <Setter Property="CornerRadius" Value="24"/>
-                            <Setter Property="Padding" Value="22,18"/>
+                            <Setter Property="Padding" Value="22,16"/>
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
@@ -150,7 +150,7 @@
                 </Grid>
 
                 <!-- ═══════════════════════════════════════════════════════════ -->
-                <!-- STATE: MAJOR SOFTWARE UPDATE VIEW (NEO-MINIMALIST AESTHETIC) -->
+                <!-- STATE: MAJOR SOFTWARE UPDATE VIEW (CLEAN NEO-MINIMALIST STYLE) -->
                 <!-- ═══════════════════════════════════════════════════════════ -->
                 <Grid x:Name="AppUpdateView" Grid.Row="1" VerticalAlignment="Stretch">
                     <Grid.Style>
@@ -170,86 +170,151 @@
                         </Style>
                     </Grid.Style>
 
-                    <Border Background="#12141C" BorderBrush="#232B3C" BorderThickness="1.2"
-                            CornerRadius="18" Padding="18,16" Margin="0,0,0,8">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-
-                            <!-- 1. Top Badges & Version Info -->
-                            <StackPanel Grid.Row="0" Margin="0,0,0,12">
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                    <!-- Major Update Pill Badge -->
-                                    <Border CornerRadius="8" Background="#162B1D" BorderBrush="#255E38" BorderThickness="1"
-                                            Padding="10,3.5" Margin="0,0,8,0">
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <TextBlock Text="⚡" FontSize="11" Foreground="#D1FE29" Margin="0,0,4,0"/>
-                                            <TextBlock Text="MAJOR SOFTWARE UPDATE" FontSize="10.5" FontWeight="Bold" Foreground="#D1FE29"/>
-                                        </StackPanel>
-                                    </Border>
-                                    <!-- Version Pill -->
-                                    <Border CornerRadius="8" Background="#1A202E" BorderBrush="#2D394E" BorderThickness="1"
-                                            Padding="8,3.5">
-                                        <TextBlock Text="{Binding AppUpdateVersion, FallbackValue='v1.0.1'}" FontSize="10.5" FontWeight="Bold" Foreground="#38BDF8"/>
+                    <!-- Clean Neo-Minimalist Card Matching Reference (Zero AI glow, pure crisp structure) -->
+                    <Border Background="#13161F" BorderBrush="#222838" BorderThickness="1"
+                            CornerRadius="20" Padding="20,18" Margin="0,0,0,4">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <!-- 1. Category Pill + Header -->
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <Border CornerRadius="12" Background="#1B2538" BorderBrush="#2A3854" BorderThickness="1"
+                                            Padding="10,3.5">
+                                        <TextBlock Text="Software Update" FontSize="11" FontWeight="SemiBold" Foreground="#38BDF8"/>
                                     </Border>
                                 </StackPanel>
 
-                                <TextBlock Text="Xenom Optimizer v1.0.1" FontSize="18" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,0,0,3"/>
-                                <TextBlock Text="GameLoop Pro Suite, iPad View (4:3) &amp; Latency Engine" FontSize="12" Foreground="#94A3B8"/>
-                            </StackPanel>
+                                <TextBlock Text="Xenom Optimizer" FontSize="20" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,4,0,2"/>
+                                <TextBlock Text="Major performance &amp; GameLoop Pro suite optimizations are ready to install."
+                                           FontSize="12" Foreground="#94A3B8" TextWrapping="Wrap"/>
 
-                            <!-- 2. Feature Highlights Pill Box -->
-                            <Border Grid.Row="1" Background="#0C0E14" BorderBrush="#1C212E" BorderThickness="1"
-                                    CornerRadius="12" Padding="14,10" Margin="0,0,0,14">
-                                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                    <StackPanel>
-                                        <TextBlock Text="WHAT'S NEW" FontSize="9.5" FontWeight="Bold" Foreground="#64748B" Margin="0,0,0,8" FontFamily="Segoe UI, sans-serif"/>
-                                        <TextBlock Text="{Binding AppUpdateNotes, FallbackValue='• GameLoop Pro Suite: 2K, 4K &amp; iPad View (4:3) Presets\n• In-Game 120 FPS &amp; Extreme+ Unlocker\n• ASUS ROG Phone 8 &amp; Galaxy Tab S9 Device Spoofing\n• Vulkan, OpenGL &amp; DirectX Engine Selector\n• CPU Cores &amp; 12GB RAM Allocator\n• 1-Click GameLoop Doctor (HVCI Off, Dedicated GPU Route)\n• GameLoop Safe Close &amp; Deep Cache Cleaner'}"
-                                                   FontSize="11.5" Foreground="#E2E8F0" TextWrapping="Wrap" LineHeight="18"/>
-                                    </StackPanel>
-                                </ScrollViewer>
-                            </Border>
+                                <!-- Divider -->
+                                <Border Height="1" Background="#1D2333" Margin="0,12,0,12"/>
 
-                            <!-- 3. Primary Action Button: BUMPING & GLOWING UPDATE BUTTON -->
-                            <StackPanel Grid.Row="2">
+                                <!-- 2. Large Version Display (Clean Reference Style: e.g. $34 /user/mo) -->
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding AppUpdateVersion, FallbackValue='v1.0.1'}"
+                                               FontSize="28" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                    <TextBlock Text="/ latest release" FontSize="12" Foreground="#64748B"
+                                               VerticalAlignment="Bottom" Margin="8,0,0,4"/>
+                                </StackPanel>
+
+                                <!-- 3. Clean Flat Action Button (NO GLOW, NO ICON, Flat Lime Green Pill) -->
                                 <Button Command="{Binding InstallAppUpdateCommand}"
-                                        Cursor="Hand" Height="42" Padding="18,0">
+                                        Cursor="Hand" Height="42" Margin="0,14,0,0">
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
-                                            <Border x:Name="UpdateBtnBox" Background="#D1FE29" CornerRadius="10"
+                                            <Border x:Name="UpdateBtnBox" Background="#D1FE29" CornerRadius="21"
                                                     BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                                                <Border.Effect>
-                                                    <DropShadowEffect BlurRadius="12" ShadowDepth="0" Color="#D1FE29" Opacity="0.5"/>
-                                                </Border.Effect>
                                                 <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <StackPanel Orientation="Horizontal" Visibility="{Binding IsDownloadingAppUpdate, Converter={StaticResource InvBoolToVis}}">
-                                                        <TextBlock Text="⚡" FontSize="14" FontWeight="Bold" Foreground="#0A0D08" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                                        <TextBlock Text="Download &amp; Install Major Update" FontSize="13" FontWeight="Bold" Foreground="#0A0D08" VerticalAlignment="Center"/>
-                                                    </StackPanel>
-                                                    <StackPanel Orientation="Horizontal" Visibility="{Binding IsDownloadingAppUpdate, Converter={StaticResource BoolToVis}}">
-                                                        <TextBlock Text="⏳ Downloading Update... Please wait" FontSize="13" FontWeight="Bold" Foreground="#0A0D08" VerticalAlignment="Center"/>
-                                                    </StackPanel>
+                                                    <TextBlock Text="Download Software Update"
+                                                               FontSize="13" FontWeight="Bold" Foreground="#0A0E06"
+                                                               Visibility="{Binding IsDownloadingAppUpdate, Converter={StaticResource InvBoolToVis}}"/>
+                                                    <TextBlock Text="Downloading Software Update... Please wait"
+                                                               FontSize="12.5" FontWeight="Bold" Foreground="#0A0E06"
+                                                               Visibility="{Binding IsDownloadingAppUpdate, Converter={StaticResource BoolToVis}}"/>
                                                 </Grid>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="UpdateBtnBox" Property="Background" Value="#E5FF54"/>
+                                                    <Setter TargetName="UpdateBtnBox" Property="Background" Value="#BEEA25"/>
                                                 </Trigger>
                                                 <Trigger Property="IsPressed" Value="True">
-                                                    <Setter TargetName="UpdateBtnBox" Property="Background" Value="#B9E519"/>
+                                                    <Setter TargetName="UpdateBtnBox" Property="Background" Value="#ACD51E"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
                                         </ControlTemplate>
                                     </Button.Template>
                                 </Button>
+
+                                <!-- Divider -->
+                                <Border Height="1" Background="#1D2333" Margin="0,14,0,12"/>
+
+                                <!-- 4. Feature Highlights List (Clean icons + crisp labels matching reference) -->
+                                <TextBlock Text="What's included in this update:" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="#CBD5E1" Margin="0,0,0,10"/>
+
+                                <StackPanel>
+                                    <!-- Feature 1: 120 FPS -->
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="⚡" FontSize="11" Foreground="#34D399" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="GameLoop 120 FPS &amp; Ultra Extreme safe unlocker"
+                                                   FontSize="11.5" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                    </Grid>
+
+                                    <!-- Feature 2: iPad View & 2K/4K -->
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="🖥" FontSize="11" Foreground="#38BDF8" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="iPad View 4:3 Wide FOV &amp; 2K / 4K resolution presets"
+                                                   FontSize="11.5" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                    </Grid>
+
+                                    <!-- Feature 3: Device Spoofing -->
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="📱" FontSize="11" Foreground="#A78BFA" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="ROG Phone 8 &amp; Galaxy Tab S9 flagship spoofing"
+                                                   FontSize="11.5" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                    </Grid>
+
+                                    <!-- Feature 4: Engine Switcher -->
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="⚙" FontSize="11" Foreground="#F59E0B" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="DirectX+, OpenGL+ &amp; Vulkan engine API selector"
+                                                   FontSize="11.5" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                    </Grid>
+
+                                    <!-- Feature 5: Cores & RAM -->
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="🧠" FontSize="11" Foreground="#38BDF8" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="Dedicated host CPU cores &amp; 12GB RAM allocator"
+                                                   FontSize="11.5" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                    </Grid>
+
+                                    <!-- Feature 6: HVCI bypass -->
+                                    <Grid Margin="0,0,0,6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="🩺" FontSize="11" Foreground="#34D399" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="Core Isolation (HVCI) zero-stutter latency bypass"
+                                                   FontSize="11.5" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                    </Grid>
+
+                                    <!-- Feature 7: Safe Close -->
+                                    <Grid Margin="0,0,0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="22"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="🧹" FontSize="11" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="Safe close emulator &amp; purge DirectX shader cache"
+                                                   FontSize="11.5" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </StackPanel>
                             </StackPanel>
-                        </Grid>
+                        </ScrollViewer>
                     </Border>
                 </Grid>
-
 
                 <!-- ═══════════════════════════════════════════════════════════ -->
                 <!-- STATE 2: ACTIVE DOWNLOADING (GREEN LIME THEME WIDGET)        -->
