@@ -2012,7 +2012,7 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 		IsDownloadingAppUpdate = true;
 		IsAppUpdateFinished = false;
 		AppUpdateProgressPercent = 0;
-		AppUpdateIndicatorOffset = -53.0;
+		AppUpdateIndicatorOffset = -57.0;
 		AppUpdateStep = 1;
 		AppUpdateStatusText = "Preparation";
 		AppUpdateBottomBaseText = $"Downloading Xenom Optimizer v{update.Version}";
@@ -2050,16 +2050,16 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 		{
 			AppUpdateProgressPercent = Math.Clamp(p, 0, 100);
 
-			// Calculate smooth travel from left edge of box 1 (-53) to right edge of box 4 (279)
-			AppUpdateIndicatorOffset = -53.0 + (AppUpdateProgressPercent / 100.0) * 332.0;
+			// Calculate smooth travel matching the reference box widths: Box 1 (11.2%), Box 2 (36.3%), Box 3 (24.7%), Box 4 (27.8%)
+			AppUpdateIndicatorOffset = -57.0 + (AppUpdateProgressPercent / 100.0) * 354.0;
 
-			// Box activations as line reaches each box
-			IsBox1Active = AppUpdateProgressPercent >= 2;
-			IsBox2Active = AppUpdateProgressPercent >= 25;
-			IsBox3Active = AppUpdateProgressPercent >= 50;
-			IsBox4Active = AppUpdateProgressPercent >= 75;
+			// Box activations as line reaches each proportional box
+			IsBox1Active = AppUpdateProgressPercent >= 1.0;
+			IsBox2Active = AppUpdateProgressPercent >= 11.2;
+			IsBox3Active = AppUpdateProgressPercent >= 47.5;
+			IsBox4Active = AppUpdateProgressPercent >= 72.2;
 
-			if (p <= 50)
+			if (p <= 47.5)
 			{
 				AppUpdateStep = 1;
 				AppUpdateStatusText = "Preparation";
