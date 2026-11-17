@@ -176,6 +176,24 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 	private bool _isDownloadCompleted;
 
 	[ObservableProperty]
+	private bool _isAppUpdateAvailable;
+
+	[ObservableProperty]
+	private string _appUpdateVersion = "";
+
+	[ObservableProperty]
+	private string _appUpdateNotes = "";
+
+	[ObservableProperty]
+	private string _appUpdateDownloadUrl = "";
+
+	[ObservableProperty]
+	private bool _isDownloadingAppUpdate;
+
+	[ObservableProperty]
+	private double _appUpdateProgressPercent;
+
+	[ObservableProperty]
 	private string _downloadSpeedText = "";
 
 	[ObservableProperty]
@@ -1924,6 +1942,37 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 		_pcInitialLetter = ((text2.Length > 0) ? text2.Substring(0, 1).ToUpperInvariant() : "P");
 		LoadCustomAvatar();
 		LoadAllDataAsync();
+
+		// Hook into UpdateService to detect updates
+		UpdateService.UpdateDetected += (update) =>
+		{
+			Application.Current?.Dispatcher?.Invoke(() =>
+			{
+				IsAppUpdateAvailable = true;
+				AppUpdateVersion = update.Version;
+				AppUpdateNotes = update.ReleaseNotes ?? "Major Software Update with new optimizations.";
+				AppUpdateDownloadUrl = update.DownloadUrl;
+			});
+		};
+
+		if (UpdateService.AvailableUpdate != null)
+		{
+			IsAppUpdateAvailable = true;
+			AppUpdateVersion = UpdateService.AvailableUpdate.Version;
+			AppUpdateNotes = UpdateService.AvailableUpdate.ReleaseNotes ?? "Major Software Update with new optimizations.";
+			AppUpdateDownloadUrl = UpdateService.AvailableUpdate.DownloadUrl;
+		}
+	}
+
+	[RelayCommand]
+	private async Task InstallAppUpdateAsync()
+	{
+		if (UpdateService.AvailableUpdate != null)
+		{
+			IsDownloadingAppUpdate = true;
+			await UpdateService.DownloadAndApplyUpdateAsync(UpdateService.AvailableUpdate);
+			IsDownloadingAppUpdate = false;
+		}
 	}
 
 	[RelayCommand]

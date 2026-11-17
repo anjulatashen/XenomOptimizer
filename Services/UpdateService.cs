@@ -40,6 +40,9 @@ public static class UpdateService
         Timeout = TimeSpan.FromSeconds(30)
     };
 
+    public static UpdateInfo? AvailableUpdate { get; private set; }
+    public static event Action<UpdateInfo>? UpdateDetected;
+
     static UpdateService()
     {
         // GitHub API and Raw content require a valid User-Agent header
@@ -106,30 +109,39 @@ public static class UpdateService
         {
             if (remoteVersion > currentVersion)
             {
-                // Switch to UI thread to show prompt
-                await Application.Current.Dispatcher.InvokeAsync(async () =>
+                AvailableUpdate = updateInfo;
+                Application.Current?.Dispatcher?.Invoke(() =>
                 {
-                    var notes = string.IsNullOrWhiteSpace(updateInfo.ReleaseNotes)
-                        ? ""
-                        : $"\n\nRelease Notes:\n{updateInfo.ReleaseNotes}";
-
-                    var message = $"A new version of Xenom Optimizer is available!\n\n" +
-                                  $"Current Version: v{currentVersion.ToString(3)}\n" +
-                                  $"Latest Version:  v{updateInfo.Version}" +
-                                  notes +
-                                  $"\n\nWould you like to download and install this update now?";
-
-                    var result = MessageBox.Show(
-                        message,
-                        "Update Available",
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Information);
-
-                    if (result == MessageBoxResult.Yes)
-                    {
-                        await DownloadAndApplyUpdateAsync(updateInfo);
-                    }
+                    UpdateDetected?.Invoke(updateInfo);
                 });
+
+                if (!silentIfUpToDate)
+                {
+                    // If manually checked, switch to UI thread to show prompt
+                    await Application.Current.Dispatcher.InvokeAsync(async () =>
+                    {
+                        var notes = string.IsNullOrWhiteSpace(updateInfo.ReleaseNotes)
+                            ? ""
+                            : $"\n\nRelease Notes:\n{updateInfo.ReleaseNotes}";
+
+                        var message = $"A new version of Xenom Optimizer is available!\n\n" +
+                                      $"Current Version: v{currentVersion.ToString(3)}\n" +
+                                      $"Latest Version:  v{updateInfo.Version}" +
+                                      notes +
+                                      $"\n\nWould you like to download and install this update now?";
+
+                        var result = MessageBox.Show(
+                            message,
+                            "Update Available",
+                            MessageBoxButton.YesNo,
+                            MessageBoxImage.Information);
+
+                        if (result == MessageBoxResult.Yes)
+                        {
+                            await DownloadAndApplyUpdateAsync(updateInfo);
+                        }
+                    });
+                }
             }
             else
             {
@@ -166,13 +178,47 @@ public static class UpdateService
             {
                 PropertyNameCaseInsensitive = true
             };
-            return JsonSerializer.Deserialize<UpdateInfo>(response, options);
+            var info = JsonSerializer.Deserialize<UpdateInfo>(response, options);
+            if (info != null && !string.IsNullOrWhiteSpace(info.Version))
+            {
+                return info;
+            }
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[UpdateService] Error fetching update JSON: {ex.Message}");
-            return null;
+            Debug.WriteLine($"[UpdateService] Error fetching remote update JSON: {ex.Message}");
         }
+
+        // Local fallback if offline or GitHub CDN delay
+        try
+        {
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            var candidates = new[]
+            {
+                Path.Combine(baseDir, "update.json"),
+                Path.GetFullPath(Path.Combine(baseDir, "..\\..\\..\\update.json")),
+                @"D:\Shop\Xenom Lag Fix\update.json"
+            };
+
+            foreach (var path in candidates)
+            {
+                if (File.Exists(path))
+                {
+                    var localJson = await File.ReadAllTextAsync(path);
+                    var localInfo = JsonSerializer.Deserialize<UpdateInfo>(localJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    if (localInfo != null && !string.IsNullOrWhiteSpace(localInfo.Version))
+                    {
+                        return localInfo;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[UpdateService] Error reading local fallback update JSON: {ex.Message}");
+        }
+
+        return null;
     }
 
     /// <summary>

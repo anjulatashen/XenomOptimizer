@@ -281,6 +281,18 @@ public partial class App : Application
 
                         }
 
+                        if (e.Args.Contains("--update-available"))
+
+                        {
+
+                            wvm.IsAppUpdateAvailable = true;
+
+                            wvm.AppUpdateVersion = "v2.0.0";
+
+                            wvm.AppUpdateNotes = "• GameLoop Pro Suite: 2K, 4K & iPad View (4:3) Presets\n• In-Game 120 FPS & Extreme+ Unlocker\n• ASUS ROG Phone 8 & Galaxy Tab S9 Device Spoofing\n• Vulkan, OpenGL & DirectX Engine Selector\n• CPU Cores & 12GB RAM Allocator\n• 1-Click GameLoop Doctor (HVCI Off, Dedicated GPU Route)\n• GameLoop Safe Close & Deep Cache Cleaner";
+
+                        }
+
                         if (e.Args.Contains("--download-flyout-progress"))
 
                         {

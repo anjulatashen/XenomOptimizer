@@ -140,7 +140,7 @@ public partial class WindowsOptimizationView : UserControl
 
         EnsureFramesPreloaded();
 
-        if (_subscribedVm?.IsDownloadCompleted == true)
+        if (_subscribedVm?.IsDownloadCompleted == true || _subscribedVm?.IsAppUpdateAvailable == true)
 
         {
 
@@ -937,6 +937,20 @@ public partial class WindowsOptimizationView : UserControl
             {
 
                 StopDownloadBumpAnimation();
+
+            }
+
+        }
+
+        else if (e.PropertyName == nameof(WindowsOptimizationViewModel.IsAppUpdateAvailable))
+
+        {
+
+            if (_subscribedVm?.IsAppUpdateAvailable == true)
+
+            {
+
+                StartDownloadBumpAnimation();
 
             }
 
