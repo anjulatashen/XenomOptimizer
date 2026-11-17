@@ -267,8 +267,8 @@ public static class UpdateService
                             }
                         }
 
-                        // Extraction & Installation covers 51% to 100% (Boxes 3 and 4)
-                        for (double p = 51.0; p <= 100.0; p += 1.0)
+                        // Extraction & Installation covers 51% to 99% (Boxes 3 and 4)
+                        for (double p = 51.0; p <= 99.0; p += 1.0)
                         {
                             progress?.Report(p);
                             await Task.Delay(40);
@@ -311,7 +311,7 @@ public static class UpdateService
                 if (foundLocalZip != null)
                 {
                     // Animate through all stages continuously so the white line travels like a progress bar
-                    for (double p = 1.0; p <= 100.0; p += 1.0)
+                    for (double p = 1.0; p <= 99.0; p += 1.0)
                     {
                         progress?.Report(p);
 
@@ -322,11 +322,11 @@ public static class UpdateService
 
                         if (p == 50.0)
                         {
-                            await Task.Delay(250); // subtle pause at 50% transition
+                            await Task.Delay(200); // subtle pause at 50% transition
                         }
                         else
                         {
-                            await Task.Delay(40); // 40ms * 100 = 4 seconds smooth travel
+                            await Task.Delay(35); // 35ms * 99 = ~3.5 seconds smooth travel
                         }
                     }
 
@@ -338,10 +338,15 @@ public static class UpdateService
                 }
             }
 
+            // 1. Reached 100%: Hide progress bar, trigger checkmark and display "Done!"
             progress?.Report(100.0);
-            await Task.Delay(1400); // Allow user to see completed checkmark and filled bar
+            await Task.Delay(1200); // Display "Done!" for 1.2s
 
-            // Launch updater script: terminates current process, unzips update, relaunches app
+            // 2. Hide "Done!" and display "Restarting LAG Killer..." in center
+            progress?.Report(101.0);
+            await Task.Delay(1300); // Display "Restarting LAG Killer..." for 1.3s
+
+            // 3. Launch updater script: terminates current process, unzips update, relaunches app
             LaunchUpdater(downloadedFilePath);
         }
         catch (Exception ex)

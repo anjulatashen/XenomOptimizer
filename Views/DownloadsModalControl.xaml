@@ -457,10 +457,13 @@
                                         </Grid>
 
                                         <!-- State 2: Exact Apple Vector Checkmark (Shown when finished) -->
-                                        <Grid Visibility="{Binding IsAppUpdateFinished, Converter={StaticResource BoolToVis}}">
-                                            <Path Data="M 12,21 L 18,27 L 29,14" Stroke="#1B84FF" StrokeThickness="3.2"
-                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
-                                                  HorizontalAlignment="Center" VerticalAlignment="Center" Margin="-2,-1,0,0"/>
+                                        <Grid Visibility="{Binding IsAppUpdateFinished, Converter={StaticResource BoolToVis}}"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Viewbox Width="17" Height="13" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <Path Data="M 1.5,7.0 L 6.0,11.5 L 15.5,2.0"
+                                                      Stroke="#1B84FF" StrokeThickness="2.8"
+                                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                            </Viewbox>
                                         </Grid>
                                     </Grid>
                                 </Border>
@@ -468,114 +471,126 @@
 
                             <!-- 2. Middle Section: Dynamic Traveling Indicator (Speech Bubble + White Line) & 4-Box Capsule Bar -->
                             <Grid Height="110">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="38"/>
-                                    <RowDefinition Height="72"/>
-                                </Grid.RowDefinitions>
+                                <!-- Active Progress Bar & Moving Indicator (Hidden when update is finished) -->
+                                <Grid Visibility="{Binding IsAppUpdateFinished, Converter={StaticResource InvBoolToVis}}">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="38"/>
+                                        <RowDefinition Height="72"/>
+                                    </Grid.RowDefinitions>
 
-                                <!-- Bottom Progress Track: 4-Segment Rounded Capsule Track matching reference photo -->
-                                <Border Grid.Row="1" Height="66" CornerRadius="18" Background="#0B1A2F" BorderBrush="#18365E" BorderThickness="1.5"
-                                        Padding="4" ClipToBounds="True">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <!-- Exact Reference Proportions matching user image: Box 1 (11.2%), Box 2 (36.3%), Box 3 (24.7%), Box 4 (27.8%) -->
-                                            <ColumnDefinition Width="1.12*"/>
-                                            <ColumnDefinition Width="3.63*"/>
-                                            <ColumnDefinition Width="2.47*"/>
-                                            <ColumnDefinition Width="2.78*"/>
-                                        </Grid.ColumnDefinitions>
+                                    <!-- Bottom Progress Track: 4-Segment Rounded Capsule Track matching reference photo -->
+                                    <Border Grid.Row="1" Height="66" CornerRadius="18" Background="#0B1A2F" BorderBrush="#18365E" BorderThickness="1.5"
+                                            Padding="4" ClipToBounds="True">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <!-- Exact Reference Proportions matching user image: Box 1 (11.2%), Box 2 (36.3%), Box 3 (24.7%), Box 4 (27.8%) -->
+                                                <ColumnDefinition Width="1.12*"/>
+                                                <ColumnDefinition Width="3.63*"/>
+                                                <ColumnDefinition Width="2.47*"/>
+                                                <ColumnDefinition Width="2.78*"/>
+                                            </Grid.ColumnDefinitions>
 
-                                        <!-- Box 1: Narrow left cap -->
-                                        <Border Grid.Column="0" CornerRadius="12" Margin="2,0">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Setter Property="Background" Value="#132644"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsBox1Active}" Value="True">
-                                                            <Setter Property="Background" Value="#147EEE"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                        </Border>
+                                            <!-- Box 1: Narrow left cap -->
+                                            <Border Grid.Column="0" CornerRadius="12" Margin="2,0">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#132644"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsBox1Active}" Value="True">
+                                                                <Setter Property="Background" Value="#147EEE"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                            </Border>
 
-                                        <!-- Box 2: Long wide segment -->
-                                        <Border Grid.Column="1" CornerRadius="12" Margin="2,0">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Setter Property="Background" Value="#132644"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsBox2Active}" Value="True">
-                                                            <Setter Property="Background" Value="#147EEE"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                        </Border>
+                                            <!-- Box 2: Long wide segment -->
+                                            <Border Grid.Column="1" CornerRadius="12" Margin="2,0">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#132644"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsBox2Active}" Value="True">
+                                                                <Setter Property="Background" Value="#147EEE"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                            </Border>
 
-                                        <!-- Box 3: Medium segment -->
-                                        <Border Grid.Column="2" CornerRadius="12" Margin="2,0">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Setter Property="Background" Value="#132644"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsBox3Active}" Value="True">
-                                                            <Setter Property="Background" Value="#147EEE"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                        </Border>
+                                            <!-- Box 3: Medium segment -->
+                                            <Border Grid.Column="2" CornerRadius="12" Margin="2,0">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#132644"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsBox3Active}" Value="True">
+                                                                <Setter Property="Background" Value="#147EEE"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                            </Border>
 
-                                        <!-- Box 4: Rounded square segment -->
-                                        <Border Grid.Column="3" CornerRadius="12" Margin="2,0">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Setter Property="Background" Value="#132644"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsBox4Active}" Value="True">
-                                                            <Setter Property="Background" Value="#147EEE"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                        </Border>
+                                            <!-- Box 4: Rounded square segment -->
+                                            <Border Grid.Column="3" CornerRadius="12" Margin="2,0">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#132644"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsBox4Active}" Value="True">
+                                                                <Setter Property="Background" Value="#147EEE"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Dynamic Moving Indicator: Travels continuously from left to right across the 4 proportional boxes -->
+                                    <Grid Grid.RowSpan="2" HorizontalAlignment="Left" Width="130" Margin="0,-2,0,0">
+                                        <Grid.RenderTransform>
+                                            <TranslateTransform X="{Binding AppUpdateIndicatorOffset}"/>
+                                        </Grid.RenderTransform>
+
+                                        <StackPanel HorizontalAlignment="Center">
+                                            <!-- Speech Bubble Pill -->
+                                            <Border Background="#147EEE" CornerRadius="9" Padding="12,5.5" HorizontalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <!-- Step Number inside White Circle -->
+                                                    <Border Width="16" Height="16" CornerRadius="8" Background="#FFFFFF" Margin="0,0,6,0">
+                                                        <TextBlock Text="{Binding AppUpdateStep, FallbackValue='1'}" FontSize="10.5" FontWeight="Bold"
+                                                                   Foreground="#147EEE" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-0.5,0,0"/>
+                                                    </Border>
+                                                    <!-- Step Text (Preparation for Boxes 1-2, Installing for Boxes 3-4) -->
+                                                    <TextBlock Text="{Binding AppUpdateStatusText, FallbackValue='Preparation'}"
+                                                               FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Downward Triangle Pointer -->
+                                            <Path Data="M 0,0 L 5.5,5 L 11,0 Z" Fill="#147EEE" HorizontalAlignment="Center" Margin="0,-0.5,0,0"/>
+
+                                            <!-- Vertical White Line (Drops straight down through the 66px capsule bar) -->
+                                            <Border Width="2.2" Height="68" Background="#FFFFFF" Opacity="0.95" HorizontalAlignment="Center"
+                                                    CornerRadius="1" Margin="0,-0.5,0,0"/>
+                                        </StackPanel>
                                     </Grid>
-                                </Border>
+                                </Grid>
 
-                                <!-- Dynamic Moving Indicator: Travels continuously from left to right across the 4 proportional boxes -->
-                                <Grid Grid.RowSpan="2" HorizontalAlignment="Left" Width="130" Margin="0,-2,0,0">
-                                    <Grid.RenderTransform>
-                                        <TranslateTransform X="{Binding AppUpdateIndicatorOffset}"/>
-                                    </Grid.RenderTransform>
-
-                                    <StackPanel HorizontalAlignment="Center">
-                                        <!-- Speech Bubble Pill -->
-                                        <Border Background="#147EEE" CornerRadius="9" Padding="12,5.5" HorizontalAlignment="Center">
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <!-- Step Number inside White Circle -->
-                                                <Border Width="16" Height="16" CornerRadius="8" Background="#FFFFFF" Margin="0,0,6,0">
-                                                    <TextBlock Text="{Binding AppUpdateStep, FallbackValue='1'}" FontSize="10.5" FontWeight="Bold"
-                                                               Foreground="#147EEE" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-0.5,0,0"/>
-                                                </Border>
-                                                <!-- Step Text (Preparation for Boxes 1-2, Installing for Boxes 3-4) -->
-                                                <TextBlock Text="{Binding AppUpdateStatusText, FallbackValue='Preparation'}"
-                                                           FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF"/>
-                                            </StackPanel>
-                                        </Border>
-
-                                        <!-- Downward Triangle Pointer -->
-                                        <Path Data="M 0,0 L 5.5,5 L 11,0 Z" Fill="#147EEE" HorizontalAlignment="Center" Margin="0,-0.5,0,0"/>
-
-                                        <!-- Vertical White Line (Drops straight down through the 66px capsule bar) -->
-                                        <Border Width="2.2" Height="68" Background="#FFFFFF" Opacity="0.95" HorizontalAlignment="Center"
-                                                CornerRadius="1" Margin="0,-0.5,0,0"/>
-                                    </StackPanel>
+                                <!-- Completion Text: Replaces progress bar when finished (Shows "Done!" then "Restarting LAG Killer...") -->
+                                <Grid Visibility="{Binding IsAppUpdateFinished, Converter={StaticResource BoolToVis}}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding AppUpdateCompletionText, FallbackValue='Done!'}"
+                                               FontSize="28" FontWeight="Bold" Foreground="#FFFFFF"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
                             </Grid>
 
-                            <!-- 3. Bottom Row: Status Text with 1-to-3 Incrementing Dots Animation (Red mark position) -->
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,22,0,0">
+                            <!-- 3. Bottom Row: Status Text with 1-to-3 Incrementing Dots Animation (Only visible during download and install) -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,22,0,0"
+                                        Visibility="{Binding IsAppUpdateFinished, Converter={StaticResource InvBoolToVis}}">
                                 <TextBlock Text="{Binding AppUpdateBottomBaseText, FallbackValue='Installing Xenom Optimizer v1.0.1'}"
                                            FontSize="12.5" FontWeight="SemiBold" Foreground="#828898"/>
                                 <TextBlock Text="{Binding AppUpdateAnimatedDots, FallbackValue='...'}"

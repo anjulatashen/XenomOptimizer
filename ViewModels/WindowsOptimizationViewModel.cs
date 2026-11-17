@@ -194,6 +194,9 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 	private bool _isAppUpdateFinished;
 
 	[ObservableProperty]
+	private string _appUpdateCompletionText = "Done!";
+
+	[ObservableProperty]
 	private double _appUpdateProgressPercent = 0.0;
 
 	[ObservableProperty]
@@ -2011,6 +2014,7 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 
 		IsDownloadingAppUpdate = true;
 		IsAppUpdateFinished = false;
+		AppUpdateCompletionText = "Done!";
 		AppUpdateProgressPercent = 0;
 		AppUpdateIndicatorOffset = -57.0;
 		AppUpdateStep = 1;
@@ -2048,35 +2052,43 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 
 		var progress = new Progress<double>(p =>
 		{
-			AppUpdateProgressPercent = Math.Clamp(p, 0, 100);
-
-			// Calculate smooth travel matching the reference box widths: Box 1 (11.2%), Box 2 (36.3%), Box 3 (24.7%), Box 4 (27.8%)
-			AppUpdateIndicatorOffset = -57.0 + (AppUpdateProgressPercent / 100.0) * 354.0;
-
-			// Box activations as line reaches each proportional box
-			IsBox1Active = AppUpdateProgressPercent >= 1.0;
-			IsBox2Active = AppUpdateProgressPercent >= 11.2;
-			IsBox3Active = AppUpdateProgressPercent >= 47.5;
-			IsBox4Active = AppUpdateProgressPercent >= 72.2;
-
-			if (p <= 47.5)
+			if (p <= 100.0)
 			{
-				AppUpdateStep = 1;
-				AppUpdateStatusText = "Preparation";
-				AppUpdateBottomBaseText = $"Downloading Xenom Optimizer v{update.Version}";
-			}
-			else if (p < 100)
-			{
-				AppUpdateStep = 2;
-				AppUpdateStatusText = "Installing";
-				AppUpdateBottomBaseText = $"Installing Xenom Optimizer v{update.Version}";
+				AppUpdateProgressPercent = Math.Clamp(p, 0, 100);
+
+				// Calculate smooth travel matching the reference box widths: Box 1 (11.2%), Box 2 (36.3%), Box 3 (24.7%), Box 4 (27.8%)
+				AppUpdateIndicatorOffset = -57.0 + (AppUpdateProgressPercent / 100.0) * 354.0;
+
+				// Box activations as line reaches each proportional box
+				IsBox1Active = AppUpdateProgressPercent >= 1.0;
+				IsBox2Active = AppUpdateProgressPercent >= 11.2;
+				IsBox3Active = AppUpdateProgressPercent >= 47.5;
+				IsBox4Active = AppUpdateProgressPercent >= 72.2;
+
+				if (p <= 47.5)
+				{
+					AppUpdateStep = 1;
+					AppUpdateStatusText = "Preparation";
+					AppUpdateBottomBaseText = $"Downloading Xenom Optimizer v{update.Version}";
+				}
+				else if (p < 100.0)
+				{
+					AppUpdateStep = 2;
+					AppUpdateStatusText = "Installing";
+					AppUpdateBottomBaseText = $"Installing Xenom Optimizer v{update.Version}";
+				}
+				else
+				{
+					// Reached 100%: Hide progress bar, show "Done!"
+					IsAppUpdateFinished = true;
+					AppUpdateCompletionText = "Done!";
+				}
 			}
 			else
 			{
-				AppUpdateStep = 2;
-				AppUpdateStatusText = "Installing";
-				AppUpdateBottomBaseText = $"Restarting Xenom Optimizer v{update.Version}";
+				// Progress > 100 (e.g. 101): Switch to "Restarting LAG Killer..."
 				IsAppUpdateFinished = true;
+				AppUpdateCompletionText = "Restarting LAG Killer...";
 			}
 		});
 
