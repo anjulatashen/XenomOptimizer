@@ -40,6 +40,19 @@
                             <Setter Property="CornerRadius" Value="20"/>
                             <Setter Property="Padding" Value="20,16"/>
                         </DataTrigger>
+                        <!-- When App Update is Installing: Apple Widget Box Proportions matching user photo (380 x 320) -->
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsAppUpdateAvailable}" Value="True"/>
+                                <Condition Binding="{Binding IsDownloadingAppUpdate}" Value="True"/>
+                            </MultiDataTrigger.Conditions>
+                            <Setter Property="Width" Value="380"/>
+                            <Setter Property="Height" Value="320"/>
+                            <Setter Property="CornerRadius" Value="28"/>
+                            <Setter Property="Padding" Value="26,24"/>
+                            <Setter Property="Background" Value="#1D1D1F"/>
+                            <Setter Property="BorderBrush" Value="#2A2A2E"/>
+                        </MultiDataTrigger>
                     </Style.Triggers>
                 </Style>
             </Border.Style>
@@ -60,8 +73,17 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- ── CARD HEADER: Prominent 'Downloads' Title + Red-Hover Close Button ── -->
+                <!-- ── CARD HEADER: Prominent 'Downloads' Title + Red-Hover Close Button (Collapsed during Apple widget install) ── -->
                 <Grid Grid.Row="0" Margin="0,0,0,14">
+                    <Grid.Style>
+                        <Style TargetType="Grid">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsDownloadingAppUpdate}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
@@ -170,9 +192,10 @@
                         </Style>
                     </Grid.Style>
 
-                    <!-- Clean Neo-Minimalist Card Matching Reference (Zero AI glow, neutral dark palette) -->
+                    <!-- Clean Neo-Minimalist Card Matching Reference (Zero AI glow, neutral dark palette, visible when NOT installing) -->
                     <Border Background="#121215" BorderBrush="#242429" BorderThickness="1"
-                            CornerRadius="16" Padding="20,18" Margin="0,0,0,4">
+                            CornerRadius="16" Padding="20,18" Margin="0,0,0,4"
+                            Visibility="{Binding IsDownloadingAppUpdate, Converter={StaticResource InvBoolToVis}}">
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
                             <StackPanel>
                                 <!-- 1. Category Pill + Header -->
@@ -338,6 +361,154 @@
                             </StackPanel>
                         </ScrollViewer>
                     </Border>
+
+                    <!-- ═══════════════════════════════════════════════════════════ -->
+                    <!-- STATE B: INSTALLING APPLE WIDGET BOX (MATCHING USER PHOTO)   -->
+                    <!-- ═══════════════════════════════════════════════════════════ -->
+                    <Grid x:Name="AppUpdateInstallingWidget"
+                          Visibility="{Binding IsDownloadingAppUpdate, Converter={StaticResource BoolToVis}}"
+                          VerticalAlignment="Center">
+                        <StackPanel>
+                            <!-- 1. Top Row: Title (LAG Killer), Subtitle (by Xenom) & Blue Status Circle -->
+                            <Grid Margin="0,0,0,22">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Left: LAG Killer + by Xenom -->
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock Text="LAG Killer" FontSize="30" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                    <TextBlock Text="by Xenom" FontSize="13.5" FontWeight="Medium" Foreground="#787C87"
+                                               Margin="2,3,0,0"/>
+                                </StackPanel>
+
+                                <!-- Right: Blue Status Circle with checkmark matching photo -->
+                                <Border Grid.Column="1" Width="38" Height="38" CornerRadius="19"
+                                        Background="#0D3568" BorderBrush="#1555A8" BorderThickness="1.2"
+                                        VerticalAlignment="Top" HorizontalAlignment="Right">
+                                    <TextBlock Text="✓" FontSize="18" FontWeight="Bold" Foreground="#147EEE"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0"/>
+                                </Border>
+                            </Grid>
+
+                            <!-- 2. Tooltip Row: Blue Speech Bubble + Pointer Line pointing down into active bar segment -->
+                            <Grid Margin="0,4,0,0">
+                                <StackPanel HorizontalAlignment="Right" Margin="0,0,10,0">
+                                    <!-- Speech Bubble Pill -->
+                                    <Border Background="#147EEE" CornerRadius="8" Padding="10,4.5" HorizontalAlignment="Right">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Border Width="16" Height="16" CornerRadius="8" Background="#FFFFFF" Margin="0,0,6,0">
+                                                <TextBlock Text="{Binding AppUpdateStep, FallbackValue='1'}" FontSize="10" FontWeight="Bold"
+                                                           Foreground="#147EEE" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding AppUpdateStatusText, FallbackValue='Preparation'}"
+                                                       FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Downward Arrow Pointer + White Vertical Indicator Line connecting bubble to the bar -->
+                                    <Grid HorizontalAlignment="Right" Margin="0,-0.5,24,0">
+                                        <StackPanel HorizontalAlignment="Center">
+                                            <Path Data="M 0,0 L 5,4 L 10,0 Z" Fill="#147EEE" HorizontalAlignment="Center"/>
+                                            <Border Width="1.5" Height="14" Background="#FFFFFF" Opacity="0.95" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- 3. Bottom Progress Bar: 4-Segment Rounded Capsule Track matching photo -->
+                            <Border Height="44" CornerRadius="12" Background="#11223B" BorderBrush="#1B3254" BorderThickness="1.2"
+                                    Padding="3" ClipToBounds="True" Margin="0,-1,0,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Segment 1 -->
+                                    <Border Grid.Column="0" CornerRadius="8" Margin="2,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#153764"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding AppUpdateStep}" Value="1">
+                                                        <Setter Property="Background" Value="#147EEE"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding AppUpdateStep}" Value="2">
+                                                        <Setter Property="Background" Value="#147EEE"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding AppUpdateStep}" Value="3">
+                                                        <Setter Property="Background" Value="#147EEE"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding AppUpdateStep}" Value="4">
+                                                        <Setter Property="Background" Value="#147EEE"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+
+                                    <!-- Segment 2 -->
+                                    <Border Grid.Column="1" CornerRadius="8" Margin="2,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#153764"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding AppUpdateStep}" Value="2">
+                                                        <Setter Property="Background" Value="#147EEE"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding AppUpdateStep}" Value="3">
+                                                        <Setter Property="Background" Value="#147EEE"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding AppUpdateStep}" Value="4">
+                                                        <Setter Property="Background" Value="#147EEE"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+
+                                    <!-- Segment 3 -->
+                                    <Border Grid.Column="2" CornerRadius="8" Margin="2,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#153764"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding AppUpdateStep}" Value="3">
+                                                        <Setter Property="Background" Value="#147EEE"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding AppUpdateStep}" Value="4">
+                                                        <Setter Property="Background" Value="#147EEE"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+
+                                    <!-- Segment 4 -->
+                                    <Border Grid.Column="3" CornerRadius="8" Margin="2,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#153764"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding AppUpdateStep}" Value="4">
+                                                        <Setter Property="Background" Value="#147EEE"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                </Grid>
+                            </Border>
+
+                            <!-- 4. Subtitle under bar: yatin podiyata install penna -->
+                            <TextBlock Text="{Binding AppUpdateProgressSubtitle, FallbackValue='Installing Xenom Optimizer v1.0.1...'}"
+                                       FontSize="11.5" Foreground="#787C87" HorizontalAlignment="Center" Margin="0,14,0,0"/>
+                        </StackPanel>
+                    </Grid>
                 </Grid>
 
                 <!-- ═══════════════════════════════════════════════════════════ -->

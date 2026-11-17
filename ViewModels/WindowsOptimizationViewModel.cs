@@ -191,7 +191,16 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 	private bool _isDownloadingAppUpdate;
 
 	[ObservableProperty]
-	private double _appUpdateProgressPercent;
+	private double _appUpdateProgressPercent = 85.0;
+
+	[ObservableProperty]
+	private string _appUpdateStatusText = "Preparation";
+
+	[ObservableProperty]
+	private string _appUpdateProgressSubtitle = "Installing Xenom Optimizer v1.0.1...";
+
+	[ObservableProperty]
+	private int _appUpdateStep = 1;
 
 	[ObservableProperty]
 	private string _downloadSpeedText = "";
@@ -1970,7 +1979,41 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 		if (UpdateService.AvailableUpdate != null)
 		{
 			IsDownloadingAppUpdate = true;
-			await UpdateService.DownloadAndApplyUpdateAsync(UpdateService.AvailableUpdate);
+			AppUpdateStep = 1;
+			AppUpdateStatusText = "Preparation";
+			AppUpdateProgressSubtitle = "Preparing update package...";
+			AppUpdateProgressPercent = 15;
+
+			var progress = new Progress<double>(p =>
+			{
+				AppUpdateProgressPercent = Math.Clamp(p, 0, 100);
+				if (p < 25)
+				{
+					AppUpdateStep = 1;
+					AppUpdateStatusText = "Preparation";
+					AppUpdateProgressSubtitle = "Connecting to GitHub & preparing...";
+				}
+				else if (p < 60)
+				{
+					AppUpdateStep = 2;
+					AppUpdateStatusText = "Downloading";
+					AppUpdateProgressSubtitle = $"Downloading update package ({p:F0}%)...";
+				}
+				else if (p < 85)
+				{
+					AppUpdateStep = 3;
+					AppUpdateStatusText = "Extracting";
+					AppUpdateProgressSubtitle = $"Extracting & verifying binaries ({p:F0}%)...";
+				}
+				else
+				{
+					AppUpdateStep = 4;
+					AppUpdateStatusText = "Installing";
+					AppUpdateProgressSubtitle = "Installing Xenom Optimizer v1.0.1...";
+				}
+			});
+
+			await UpdateService.DownloadAndApplyUpdateAsync(UpdateService.AvailableUpdate, progress);
 			IsDownloadingAppUpdate = false;
 		}
 	}

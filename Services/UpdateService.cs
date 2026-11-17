@@ -224,7 +224,7 @@ public static class UpdateService
     /// <summary>
     /// Downloads the update archive / executable and launches the standalone updater script.
     /// </summary>
-    public static async Task DownloadAndApplyUpdateAsync(UpdateInfo updateInfo)
+    public static async Task DownloadAndApplyUpdateAsync(UpdateInfo updateInfo, IProgress<double>? progress = null)
     {
         if (string.IsNullOrWhiteSpace(updateInfo.DownloadUrl))
         {
@@ -241,49 +241,70 @@ public static class UpdateService
 
         try
         {
-            // Lightweight modal indicator during download
-            var statusWin = new Window
+            Window? statusWin = null;
+            if (progress == null)
             {
-                Title = "Updating...",
-                Width = 380,
-                Height = 150,
-                WindowStartupLocation = WindowStartupLocation.CenterScreen,
-                ResizeMode = ResizeMode.NoResize,
-                WindowStyle = WindowStyle.ToolWindow
-            };
+                statusWin = new Window
+                {
+                    Title = "Updating...",
+                    Width = 380,
+                    Height = 150,
+                    WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                    ResizeMode = ResizeMode.NoResize,
+                    WindowStyle = WindowStyle.ToolWindow
+                };
 
-            var sp = new System.Windows.Controls.StackPanel
-            {
-                Margin = new Thickness(20),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            var txt = new System.Windows.Controls.TextBlock
-            {
-                Text = $"Downloading update v{updateInfo.Version}...\nPlease wait, the app will restart automatically.",
-                FontSize = 13,
-                FontWeight = FontWeights.Medium,
-                Margin = new Thickness(0, 0, 0, 14)
-            };
-            var pb = new System.Windows.Controls.ProgressBar
-            {
-                IsIndeterminate = true,
-                Height = 16
-            };
-            sp.Children.Add(txt);
-            sp.Children.Add(pb);
-            statusWin.Content = sp;
-            statusWin.Show();
+                var sp = new System.Windows.Controls.StackPanel
+                {
+                    Margin = new Thickness(20),
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                var txt = new System.Windows.Controls.TextBlock
+                {
+                    Text = $"Downloading update v{updateInfo.Version}...\nPlease wait, the app will restart automatically.",
+                    FontSize = 13,
+                    FontWeight = FontWeights.Medium,
+                    Margin = new Thickness(0, 0, 0, 14)
+                };
+                var pb = new System.Windows.Controls.ProgressBar
+                {
+                    IsIndeterminate = true,
+                    Height = 16
+                };
+                sp.Children.Add(txt);
+                sp.Children.Add(pb);
+                statusWin.Content = sp;
+                statusWin.Show();
+            }
 
-            // Download file
+            // Download file with progress reporting
             using (var response = await HttpClient.GetAsync(updateInfo.DownloadUrl, HttpCompletionOption.ResponseHeadersRead))
             {
                 response.EnsureSuccessStatusCode();
+                var totalBytes = response.Content.Headers.ContentLength ?? -1L;
                 await using var streamToReadFrom = await response.Content.ReadAsStreamAsync();
                 await using var streamToWriteTo = File.Create(downloadedFilePath);
-                await streamToReadFrom.CopyToAsync(streamToWriteTo);
+
+                var buffer = new byte[81920];
+                long totalRead = 0;
+                int bytesRead;
+
+                while ((bytesRead = await streamToReadFrom.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                {
+                    await streamToWriteTo.WriteAsync(buffer.AsMemory(0, bytesRead));
+                    totalRead += bytesRead;
+                    if (totalBytes > 0 && progress != null)
+                    {
+                        var pct = (double)totalRead / totalBytes * 100.0;
+                        progress.Report(pct);
+                    }
+                }
             }
 
-            statusWin.Close();
+            progress?.Report(100.0);
+            await Task.Delay(600);
+
+            statusWin?.Close();
 
             // Launch updater script
             LaunchUpdater(downloadedFilePath);

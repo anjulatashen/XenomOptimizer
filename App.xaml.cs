@@ -302,6 +302,18 @@ public partial class App : Application
 
                         }
 
+                        if (e.Args.Contains("--update-installing"))
+                        {
+                            wvm.IsInstructionModalVisible = false;
+                            wvm.IsDownloadFlyoutOpen = true;
+                            wvm.IsAppUpdateAvailable = true;
+                            wvm.IsDownloadingAppUpdate = true;
+                            wvm.AppUpdateStep = 1;
+                            wvm.AppUpdateStatusText = "Preparation";
+                            wvm.AppUpdateProgressSubtitle = "Installing Xenom Optimizer v1.0.1...";
+                            wvm.AppUpdateProgressPercent = 25.0;
+                        }
+
                         if (e.Args.Contains("--download-flyout-progress"))
 
                         {

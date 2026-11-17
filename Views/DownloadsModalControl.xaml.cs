@@ -319,10 +319,12 @@ public partial class DownloadsModalControl : UserControl
     {
         if (DataContext is WindowsOptimizationViewModel vm)
         {
+            if (vm.IsDownloadingAppUpdate) return;
             vm.IsDownloadFlyoutOpen = false;
         }
         else if (DataContext is MainViewModel mvm)
         {
+            if (mvm.WindowsVm.IsDownloadingAppUpdate) return;
             mvm.WindowsVm.IsDownloadFlyoutOpen = false;
         }
     }
