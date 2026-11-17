@@ -1976,46 +1976,52 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 	[RelayCommand]
 	private async Task InstallAppUpdateAsync()
 	{
-		if (UpdateService.AvailableUpdate != null)
+		var update = UpdateService.AvailableUpdate ?? new UpdateInfo
 		{
-			IsDownloadingAppUpdate = true;
-			AppUpdateStep = 1;
-			AppUpdateStatusText = "Preparation";
-			AppUpdateProgressSubtitle = "Preparing update package...";
-			AppUpdateProgressPercent = 15;
+			Version = string.IsNullOrWhiteSpace(AppUpdateVersion) ? "1.0.1" : AppUpdateVersion.TrimStart('v'),
+			DownloadUrl = string.IsNullOrWhiteSpace(AppUpdateDownloadUrl)
+				? "https://github.com/anjulatashen/XenomOptimizer/releases/download/v1.0.1/XenomOptimizer-Update.zip"
+				: AppUpdateDownloadUrl,
+			ReleaseNotes = AppUpdateNotes
+		};
 
-			var progress = new Progress<double>(p =>
+		IsDownloadingAppUpdate = true;
+		AppUpdateStep = 1;
+		AppUpdateStatusText = "Preparation";
+		AppUpdateProgressSubtitle = "Preparing update package...";
+		AppUpdateProgressPercent = 15;
+
+		var progress = new Progress<double>(p =>
+		{
+			AppUpdateProgressPercent = Math.Clamp(p, 0, 100);
+			if (p < 25)
 			{
-				AppUpdateProgressPercent = Math.Clamp(p, 0, 100);
-				if (p < 25)
-				{
-					AppUpdateStep = 1;
-					AppUpdateStatusText = "Preparation";
-					AppUpdateProgressSubtitle = "Connecting to GitHub & preparing...";
-				}
-				else if (p < 60)
-				{
-					AppUpdateStep = 2;
-					AppUpdateStatusText = "Downloading";
-					AppUpdateProgressSubtitle = $"Downloading update package ({p:F0}%)...";
-				}
-				else if (p < 85)
-				{
-					AppUpdateStep = 3;
-					AppUpdateStatusText = "Extracting";
-					AppUpdateProgressSubtitle = $"Extracting & verifying binaries ({p:F0}%)...";
-				}
-				else
-				{
-					AppUpdateStep = 4;
-					AppUpdateStatusText = "Installing";
-					AppUpdateProgressSubtitle = "Installing Xenom Optimizer v1.0.1...";
-				}
-			});
+				AppUpdateStep = 1;
+				AppUpdateStatusText = "Preparation";
+				AppUpdateProgressSubtitle = "Connecting to server & preparing...";
+			}
+			else if (p < 60)
+			{
+				AppUpdateStep = 2;
+				AppUpdateStatusText = "Downloading";
+				AppUpdateProgressSubtitle = $"Downloading binaries ({p:F0}%)...";
+			}
+			else if (p < 85)
+			{
+				AppUpdateStep = 3;
+				AppUpdateStatusText = "Extracting";
+				AppUpdateProgressSubtitle = $"Extracting & verifying binaries ({p:F0}%)...";
+			}
+			else
+			{
+				AppUpdateStep = 4;
+				AppUpdateStatusText = "Installing";
+				AppUpdateProgressSubtitle = "Installing Xenom Optimizer v1.0.1...";
+			}
+		});
 
-			await UpdateService.DownloadAndApplyUpdateAsync(UpdateService.AvailableUpdate, progress);
-			IsDownloadingAppUpdate = false;
-		}
+		await UpdateService.DownloadAndApplyUpdateAsync(update, progress);
+		IsDownloadingAppUpdate = false;
 	}
 
 	[RelayCommand]

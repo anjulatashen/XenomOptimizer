@@ -392,11 +392,38 @@
                                 </Border>
                             </Grid>
 
-                            <!-- 2. Tooltip Row: Blue Speech Bubble + Pointer Line pointing down into active bar segment -->
+                            <!-- 2. Tooltip Row: Dynamic 4-Column Speech Bubble + Pointer Line pointing down into active bar segment -->
                             <Grid Margin="0,4,0,0">
-                                <StackPanel HorizontalAlignment="Right" Margin="0,0,10,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel HorizontalAlignment="Center">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Setter Property="Grid.Column" Value="0"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding AppUpdateStep}" Value="1">
+                                                    <Setter Property="Grid.Column" Value="0"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding AppUpdateStep}" Value="2">
+                                                    <Setter Property="Grid.Column" Value="1"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding AppUpdateStep}" Value="3">
+                                                    <Setter Property="Grid.Column" Value="2"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding AppUpdateStep}" Value="4">
+                                                    <Setter Property="Grid.Column" Value="3"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+
                                     <!-- Speech Bubble Pill -->
-                                    <Border Background="#147EEE" CornerRadius="8" Padding="10,4.5" HorizontalAlignment="Right">
+                                    <Border Background="#147EEE" CornerRadius="8" Padding="10,4.5" HorizontalAlignment="Center">
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                             <Border Width="16" Height="16" CornerRadius="8" Background="#FFFFFF" Margin="0,0,6,0">
                                                 <TextBlock Text="{Binding AppUpdateStep, FallbackValue='1'}" FontSize="10" FontWeight="Bold"
@@ -408,12 +435,10 @@
                                     </Border>
 
                                     <!-- Downward Arrow Pointer + White Vertical Indicator Line connecting bubble to the bar -->
-                                    <Grid HorizontalAlignment="Right" Margin="0,-0.5,24,0">
-                                        <StackPanel HorizontalAlignment="Center">
-                                            <Path Data="M 0,0 L 5,4 L 10,0 Z" Fill="#147EEE" HorizontalAlignment="Center"/>
-                                            <Border Width="1.5" Height="14" Background="#FFFFFF" Opacity="0.95" HorizontalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Grid>
+                                    <StackPanel HorizontalAlignment="Center" Margin="0,-0.5,0,0">
+                                        <Path Data="M 0,0 L 5,4 L 10,0 Z" Fill="#147EEE" HorizontalAlignment="Center"/>
+                                        <Border Width="1.5" Height="14" Background="#FFFFFF" Opacity="0.95" HorizontalAlignment="Center"/>
+                                    </StackPanel>
                                 </StackPanel>
                             </Grid>
 
