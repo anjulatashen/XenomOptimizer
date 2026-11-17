@@ -140,4 +140,20 @@ public interface IGameLoopOptimizerService
     Task<bool> IsNetworkThrottlingDisabledAsync();
     Task<bool> IsGameDvrDisabledAsync();
     Task<bool> IsDeliveryOptimizationDisabledAsync();
+
+    // GameLoop Pro Suite additions (Resolutions, Engines, Cores/RAM, Spoofing, Doctor, Safe Close)
+    Task<OptimizationResult> ApplyResolutionPresetAsync(int width, int height, int dpi, string presetName);
+    Task<(int Width, int Height, int Dpi)> GetCurrentResolutionAsync();
+    Task<OptimizationResult> ApplyRenderEngineAsync(int engineMode, string engineName);
+    Task<int> GetCurrentRenderEngineAsync();
+    Task<OptimizationResult> ApplyHardwareAllocationAsync(int cores, int ramMb);
+    Task<(int Cores, int RamMb)> GetCurrentHardwareAllocationAsync();
+    Task<OptimizationResult> ApplyDeviceProfileAsync(string model, string manufacturer, string phoneName, int fpsLevel = 120);
+    Task<string> GetCurrentDeviceModelAsync();
+    Task<bool> IsCoreIsolationHvciEnabledAsync();
+    Task<OptimizationResult> SetCoreIsolationHvciAsync(bool enable);
+    Task<bool> IsAppMarketAutoCloseEnabledAsync();
+    Task<OptimizationResult> SetAppMarketAutoCloseAsync(bool enable);
+    Task<OptimizationResult> SafeCloseGameLoopAsync();
+    Task<OptimizationResult> CleanShaderAndTempCacheAsync();
 }

@@ -15,6 +15,7 @@
             <conv:StringToVisibilityConverter x:Key="StringToVis"/>
             <conv:ScrollOffsetToOpacityConverter x:Key="ScrollOffsetToOpacity"/>
             <conv:DownloadPercentToHeightConverter x:Key="DownloadPercentToHeight"/>
+            <conv:IntEqualsToVisibilityConverter x:Key="IntEqualsToVis"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

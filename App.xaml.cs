@@ -235,6 +235,15 @@ public partial class App : Application
 
 
 
+                    if (mvm.CurrentPage is GameLoopOptimizationViewModel gvm)
+                    {
+                        var tabArgIndex = Array.IndexOf(e.Args, "--subtab");
+                        if (tabArgIndex >= 0 && tabArgIndex + 1 < e.Args.Length && int.TryParse(e.Args[tabArgIndex + 1], out var tIdx))
+                        {
+                            gvm.SelectedSubTab = tIdx;
+                        }
+                    }
+
                     if (mvm.CurrentPage is WindowsOptimizationViewModel wvm)
 
                     {
@@ -287,7 +296,7 @@ public partial class App : Application
 
                             wvm.IsAppUpdateAvailable = true;
 
-                            wvm.AppUpdateVersion = "v2.0.0";
+                            wvm.AppUpdateVersion = "v1.0.1";
 
                             wvm.AppUpdateNotes = "• GameLoop Pro Suite: 2K, 4K & iPad View (4:3) Presets\n• In-Game 120 FPS & Extreme+ Unlocker\n• ASUS ROG Phone 8 & Galaxy Tab S9 Device Spoofing\n• Vulkan, OpenGL & DirectX Engine Selector\n• CPU Cores & 12GB RAM Allocator\n• 1-Click GameLoop Doctor (HVCI Off, Dedicated GPU Route)\n• GameLoop Safe Close & Deep Cache Cleaner";
 
@@ -864,16 +873,15 @@ public partial class App : Application
 
 
                     using (var fs = System.IO.File.Open(outPath, FileMode.Create))
-
                     {
-
                         encoder.Save(fs);
-
                     }
-
+                    File.WriteAllText(@"C:\Users\anjul\.gemini\antigravity\brain\71b74b8b-8fa5-4dce-a4ef-4fbb8a50d260\shot_success.log", $"Saved: {outPath}");
                 }
-
-                catch { }
+                catch (Exception ex)
+                {
+                    File.WriteAllText(@"C:\Users\anjul\.gemini\antigravity\brain\71b74b8b-8fa5-4dce-a4ef-4fbb8a50d260\err_shot.log", ex.ToString());
+                }
 
                 Shutdown();
 

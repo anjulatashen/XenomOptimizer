@@ -1,339 +1,1046 @@
 <UserControl x:Class="XenomOptimizer.Views.GameLoopOptimizationView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="24,24">
-        <StackPanel MaxWidth="1100">
-            <!-- Page Title -->
-            <TextBlock Text="GameLoop Optimization" FontSize="24" FontWeight="Bold"
-                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,4"/>
-            <TextBlock Text="Optimize Tencent GameLoop emulator engine and Windows integration for maximum PUBG performance"
-                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="13" Margin="0,0,0,24"/>
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:conv="clr-namespace:XenomOptimizer.Converters"
+             xmlns:System="clr-namespace:System;assembly=mscorlib">
 
-            <!-- Loading Indicator -->
-            <TextBlock Text="⏳ Detecting GameLoop..."
-                       Foreground="{StaticResource TextMutedBrush}" FontSize="13"
-                       Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}"/>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="28,24,28,32">
+        <StackPanel MaxWidth="1120">
 
-            <!-- GameLoop Status Card -->
-            <Border Style="{StaticResource CardBorder}" Margin="0,0,0,20"
-                    Visibility="{Binding IsLoading, Converter={StaticResource InvBoolToVis}}">
-                <StackPanel>
-                    <TextBlock Text="GameLoop Status" FontSize="16" FontWeight="SemiBold"
-                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16"/>
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- HEADER SECTION WITH STATUS BADGE                            -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <Grid Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-                    <Grid Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="140"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Installation" Foreground="{StaticResource TextMutedBrush}" FontSize="13"/>
-                        <TextBlock Grid.Column="1" FontSize="13" FontWeight="SemiBold">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Text" Value="✗ Not Installed"/>
-                                    <Setter Property="Foreground" Value="{StaticResource AccentRedBrush}"/>
+                <StackPanel Grid.Column="0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="GameLoop Pro Optimization Suite" FontSize="24" FontWeight="Bold"
+                                   Foreground="{StaticResource TextPrimaryBrush}" FontFamily="pack://application:,,,/Fonts/#Poppins, Segoe UI, sans-serif"/>
+                        <Border Background="#12251D" BorderBrush="#1C4B36" BorderThickness="1" CornerRadius="12" Padding="8,3" Margin="12,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="PRO SUITE" FontSize="10.5" FontWeight="Bold" Foreground="#34D399"/>
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text="Engine tuning, safe 120 FPS unlocker, iPad view presets &amp; low-latency latency booster"
+                               Foreground="{StaticResource TextSecondaryBrush}" FontSize="13" Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <!-- Status Pill on Right -->
+                <Border Grid.Column="1" Background="#11141E" BorderBrush="#202738" BorderThickness="1" CornerRadius="16" Padding="14,8" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse Width="8" Height="8" Margin="0,0,8,0">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="#EF4444"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsInstalled}" Value="True">
-                                            <Setter Property="Text" Value="✓ Installed"/>
-                                            <Setter Property="Foreground" Value="{StaticResource AccentGreenBrush}"/>
+                                            <Setter Property="Fill" Value="#10B981"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <TextBlock FontSize="12" FontWeight="SemiBold">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="GameLoop Not Found"/>
+                                    <Setter Property="Foreground" Value="#94A3B8"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsInstalled}" Value="True">
+                                            <Setter Property="Text" Value="GameLoop Detected"/>
+                                            <Setter Property="Foreground" Value="#F8FAFC"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </TextBlock.Style>
                         </TextBlock>
-                    </Grid>
-                    <Grid Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="140"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Version" Foreground="{StaticResource TextMutedBrush}" FontSize="13"/>
-                        <TextBlock Grid.Column="1" Text="{Binding Version}" FontSize="13"
-                                   Foreground="{StaticResource TextPrimaryBrush}"/>
-                    </Grid>
-                    <Grid Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="140"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="Installation Path" Foreground="{StaticResource TextMutedBrush}" FontSize="13"/>
-                        <TextBlock Grid.Column="1" Text="{Binding InstallPath}" FontSize="12"
-                                   Foreground="{StaticResource TextPrimaryBrush}" TextWrapping="Wrap"/>
-                    </Grid>
-                </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- MODERN SEGMENTED PILL TAB NAVIGATION BAR                    -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <Border Background="#0C0E14" BorderBrush="#1E2333" BorderThickness="1" CornerRadius="22" Padding="5" Margin="0,0,0,24">
+                <UniformGrid Rows="1" Columns="5">
+                    <!-- Tab 0: Graphics & 120 FPS -->
+                    <Button Command="{Binding SwitchTabCommand}" CommandParameter="0" Height="40" Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="TabBorder" Background="{TemplateBinding Background}" CornerRadius="18" Padding="12,0">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <TextBlock Text="🎮" FontSize="13" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="Graphics &amp; 120 FPS" FontSize="12.5" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="TabText"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedSubTab}" Value="0">
+                                                    <Setter TargetName="TabBorder" Property="Background" Value="#1C2335"/>
+                                                    <Setter TargetName="TabBorder" Property="BorderBrush" Value="#2D3A56"/>
+                                                    <Setter TargetName="TabBorder" Property="BorderThickness" Value="1"/>
+                                                    <Setter TargetName="TabText" Property="Foreground" Value="#38BDF8"/>
+                                                </DataTrigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Tab 1: Engine & Hardware -->
+                    <Button Command="{Binding SwitchTabCommand}" CommandParameter="1" Height="40" Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="TabBorder" Background="{TemplateBinding Background}" CornerRadius="18" Padding="12,0">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <TextBlock Text="⚙️" FontSize="13" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="Engine &amp; Cores" FontSize="12.5" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="TabText"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedSubTab}" Value="1">
+                                                    <Setter TargetName="TabBorder" Property="Background" Value="#1C2335"/>
+                                                    <Setter TargetName="TabBorder" Property="BorderBrush" Value="#2D3A56"/>
+                                                    <Setter TargetName="TabBorder" Property="BorderThickness" Value="1"/>
+                                                    <Setter TargetName="TabText" Property="Foreground" Value="#38BDF8"/>
+                                                </DataTrigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Tab 2: Device Spoofing -->
+                    <Button Command="{Binding SwitchTabCommand}" CommandParameter="2" Height="40" Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="TabBorder" Background="{TemplateBinding Background}" CornerRadius="18" Padding="12,0">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <TextBlock Text="📱" FontSize="13" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="Device Spoofing" FontSize="12.5" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="TabText"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedSubTab}" Value="2">
+                                                    <Setter TargetName="TabBorder" Property="Background" Value="#1C2335"/>
+                                                    <Setter TargetName="TabBorder" Property="BorderBrush" Value="#2D3A56"/>
+                                                    <Setter TargetName="TabBorder" Property="BorderThickness" Value="1"/>
+                                                    <Setter TargetName="TabText" Property="Foreground" Value="#38BDF8"/>
+                                                </DataTrigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Tab 3: PC Doctor & Tweaks -->
+                    <Button Command="{Binding SwitchTabCommand}" CommandParameter="3" Height="40" Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="TabBorder" Background="{TemplateBinding Background}" CornerRadius="18" Padding="12,0">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <TextBlock Text="🩺" FontSize="13" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="GameLoop Doctor" FontSize="12.5" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="TabText"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedSubTab}" Value="3">
+                                                    <Setter TargetName="TabBorder" Property="Background" Value="#1C2335"/>
+                                                    <Setter TargetName="TabBorder" Property="BorderBrush" Value="#2D3A56"/>
+                                                    <Setter TargetName="TabBorder" Property="BorderThickness" Value="1"/>
+                                                    <Setter TargetName="TabText" Property="Foreground" Value="#38BDF8"/>
+                                                </DataTrigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Tab 4: Storage & Safe Close -->
+                    <Button Command="{Binding SwitchTabCommand}" CommandParameter="4" Height="40" Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="TabBorder" Background="{TemplateBinding Background}" CornerRadius="18" Padding="12,0">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <TextBlock Text="🧹" FontSize="13" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="Safe Close &amp; Cache" FontSize="12.5" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="TabText"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedSubTab}" Value="4">
+                                                    <Setter TargetName="TabBorder" Property="Background" Value="#1C2335"/>
+                                                    <Setter TargetName="TabBorder" Property="BorderBrush" Value="#2D3A56"/>
+                                                    <Setter TargetName="TabBorder" Property="BorderThickness" Value="1"/>
+                                                    <Setter TargetName="TabText" Property="Foreground" Value="#38BDF8"/>
+                                                </DataTrigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </UniformGrid>
             </Border>
 
-            <!-- Status Message -->
-            <TextBlock Text="{Binding StatusMessage}" FontSize="12"
-                       Foreground="{StaticResource AccentOrangeBrush}"
-                       TextWrapping="Wrap" Margin="0,0,0,16"
-                       Visibility="{Binding StatusMessage, Converter={StaticResource StringToVis}}"/>
-
             <!-- ═══════════════════════════════════════════════════════════ -->
-            <!-- 120 FPS SAFE UNLOCK CARD (PUBG MOBILE ULTRA PERFORMANCE)    -->
+            <!-- TAB 0: GRAPHICS & 120 FPS UNLOCKER                          -->
             <!-- ═══════════════════════════════════════════════════════════ -->
-            <Border Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2"
-                    CornerRadius="16" Padding="24,20" Margin="0,0,0,20"
-                    Visibility="{Binding IsInstalled, Converter={StaticResource BoolToVis}}">
-                <StackPanel>
-                    <Grid Margin="0,0,0,14">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
+            <StackPanel Visibility="{Binding SelectedSubTab, Converter={StaticResource IntEqualsToVis}, ConverterParameter=0}">
 
-                        <!-- Title & Badge -->
-                        <StackPanel Grid.Column="0">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <TextBlock Text="⚡ 120 FPS Safe Unlocker" FontSize="18" FontWeight="Bold"
-                                           Foreground="{StaticResource TextPrimaryBrush}" FontFamily="pack://application:,,,/Fonts/#Poppins, Segoe UI, sans-serif"/>
-                                <!-- Status Badge -->
-                                <Border CornerRadius="8" Padding="8,3" Margin="10,0,0,0" VerticalAlignment="Center">
-                                    <Border.Style>
-                                        <Style TargetType="Border">
-                                            <Setter Property="Background" Value="#1C212E"/>
-                                            <Setter Property="BorderBrush" Value="#2D354A"/>
-                                            <Setter Property="BorderThickness" Value="1"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding Is120FpsUnlocked}" Value="True">
-                                                    <Setter Property="Background" Value="#122B22"/>
-                                                    <Setter Property="BorderBrush" Value="#1A4A38"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Border.Style>
-                                    <TextBlock Text="{Binding Fps120StatusText}" FontSize="11" FontWeight="Bold">
-                                        <TextBlock.Style>
-                                            <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="#94A3B8"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Is120FpsUnlocked}" Value="True">
-                                                        <Setter Property="Foreground" Value="#10B981"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </TextBlock.Style>
-                                    </TextBlock>
-                                </Border>
-                            </StackPanel>
-                            <TextBlock Text="Official device model spoofing &amp; emulator high-refresh unlock. 100% Anti-Cheat Ban-Safe."
-                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="12.5"/>
-                        </StackPanel>
-
-                        <!-- Quick Action Button -->
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <Button Command="{Binding Toggle120FpsCommand}"
-                                    IsEnabled="{Binding IsApplying120Fps, Converter={StaticResource InvBoolToVis}}"
-                                    Height="38" Padding="18,0" Margin="0,0,10,0" Cursor="Hand">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-                                        <Setter Property="Content" Value="⚡ Unlock 120 FPS Mode"/>
-                                        <Setter Property="Background" Value="#10B981"/>
-                                        <Setter Property="BorderBrush" Value="#059669"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Is120FpsUnlocked}" Value="True">
-                                                <Setter Property="Content" Value="✓ 120 FPS Active (Revert)"/>
-                                                <Setter Property="Background" Value="#1C2638"/>
-                                                <Setter Property="BorderBrush" Value="#2F3E5C"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
-
-                            <Button Style="{StaticResource SecondaryButton}"
-                                    Content="🚀 Launch 120 FPS"
-                                    Command="{Binding LaunchGameLoop120FpsCommand}"
-                                    Height="38" Padding="14,0" Cursor="Hand" ToolTip="Launch GameLoop with -vm 100 engine boost"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- Detail Box with Features -->
-                    <Border Background="#161A28" BorderBrush="#252C3E" BorderThickness="1" CornerRadius="12" Padding="16,14" Margin="0,0,0,8">
-                        <Grid>
+                <!-- 120 FPS Ultra Unlock Banner Card -->
+                <Border Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2" CornerRadius="18" Padding="24,20" Margin="0,0,0,20">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,14">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="{Binding Fps120DetailText}" FontSize="12" Foreground="#CBD5E1" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                                
-                                <!-- 3 Feature Chips -->
-                                <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                    <Border Background="#1E2436" CornerRadius="6" Padding="8,4" Margin="0,0,8,0">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="📱 Samsung SM-X910" FontSize="11" Foreground="#38BDF8"/>
-                                        </StackPanel>
-                                    </Border>
-                                    <Border Background="#1E2436" CornerRadius="6" Padding="8,4" Margin="0,0,8,0">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="⚡ Engine -vm 100" FontSize="11" Foreground="#34D399"/>
-                                        </StackPanel>
-                                    </Border>
-                                    <Border Background="#1E2436" CornerRadius="6" Padding="8,4">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="🛡️ 100% Ban-Safe (Zero Memory Injection)" FontSize="11" Foreground="#A78BFA"/>
-                                        </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="⚡ 120 FPS Safe Unlocker" FontSize="18" FontWeight="Bold" Foreground="#F8FAFC"/>
+                                    <!-- Status Badge -->
+                                    <Border CornerRadius="8" Padding="8,3" Margin="10,0,0,0" VerticalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#1C212E"/>
+                                                <Setter Property="BorderBrush" Value="#2D354A"/>
+                                                <Setter Property="BorderThickness" Value="1"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Is120FpsUnlocked}" Value="True">
+                                                        <Setter Property="Background" Value="#122B22"/>
+                                                        <Setter Property="BorderBrush" Value="#1A4A38"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding Fps120StatusText}" FontSize="11" FontWeight="Bold">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#94A3B8"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Is120FpsUnlocked}" Value="True">
+                                                            <Setter Property="Foreground" Value="#10B981"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
                                     </Border>
                                 </StackPanel>
+                                <TextBlock Text="Safe device spoofing &amp; emulator high-refresh unlock. 100% Anti-Cheat Ban-Safe." Foreground="#94A3B8" FontSize="12.5"/>
                             </StackPanel>
 
-                            <!-- Create Desktop Shortcut Button -->
-                            <Button Grid.Column="1" Style="{StaticResource SecondaryButton}"
-                                    Content="📌 Desktop Shortcut"
-                                    Command="{Binding Create120FpsShortcutCommand}"
-                                    VerticalAlignment="Center" Height="34" Padding="12,0" Margin="16,0,0,0" Cursor="Hand"
-                                    ToolTip="Create a 120 FPS high-performance shortcut on your Desktop"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Command="{Binding Toggle120FpsCommand}" Height="38" Padding="18,0" Margin="0,0,10,0" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+                                            <Setter Property="Content" Value="⚡ Unlock 120 FPS Mode"/>
+                                            <Setter Property="Background" Value="#10B981"/>
+                                            <Setter Property="BorderBrush" Value="#059669"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Is120FpsUnlocked}" Value="True">
+                                                    <Setter Property="Content" Value="✓ 120 FPS Active (Revert)"/>
+                                                    <Setter Property="Background" Value="#1C2638"/>
+                                                    <Setter Property="BorderBrush" Value="#2F3E5C"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <Button Style="{StaticResource SecondaryButton}" Content="🚀 Launch 120 FPS" Command="{Binding LaunchGameLoop120FpsCommand}" Height="38" Padding="14,0" Cursor="Hand"/>
+                            </StackPanel>
                         </Grid>
-                    </Border>
 
-                    <!-- Action Status Message -->
-                    <TextBlock Text="{Binding Fps120ActionMessage}" FontSize="11.5"
-                               Foreground="{StaticResource AccentGreenBrush}"
-                               Visibility="{Binding Fps120ActionMessage, Converter={StaticResource StringToVis}}"/>
-                </StackPanel>
-            </Border>
+                        <Border Background="#161A28" BorderBrush="#252C3E" BorderThickness="1" CornerRadius="12" Padding="16,14" Margin="0,0,0,8">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{Binding Fps120DetailText}" FontSize="12" Foreground="#CBD5E1" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Background="#1E2436" CornerRadius="6" Padding="8,4" Margin="0,0,8,0">
+                                            <TextBlock Text="📱 Samsung SM-X910" FontSize="11" Foreground="#38BDF8"/>
+                                        </Border>
+                                        <Border Background="#1E2436" CornerRadius="6" Padding="8,4" Margin="0,0,8,0">
+                                            <TextBlock Text="⚡ Engine -vm 100" FontSize="11" Foreground="#34D399"/>
+                                        </Border>
+                                        <Border Background="#1E2436" CornerRadius="6" Padding="8,4">
+                                            <TextBlock Text="🛡️ 100% Ban-Safe (Zero Memory Injection)" FontSize="11" Foreground="#A78BFA"/>
+                                        </Border>
+                                    </StackPanel>
+                                </StackPanel>
+                                <Button Grid.Column="1" Style="{StaticResource SecondaryButton}" Content="📌 Desktop Shortcut" Command="{Binding Create120FpsShortcutCommand}" VerticalAlignment="Center" Height="34" Padding="12,0" Margin="16,0,0,0" Cursor="Hand"/>
+                            </Grid>
+                        </Border>
+                        <TextBlock Text="{Binding Fps120ActionMessage}" FontSize="11.5" Foreground="{StaticResource AccentGreenBrush}" Visibility="{Binding Fps120ActionMessage, Converter={StaticResource StringToVis}}"/>
+                    </StackPanel>
+                </Border>
 
-            <!-- ═══════════════════════════════════════════════════════════ -->
-            <!-- GAMELOOP REGISTRY EDITS (BOTTOM SECTION AS REQUESTED)       -->
-            <!-- ═══════════════════════════════════════════════════════════ -->
-            <Border Style="{StaticResource CardBorder}" Margin="0,0,0,20">
-                <StackPanel>
-                    <Grid Margin="0,0,0,12">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
+                <!-- Resolution & Aspect Ratio Presets Card -->
+                <Border Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2" CornerRadius="18" Padding="24,20" Margin="0,0,0,20">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Aspect Ratio &amp; Resolution Presets" FontSize="17" FontWeight="Bold" Foreground="#F8FAFC" Margin="0,0,0,4"/>
+                                <TextBlock Text="Quickly switch between competitive iPad 4:3 FOV and sharp 2K/4K display resolutions" Foreground="#94A3B8" FontSize="12"/>
+                            </StackPanel>
+                            <Border Grid.Column="1" Background="#161B29" BorderBrush="#26314A" BorderThickness="1" CornerRadius="12" Padding="12,6" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Current: " Foreground="#64748B" FontSize="11.5"/>
+                                    <TextBlock Text="{Binding CurrentResolutionDisplay}" Foreground="#38BDF8" FontSize="11.5" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
 
-                        <StackPanel>
-                            <TextBlock Text="GameLoop Registry Edits" FontSize="17" FontWeight="Bold"
-                                       Foreground="{StaticResource AccentCyanBrush}" Margin="0,0,0,4"/>
-                            <TextBlock Text="Windows &amp; emulator registry tweaks tailored strictly for GameLoop processes"
-                                       Foreground="{StaticResource TextSecondaryBrush}" FontSize="12"/>
-                        </StackPanel>
+                        <TextBlock Text="{Binding ResolutionStatusMessage}" FontSize="11.5" Foreground="{StaticResource AccentGreenBrush}" Margin="0,0,0,10" Visibility="{Binding ResolutionStatusMessage, Converter={StaticResource StringToVis}}"/>
 
-                        <!-- Batch Apply Button -->
-                        <Button Grid.Column="1" Style="{StaticResource PrimaryButton}"
-                                Content="⚡ Apply All GameLoop Edits"
-                                Command="{Binding ApplyAllRegistryEditsCommand}"
-                                IsEnabled="{Binding IsOneTapBusy, Converter={StaticResource InvBoolToVis}}"
-                                Padding="16,8" VerticalAlignment="Center"/>
-                    </Grid>
-
-                    <TextBlock Text="{Binding OneTapStatus}" Foreground="{StaticResource AccentGreenBrush}" FontSize="12"
-                               Margin="0,0,0,10" Visibility="{Binding OneTapStatus, Converter={StaticResource StringToVis}}"/>
-
-                    <!-- Registry Tweaks List -->
-                    <ItemsControl ItemsSource="{Binding RegistryEdits}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Background="#121319" BorderBrush="#20222B" BorderThickness="1"
-                                        CornerRadius="8" Padding="14,12" Margin="0,0,0,10">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                                <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
-                                                           Foreground="{StaticResource TextPrimaryBrush}"/>
-                                                <Border Background="#1E293B" CornerRadius="4" Padding="6,2" Margin="8,0,0,0"
-                                                        Visibility="{Binding RequiresAdmin, Converter={StaticResource BoolToVis}}">
-                                                    <TextBlock Text="ADMIN" FontSize="9" FontWeight="Bold" Foreground="#38BDF8"/>
-                                                </Border>
-                                            </StackPanel>
-
-                                            <TextBlock Text="{Binding Description}" FontSize="12"
-                                                       Foreground="{StaticResource TextSecondaryBrush}"
-                                                       TextWrapping="Wrap" Margin="0,0,0,8"/>
-
-                                            <!-- Registry Target Box -->
-                                            <Border Background="#0B0C10" CornerRadius="4" Padding="8,5" Margin="0,0,0,6">
-                                                <TextBlock Text="{Binding RegistryTarget}" FontSize="10"
-                                                           Foreground="#64748B" FontFamily="{StaticResource MonoFont}"/>
-                                            </Border>
-
-                                            <!-- Status Message -->
-                                            <TextBlock Text="{Binding StatusMessage}" FontSize="11"
-                                                       Foreground="{StaticResource AccentGreenBrush}"
-                                                       Visibility="{Binding StatusMessage, Converter={StaticResource StringToVis}}"/>
-                                        </StackPanel>
-
-                                        <!-- Toggle Button / Action -->
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0">
-                                            <Button Style="{StaticResource PrimaryButton}"
-                                                    Content="Apply"
-                                                    Command="{Binding ToggleCommand}"
-                                                    CommandParameter="{x:Static System:Boolean.TrueString}"
-                                                    MinWidth="90" Margin="0,0,0,6"
-                                                    xmlns:System="clr-namespace:System;assembly=mscorlib"/>
-                                            <TextBlock HorizontalAlignment="Center" FontSize="11" FontWeight="SemiBold">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Text" Value="Disabled"/>
-                                                        <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsEnabled}" Value="True">
-                                                                <Setter Property="Text" Value="Active ✓"/>
-                                                                <Setter Property="Foreground" Value="{StaticResource AccentGreenBrush}"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-            </Border>
-
-            <!-- Detected Configuration Items -->
-            <Border Style="{StaticResource CardBorder}"
-                    Visibility="{Binding IsInstalled, Converter={StaticResource BoolToVis}}">
-                <StackPanel>
-                    <TextBlock Text="Detected Configuration" FontSize="16" FontWeight="SemiBold"
-                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,16"/>
-
-                    <ItemsControl ItemsSource="{Binding ConfigItems}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Grid Margin="0,0,0,6">
+                        <!-- 6 Presets Grid -->
+                        <UniformGrid Columns="2" Rows="3">
+                            <!-- Preset 0: 1080p FHD -->
+                            <Border Background="#161924" BorderBrush="#23283A" BorderThickness="1" CornerRadius="14" Padding="14,12" Margin="0,0,8,10">
+                                <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="250"/>
+                                        <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="{Binding Key}" FontSize="11"
-                                               Foreground="{StaticResource TextMutedBrush}"
-                                               FontFamily="{StaticResource MonoFont}"/>
-                                    <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="11"
-                                               Foreground="{StaticResource TextPrimaryBrush}"
-                                               FontFamily="{StaticResource MonoFont}" TextWrapping="Wrap"/>
+                                    <!-- Left Indicator Pill -->
+                                    <Border Grid.Column="0" Width="3.5" Height="28" CornerRadius="2" Margin="0,0,12,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedResolutionIndex}" Value="0">
+                                                        <Setter Property="Background" Value="#38BDF8"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="1080p FHD (Standard)" FontSize="13.5" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+                                            <Border Background="#1E273A" CornerRadius="4" Padding="6,1.5" Margin="8,0,0,0">
+                                                <TextBlock Text="16:9" FontSize="10" FontWeight="Bold" Foreground="#94A3B8"/>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="1920 x 1080 • 240 DPI (Smooth Frame Pacing)" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="Apply" Command="{Binding ApplyResolutionPresetCommand}" CommandParameter="0" Height="30" Padding="14,0" VerticalAlignment="Center" Cursor="Hand"/>
                                 </Grid>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                            </Border>
 
-                    <TextBlock Text="No configuration entries found." FontSize="12"
-                               Foreground="{StaticResource TextMutedBrush}" Margin="0,8,0,0">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ConfigItems.Count}" Value="0">
-                                        <Setter Property="Visibility" Value="Visible"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                </StackPanel>
-            </Border>
+                            <!-- Preset 3: iPad View 4:3 Wide (Highlighted!) -->
+                            <Border Background="#141B26" BorderBrush="#25354F" BorderThickness="1.2" CornerRadius="14" Padding="14,12" Margin="8,0,0,10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <!-- Left Indicator Pill -->
+                                    <Border Grid.Column="0" Width="3.5" Height="28" CornerRadius="2" Margin="0,0,12,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedResolutionIndex}" Value="3">
+                                                        <Setter Property="Background" Value="#10B981"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="iPad View 4:3 Wide" FontSize="13.5" FontWeight="Bold" Foreground="#34D399"/>
+                                            <Border Background="#132B22" BorderBrush="#1B4D3B" BorderThickness="1" CornerRadius="4" Padding="6,1.5" Margin="8,0,0,0">
+                                                <TextBlock Text="4:3 FOV" FontSize="10" FontWeight="Bold" Foreground="#34D399"/>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="1440 x 1080 • 240 DPI (Extra Wide Vision in PUBG)" FontSize="11" Foreground="#94A3B8" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Style="{StaticResource PrimaryButton}" Content="Apply" Command="{Binding ApplyResolutionPresetCommand}" CommandParameter="3" Height="30" Padding="14,0" VerticalAlignment="Center" Cursor="Hand"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Preset 1: 2K QHD -->
+                            <Border Background="#161924" BorderBrush="#23283A" BorderThickness="1" CornerRadius="14" Padding="14,12" Margin="0,0,8,10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Width="3.5" Height="28" CornerRadius="2" Margin="0,0,12,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedResolutionIndex}" Value="1">
+                                                        <Setter Property="Background" Value="#38BDF8"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="2K QHD (High Fidelity)" FontSize="13.5" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+                                            <Border Background="#1E273A" CornerRadius="4" Padding="6,1.5" Margin="8,0,0,0">
+                                                <TextBlock Text="16:9" FontSize="10" FontWeight="Bold" Foreground="#94A3B8"/>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="2560 x 1440 • 320 DPI (Crisp Textures &amp; Distant Enemies)" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="Apply" Command="{Binding ApplyResolutionPresetCommand}" CommandParameter="1" Height="30" Padding="14,0" VerticalAlignment="Center" Cursor="Hand"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Preset 4: iPad Pro 4:3 -->
+                            <Border Background="#161924" BorderBrush="#23283A" BorderThickness="1" CornerRadius="14" Padding="14,12" Margin="8,0,0,10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Width="3.5" Height="28" CornerRadius="2" Margin="0,0,12,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedResolutionIndex}" Value="4">
+                                                        <Setter Property="Background" Value="#38BDF8"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="iPad Pro 4:3 Ultra" FontSize="13.5" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+                                            <Border Background="#1E273A" CornerRadius="4" Padding="6,1.5" Margin="8,0,0,0">
+                                                <TextBlock Text="4:3 HD" FontSize="10" FontWeight="Bold" Foreground="#94A3B8"/>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="2300 x 1920 • 320 DPI (Maximum Vertical Field)" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="Apply" Command="{Binding ApplyResolutionPresetCommand}" CommandParameter="4" Height="30" Padding="14,0" VerticalAlignment="Center" Cursor="Hand"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Preset 2: 4K UHD -->
+                            <Border Background="#161924" BorderBrush="#23283A" BorderThickness="1" CornerRadius="14" Padding="14,12" Margin="0,0,8,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Width="3.5" Height="28" CornerRadius="2" Margin="0,0,12,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedResolutionIndex}" Value="2">
+                                                        <Setter Property="Background" Value="#38BDF8"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="4K Ultra HD" FontSize="13.5" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+                                            <Border Background="#1E273A" CornerRadius="4" Padding="6,1.5" Margin="8,0,0,0">
+                                                <TextBlock Text="4K" FontSize="10" FontWeight="Bold" Foreground="#94A3B8"/>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="3840 x 2160 • 480 DPI (RTX 3070+ / High-end GPUs)" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="Apply" Command="{Binding ApplyResolutionPresetCommand}" CommandParameter="2" Height="30" Padding="14,0" VerticalAlignment="Center" Cursor="Hand"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Preset 5: 720p Fast -->
+                            <Border Background="#161924" BorderBrush="#23283A" BorderThickness="1" CornerRadius="14" Padding="14,12" Margin="8,0,0,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Width="3.5" Height="28" CornerRadius="2" Margin="0,0,12,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedResolutionIndex}" Value="5">
+                                                        <Setter Property="Background" Value="#38BDF8"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="720p Fast (Potato PC Mode)" FontSize="13.5" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+                                            <Border Background="#1E273A" CornerRadius="4" Padding="6,1.5" Margin="8,0,0,0">
+                                                <TextBlock Text="FPS" FontSize="10" FontWeight="Bold" Foreground="#F59E0B"/>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="1280 x 720 • 160 DPI (Maximum FPS on Laptops)" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="Apply" Command="{Binding ApplyResolutionPresetCommand}" CommandParameter="5" Height="30" Padding="14,0" VerticalAlignment="Center" Cursor="Hand"/>
+                                </Grid>
+                            </Border>
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- TAB 1: ENGINE BACKEND & HARDWARE ALLOCATION                 -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <StackPanel Visibility="{Binding SelectedSubTab, Converter={StaticResource IntEqualsToVis}, ConverterParameter=1}">
+
+                <!-- Engine Render Mode -->
+                <Border Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2" CornerRadius="18" Padding="24,20" Margin="0,0,0,20">
+                    <StackPanel>
+                        <TextBlock Text="Rendering Engine Backend" FontSize="17" FontWeight="Bold" Foreground="#F8FAFC" Margin="0,0,0,4"/>
+                        <TextBlock Text="Select the graphics API that provides the smoothest frame-times for your GPU" Foreground="#94A3B8" FontSize="12" Margin="0,0,0,16"/>
+
+                        <UniformGrid Columns="2" Rows="2" Margin="0,0,0,16">
+                            <!-- DirectX+ -->
+                            <RadioButton GroupName="EngineBackend" IsChecked="{Binding SelectedEngineIndex, Converter={StaticResource IntEqualsToVis}, ConverterParameter=0, Mode=OneWay}"
+                                         Command="{Binding SwitchTabCommand}" Margin="0,0,8,10">
+                                <RadioButton.Template>
+                                    <ControlTemplate>
+                                        <Border Background="#161924" BorderBrush="#262D42" BorderThickness="1" CornerRadius="12" Padding="16,14" Cursor="Hand">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="DirectX+ (Recommended)" FontSize="14" FontWeight="SemiBold" Foreground="#38BDF8"/>
+                                                    <Border Background="#16293D" CornerRadius="4" Padding="6,1.5" Margin="8,0,0,0">
+                                                        <TextBlock Text="STABLE" FontSize="9.5" FontWeight="Bold" Foreground="#38BDF8"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <TextBlock Text="DirectX 11 rendering pipeline with hardware swapchain. Recommended for NVIDIA GeForce &amp; Intel Iris." FontSize="11.5" Foreground="#64748B" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </ControlTemplate>
+                                </RadioButton.Template>
+                            </RadioButton>
+
+                            <!-- OpenGL+ -->
+                            <RadioButton GroupName="EngineBackend" Margin="8,0,0,10">
+                                <RadioButton.Template>
+                                    <ControlTemplate>
+                                        <Border Background="#161924" BorderBrush="#262D42" BorderThickness="1" CornerRadius="12" Padding="16,14" Cursor="Hand">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="OpenGL+" FontSize="14" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+                                                    <Border Background="#1E273A" CornerRadius="4" Padding="6,1.5" Margin="8,0,0,0">
+                                                        <TextBlock Text="AMD OPTIMAL" FontSize="9.5" FontWeight="Bold" Foreground="#94A3B8"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <TextBlock Text="Open graphics library with low CPU instruction overhead. Excellent on AMD Radeon graphics cards." FontSize="11.5" Foreground="#64748B" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </ControlTemplate>
+                                </RadioButton.Template>
+                            </RadioButton>
+
+                            <!-- Vulkan -->
+                            <RadioButton GroupName="EngineBackend" Margin="0,0,8,0">
+                                <RadioButton.Template>
+                                    <ControlTemplate>
+                                        <Border Background="#161924" BorderBrush="#262D42" BorderThickness="1" CornerRadius="12" Padding="16,14" Cursor="Hand">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="Vulkan (Low Overhead)" FontSize="14" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+                                                    <Border Background="#1E273A" CornerRadius="4" Padding="6,1.5" Margin="8,0,0,0">
+                                                        <TextBlock Text="NEXT-GEN" FontSize="9.5" FontWeight="Bold" Foreground="#94A3B8"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <TextBlock Text="Next-gen Khronos API with minimal driver overhead. Unlocks smoother frame spikes on modern GPUs." FontSize="11.5" Foreground="#64748B" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </ControlTemplate>
+                                </RadioButton.Template>
+                            </RadioButton>
+
+                            <!-- DirectX Lite -->
+                            <RadioButton GroupName="EngineBackend" Margin="8,0,0,0">
+                                <RadioButton.Template>
+                                    <ControlTemplate>
+                                        <Border Background="#161924" BorderBrush="#262D42" BorderThickness="1" CornerRadius="12" Padding="16,14" Cursor="Hand">
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="DirectX Lite" FontSize="14" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+                                                    <Border Background="#1E273A" CornerRadius="4" Padding="6,1.5" Margin="8,0,0,0">
+                                                        <TextBlock Text="LOW SPEC" FontSize="9.5" FontWeight="Bold" Foreground="#94A3B8"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <TextBlock Text="Minimalist DirectX engine with texture downsampling for low VRAM and older laptops." FontSize="11.5" Foreground="#64748B" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </ControlTemplate>
+                                </RadioButton.Template>
+                            </RadioButton>
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Hardware Allocator (CPU & RAM) -->
+                <Border Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2" CornerRadius="18" Padding="24,20">
+                    <StackPanel>
+                        <TextBlock Text="CPU Cores &amp; RAM Allocation" FontSize="17" FontWeight="Bold" Foreground="#F8FAFC" Margin="0,0,0,4"/>
+                        <TextBlock Text="Configure dedicated host processor threads and memory bounds for Tencent VM" Foreground="#94A3B8" FontSize="12" Margin="0,0,0,16"/>
+
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- CPU Cores Selector -->
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="CPU Cores" FontSize="13.5" FontWeight="SemiBold" Foreground="#F8FAFC" Margin="0,0,0,8"/>
+                                <ComboBox SelectedIndex="{Binding SelectedCoresIndex}" Height="38" Background="#161A26" Foreground="#F8FAFC" BorderBrush="#2A334A">
+                                    <ComboBoxItem Content="Auto (GameLoop Default)"/>
+                                    <ComboBoxItem Content="2 Cores (Dual-Core Systems)"/>
+                                    <ComboBoxItem Content="4 Cores (Quad-Core Balanced)"/>
+                                    <ComboBoxItem Content="6 Cores (Hexa-Core Fast)"/>
+                                    <ComboBoxItem Content="8 Cores (Octa-Core Ultra Performance)"/>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <!-- RAM Selector -->
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Memory (RAM)" FontSize="13.5" FontWeight="SemiBold" Foreground="#F8FAFC" Margin="0,0,0,8"/>
+                                <ComboBox SelectedIndex="{Binding SelectedRamIndex}" Height="38" Background="#161A26" Foreground="#F8FAFC" BorderBrush="#2A334A">
+                                    <ComboBoxItem Content="Auto (GameLoop Default)"/>
+                                    <ComboBoxItem Content="2048 MB (2 GB RAM)"/>
+                                    <ComboBoxItem Content="4096 MB (4 GB RAM - Standard)"/>
+                                    <ComboBoxItem Content="8192 MB (8 GB RAM - Optimal PUBG)"/>
+                                    <ComboBoxItem Content="12288 MB (12 GB RAM - Extreme High-End)"/>
+                                </ComboBox>
+                            </StackPanel>
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding EngineHardwareStatus}" FontSize="11.5" Foreground="{StaticResource AccentGreenBrush}" VerticalAlignment="Center" TextWrapping="Wrap" Visibility="{Binding EngineHardwareStatus, Converter={StaticResource StringToVis}}"/>
+                            <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" Content="💾 Save &amp; Apply Hardware Settings" Command="{Binding ApplyEngineSettingsCommand}" Height="38" Padding="20,0" Cursor="Hand"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- TAB 2: DEVICE SPOOFING (120/90 FPS CERTIFIED PROFILES)      -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <StackPanel Visibility="{Binding SelectedSubTab, Converter={StaticResource IntEqualsToVis}, ConverterParameter=2}">
+                <Border Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2" CornerRadius="18" Padding="24,20" Margin="0,0,0,20">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Certified 120 FPS / 90 FPS Device Spoofing" FontSize="17" FontWeight="Bold" Foreground="#F8FAFC" Margin="0,0,0,4"/>
+                                <TextBlock Text="Spoofs verified flagship hardware signatures to unlock PUBG Mobile Extreme+ &amp; 120 FPS settings" Foreground="#94A3B8" FontSize="12"/>
+                            </StackPanel>
+                            <Border Grid.Column="1" Background="#161B29" BorderBrush="#26314A" BorderThickness="1" CornerRadius="12" Padding="12,6" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Active Model: " Foreground="#64748B" FontSize="11.5"/>
+                                    <TextBlock Text="{Binding CurrentDeviceModelText}" Foreground="#34D399" FontSize="11.5" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <TextBlock Text="{Binding DeviceSpoofStatus}" FontSize="11.5" Foreground="{StaticResource AccentGreenBrush}" Margin="0,0,0,12" Visibility="{Binding DeviceSpoofStatus, Converter={StaticResource StringToVis}}"/>
+
+                        <!-- 4 Device Cards -->
+                        <StackPanel>
+                            <!-- Device 0: ASUS ROG Phone 8 Pro -->
+                            <Border Background="#151926" BorderBrush="#252E46" BorderThickness="1" CornerRadius="14" Padding="16,14" Margin="0,0,0,10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Width="3.5" Height="32" CornerRadius="2" Margin="0,0,14,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedDeviceIndex}" Value="0">
+                                                        <Setter Property="Background" Value="#10B981"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="ASUS ROG Phone 8 Pro (ASUS_AI2401_A)" FontSize="14" FontWeight="Bold" Foreground="#F8FAFC"/>
+                                            <Border Background="#12251D" BorderBrush="#1C4B36" BorderThickness="1" CornerRadius="4" Padding="6,1.5" Margin="8,0,0,0">
+                                                <TextBlock Text="120 FPS PRO" FontSize="9.5" FontWeight="Bold" Foreground="#34D399"/>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="Snapdragon 8 Gen 3 gaming profile • Official Tencent 120 FPS white-listed model" FontSize="11.5" Foreground="#64748B" Margin="0,3,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Style="{StaticResource PrimaryButton}" Content="Apply Profile" Command="{Binding ApplyDeviceProfileCommand}" CommandParameter="0" Height="32" Padding="14,0" Cursor="Hand"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Device 1: Samsung Galaxy Tab S9 Ultra -->
+                            <Border Background="#151926" BorderBrush="#252E46" BorderThickness="1" CornerRadius="14" Padding="16,14" Margin="0,0,0,10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Width="3.5" Height="32" CornerRadius="2" Margin="0,0,14,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedDeviceIndex}" Value="1">
+                                                        <Setter Property="Background" Value="#38BDF8"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Samsung Galaxy Tab S9 Ultra (SM-X910)" FontSize="14" FontWeight="Bold" Foreground="#F8FAFC"/>
+                                            <Border Background="#16293D" BorderBrush="#1D4363" BorderThickness="1" CornerRadius="4" Padding="6,1.5" Margin="8,0,0,0">
+                                                <TextBlock Text="120 FPS TABLET" FontSize="9.5" FontWeight="Bold" Foreground="#38BDF8"/>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="Official 120Hz high-refresh tablet model • Certified PUBG Ultra Extreme profile" FontSize="11.5" Foreground="#64748B" Margin="0,3,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="Apply Profile" Command="{Binding ApplyDeviceProfileCommand}" CommandParameter="1" Height="32" Padding="14,0" Cursor="Hand"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Device 2: ASUS ROG Phone 5 -->
+                            <Border Background="#151926" BorderBrush="#252E46" BorderThickness="1" CornerRadius="14" Padding="16,14" Margin="0,0,0,10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Width="3.5" Height="32" CornerRadius="2" Margin="0,0,14,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedDeviceIndex}" Value="2">
+                                                        <Setter Property="Background" Value="#38BDF8"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="ASUS ROG Phone 5 (ASUS_I005D)" FontSize="14" FontWeight="Bold" Foreground="#F8FAFC"/>
+                                            <Border Background="#1E273A" CornerRadius="4" Padding="6,1.5" Margin="8,0,0,0">
+                                                <TextBlock Text="90 FPS ROCK SOLID" FontSize="9.5" FontWeight="Bold" Foreground="#94A3B8"/>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="Rock-solid 90 FPS configuration for mid-range systems with zero thermal/framerate jitter" FontSize="11.5" Foreground="#64748B" Margin="0,3,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="Apply Profile" Command="{Binding ApplyDeviceProfileCommand}" CommandParameter="2" Height="32" Padding="14,0" Cursor="Hand"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Device 3: Xiaomi 13 Pro -->
+                            <Border Background="#151926" BorderBrush="#252E46" BorderThickness="1" CornerRadius="14" Padding="16,14">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Width="3.5" Height="32" CornerRadius="2" Margin="0,0,14,0">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="Transparent"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding SelectedDeviceIndex}" Value="3">
+                                                        <Setter Property="Background" Value="#38BDF8"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Xiaomi 13 Pro (2210132C)" FontSize="14" FontWeight="Bold" Foreground="#F8FAFC"/>
+                                            <Border Background="#16293D" BorderBrush="#1D4363" BorderThickness="1" CornerRadius="4" Padding="6,1.5" Margin="8,0,0,0">
+                                                <TextBlock Text="120 FPS HDR" FontSize="9.5" FontWeight="Bold" Foreground="#38BDF8"/>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="Snapdragon 8 Gen 2 profile with high color gamut and 120 FPS support" FontSize="11.5" Foreground="#64748B" Margin="0,3,0,0"/>
+                                    </StackPanel>
+                                    <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="Apply Profile" Command="{Binding ApplyDeviceProfileCommand}" CommandParameter="3" Height="32" Padding="14,0" Cursor="Hand"/>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- TAB 3: GAMELOOP DOCTOR & REGISTRY TWEAKS                    -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <StackPanel Visibility="{Binding SelectedSubTab, Converter={StaticResource IntEqualsToVis}, ConverterParameter=3}">
+
+                <!-- System Micro-stutter Fixes (HVCI & AppMarket) -->
+                <Border Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2" CornerRadius="18" Padding="24,20" Margin="0,0,0,20">
+                    <StackPanel>
+                        <TextBlock Text="GameLoop Doctor • Latency &amp; Micro-Stutter Fixes" FontSize="17" FontWeight="Bold" Foreground="#F8FAFC" Margin="0,0,0,4"/>
+                        <TextBlock Text="Deep Windows sub-system patches that eliminate virtualization lag and stuttering" Foreground="#94A3B8" FontSize="12" Margin="0,0,0,16"/>
+
+                        <TextBlock Text="{Binding DoctorStatusMessage}" FontSize="11.5" Foreground="{StaticResource AccentGreenBrush}" Margin="0,0,0,12" Visibility="{Binding DoctorStatusMessage, Converter={StaticResource StringToVis}}"/>
+
+                        <!-- Item 1: Core Isolation (HVCI) Bypass -->
+                        <Border Background="#161924" BorderBrush="#262D42" BorderThickness="1" CornerRadius="14" Padding="16,14" Margin="0,0,0,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <TextBlock Text="Disable Core Isolation (HVCI) for VT-x Acceleration" FontSize="14" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+                                        <Border Background="#16293D" CornerRadius="4" Padding="6,1.5" Margin="8,0,0,0">
+                                            <TextBlock Text="MAX FPS FIX" FontSize="9.5" FontWeight="Bold" Foreground="#38BDF8"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="Hypervisor-Protected Code Integrity (HVCI) causes severe 15-30% CPU latency in Android emulators. Disabling it gives silky smooth frame pacing." FontSize="11.5" Foreground="#64748B" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Command="{Binding ToggleCoreIsolationHvciCommand}" Height="34" Padding="14,0" VerticalAlignment="Center" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
+                                            <Setter Property="Content" Value="Disable HVCI (Boost FPS)"/>
+                                            <Setter Property="Background" Value="#10B981"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsCoreIsolationHvciDisabled}" Value="True">
+                                                    <Setter Property="Content" Value="✓ HVCI Disabled (Optimized)"/>
+                                                    <Setter Property="Background" Value="#1C2638"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </Grid>
+                        </Border>
+
+                        <!-- Item 2: AppMarket Auto-Close -->
+                        <Border Background="#161924" BorderBrush="#262D42" BorderThickness="1" CornerRadius="14" Padding="16,14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                        <TextBlock Text="AppMarket Background Process Auto-Close" FontSize="14" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+                                        <Border Background="#1E273A" CornerRadius="4" Padding="6,1.5" Margin="8,0,0,0">
+                                            <TextBlock Text="SAVES 400MB RAM" FontSize="9.5" FontWeight="Bold" Foreground="#94A3B8"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="Automatically closes the Tencent AppMarket UI once the game launches, freeing up 300MB-500MB of background RAM and eliminating background telemetry." FontSize="11.5" Foreground="#64748B" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Command="{Binding ToggleAppMarketAutoCloseCommand}" Height="34" Padding="14,0" VerticalAlignment="Center" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+                                            <Setter Property="Content" Value="Enable Auto-Close"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsAppMarketAutoCloseActive}" Value="True">
+                                                    <Setter Property="Content" Value="✓ Active"/>
+                                                    <Setter Property="Foreground" Value="#10B981"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- GameLoop Registry Edits List -->
+                <Border Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2" CornerRadius="18" Padding="24,20">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="GameLoop Registry Tweaks" FontSize="17" FontWeight="Bold" Foreground="#F8FAFC" Margin="0,0,0,4"/>
+                                <TextBlock Text="Dedicated GPU preference, process priority &amp; network responsiveness keys" Foreground="#94A3B8" FontSize="12"/>
+                            </StackPanel>
+                            <Button Grid.Column="1" Style="{StaticResource PrimaryButton}" Content="⚡ Apply All GameLoop Edits" Command="{Binding ApplyAllRegistryEditsCommand}" IsEnabled="{Binding IsOneTapBusy, Converter={StaticResource InvBoolToVis}}" Height="34" Padding="16,0" VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <TextBlock Text="{Binding OneTapStatus}" Foreground="{StaticResource AccentGreenBrush}" FontSize="12" Margin="0,0,0,10" Visibility="{Binding OneTapStatus, Converter={StaticResource StringToVis}}"/>
+
+                        <ItemsControl ItemsSource="{Binding RegistryEdits}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#161924" BorderBrush="#23283A" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                    <TextBlock Text="{Binding Name}" FontSize="13.5" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+                                                    <Border Background="#1E293B" CornerRadius="4" Padding="6,2" Margin="8,0,0,0" Visibility="{Binding RequiresAdmin, Converter={StaticResource BoolToVis}}">
+                                                        <TextBlock Text="ADMIN" FontSize="9" FontWeight="Bold" Foreground="#38BDF8"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding Description}" FontSize="11.5" Foreground="#94A3B8" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                                                <TextBlock Text="{Binding StatusMessage}" FontSize="11" Foreground="{StaticResource AccentGreenBrush}" Visibility="{Binding StatusMessage, Converter={StaticResource StringToVis}}"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="16,0,0,0">
+                                                <Button Style="{StaticResource SecondaryButton}" Content="Apply" Command="{Binding ToggleCommand}" CommandParameter="{x:Static System:Boolean.TrueString}" MinWidth="80" Height="30" Margin="0,0,0,4"/>
+                                                <TextBlock HorizontalAlignment="Center" FontSize="10.5" FontWeight="SemiBold">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="Disabled"/>
+                                                            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsEnabled}" Value="True">
+                                                                    <Setter Property="Text" Value="Active ✓"/>
+                                                                    <Setter Property="Foreground" Value="{StaticResource AccentGreenBrush}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- TAB 4: STORAGE & SAFE CLOSE                                 -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <StackPanel Visibility="{Binding SelectedSubTab, Converter={StaticResource IntEqualsToVis}, ConverterParameter=4}">
+                <Border Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2" CornerRadius="18" Padding="24,20" Margin="0,0,0,20">
+                    <StackPanel>
+                        <TextBlock Text="Safe Close &amp; Cache Maintenance" FontSize="17" FontWeight="Bold" Foreground="#F8FAFC" Margin="0,0,0,4"/>
+                        <TextBlock Text="Prevent keymap corruption, flush disk buffers gracefully, and clean compiled shader caches" Foreground="#94A3B8" FontSize="12" Margin="0,0,0,16"/>
+
+                        <TextBlock Text="{Binding StorageStatusMessage}" FontSize="11.5" Foreground="{StaticResource AccentGreenBrush}" Margin="0,0,0,12" Visibility="{Binding StorageStatusMessage, Converter={StaticResource StringToVis}}"/>
+
+                        <UniformGrid Columns="2" Rows="1">
+                            <!-- 1-Click Safe Close Card -->
+                            <Border Background="#161924" BorderBrush="#262D42" BorderThickness="1" CornerRadius="14" Padding="18,16" Margin="0,0,10,0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                                        <TextBlock Text="🛡️ Graceful Safe Close" FontSize="15" FontWeight="Bold" Foreground="#F8FAFC"/>
+                                        <TextBlock Text="Flush buffers &amp; protect keymaps" FontSize="11.5" Foreground="#64748B" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Row="1" Text="Closes AndroidProcess, aow_exe, and AppMarket in safe sequence, waiting for virtual disk buffers to flush. Completely prevents PUBG corrupted layout resets." FontSize="12" Foreground="#94A3B8" TextWrapping="Wrap" Margin="0,0,0,16"/>
+                                    <Button Grid.Row="2" Style="{StaticResource PrimaryButton}" Content="🛑 Safe Close GameLoop" Command="{Binding SafeCloseGameLoopActionCommand}" Height="36" Cursor="Hand"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Clean Shader & Temp Cache Card -->
+                            <Border Background="#161924" BorderBrush="#262D42" BorderThickness="1" CornerRadius="14" Padding="18,16" Margin="10,0,0,0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                                        <TextBlock Text="🧹 Purge DirectX Shader Cache" FontSize="15" FontWeight="Bold" Foreground="#F8FAFC"/>
+                                        <TextBlock Text="Fix stutter caused by corrupted cache" FontSize="11.5" Foreground="#64748B" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Row="1" Text="Removes stale compiled shaders, Tencent AppMarket temp logs, and emulator junk files. Forces GameLoop to rebuild a fresh, stutter-free shader pipeline." FontSize="12" Foreground="#94A3B8" TextWrapping="Wrap" Margin="0,0,0,16"/>
+                                    <Button Grid.Row="2" Style="{StaticResource SecondaryButton}" Content="🗑️ Clean Shader Cache" Command="{Binding CleanShaderCacheActionCommand}" Height="36" Cursor="Hand"/>
+                                </Grid>
+                            </Border>
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
         </StackPanel>
     </ScrollViewer>
 </UserControl>

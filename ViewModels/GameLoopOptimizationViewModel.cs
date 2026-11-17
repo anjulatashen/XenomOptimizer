@@ -26,12 +26,38 @@ public partial class GameLoopOptimizationViewModel : ObservableObject
     [ObservableProperty] private bool _isOneTapBusy;
     [ObservableProperty] private string _oneTapStatus = "";
 
-    // 120 FPS Safe Unlock properties
+    // ── Tab Navigation ────────────────────────────────────────────────────────
+    // 0: Graphics & 120 FPS, 1: Engine & Cores, 2: Device Spoofing, 3: PC Doctor, 4: Storage & Safe Close
+    [ObservableProperty] private int _selectedSubTab = 0;
+
+    // ── 120 FPS Safe Unlock properties ────────────────────────────────────────
     [ObservableProperty] private bool _is120FpsUnlocked;
     [ObservableProperty] private string _fps120StatusText = "90 FPS (Stock Capped)";
     [ObservableProperty] private string _fps120DetailText = "GameLoop is currently capped at 90 FPS. Click 'Unlock 120 FPS Mode' to apply safe certified 120Hz device spoofing.";
     [ObservableProperty] private string _fps120ActionMessage = "";
     [ObservableProperty] private bool _isApplying120Fps;
+
+    // ── Graphics & Resolution Presets ─────────────────────────────────────────
+    [ObservableProperty] private int _selectedResolutionIndex = 0;
+    [ObservableProperty] private string _resolutionStatusMessage = "";
+    [ObservableProperty] private string _currentResolutionDisplay = "1920x1080 (240 DPI)";
+
+    // ── Engine & Hardware Allocation ──────────────────────────────────────────
+    [ObservableProperty] private int _selectedEngineIndex = 0; // 0=DirectX+, 1=OpenGL+, 2=Vulkan, 3=DirectX Lite
+    [ObservableProperty] private int _selectedCoresIndex = 0;  // 0=Auto, 1=2, 2=4, 3=6, 4=8 Cores
+    [ObservableProperty] private int _selectedRamIndex = 0;    // 0=Auto, 1=2GB, 2=4GB, 3=8GB, 4=12GB
+    [ObservableProperty] private string _engineHardwareStatus = "";
+
+    // ── Device Spoofing ───────────────────────────────────────────────────────
+    [ObservableProperty] private int _selectedDeviceIndex = 0;
+    [ObservableProperty] private string _currentDeviceModelText = "Detecting...";
+    [ObservableProperty] private string _deviceSpoofStatus = "";
+
+    // ── PC Doctor & Storage ───────────────────────────────────────────────────
+    [ObservableProperty] private bool _isCoreIsolationHvciDisabled;
+    [ObservableProperty] private bool _isAppMarketAutoCloseActive;
+    [ObservableProperty] private string _doctorStatusMessage = "";
+    [ObservableProperty] private string _storageStatusMessage = "";
 
     public ObservableCollection<OptimizationCardViewModel> Optimizations { get; } = new();
     public ObservableCollection<GameLoopConfigItem> ConfigItems { get; } = new();
@@ -88,6 +114,26 @@ public partial class GameLoopOptimizationViewModel : ObservableObject
             // Load 120 FPS Unlock status
             Is120FpsUnlocked = await _optimizer.Is120FpsUnlockedAsync();
             Update120FpsTexts();
+
+            // Load GameLoop Pro Suite settings
+            var res = await _optimizer.GetCurrentResolutionAsync();
+            CurrentResolutionDisplay = $"{res.Width}x{res.Height} ({res.Dpi} DPI)";
+            if (res.Width == 1920 && res.Height == 1080) SelectedResolutionIndex = 0;
+            else if (res.Width == 2560 && res.Height == 1440) SelectedResolutionIndex = 1;
+            else if (res.Width == 3840 && res.Height == 2160) SelectedResolutionIndex = 2;
+            else if (res.Width == 1440 && res.Height == 1080) SelectedResolutionIndex = 3;
+            else if (res.Width == 2300 && res.Height == 1920) SelectedResolutionIndex = 4;
+            else if (res.Width == 1280 && res.Height == 720) SelectedResolutionIndex = 5;
+
+            SelectedEngineIndex = Math.Clamp(await _optimizer.GetCurrentRenderEngineAsync(), 0, 3);
+
+            var hw = await _optimizer.GetCurrentHardwareAllocationAsync();
+            SelectedCoresIndex = hw.Cores switch { 2 => 1, 4 => 2, 6 => 3, 8 => 4, _ => 0 };
+            SelectedRamIndex = hw.RamMb switch { 2048 => 1, 4096 => 2, 8192 => 3, 12288 => 4, _ => 0 };
+
+            CurrentDeviceModelText = await _optimizer.GetCurrentDeviceModelAsync();
+            IsCoreIsolationHvciDisabled = !(await _optimizer.IsCoreIsolationHvciEnabledAsync());
+            IsAppMarketAutoCloseActive = await _optimizer.IsAppMarketAutoCloseEnabledAsync();
         }
         catch (Exception ex)
         {
@@ -260,6 +306,147 @@ public partial class GameLoopOptimizationViewModel : ObservableObject
         {
             Fps120ActionMessage = $"Error: {ex.Message}";
         }
+    }
+
+    [RelayCommand]
+    private void SwitchTab(object? parameter)
+    {
+        if (parameter is int i) SelectedSubTab = i;
+        else if (parameter != null && int.TryParse(parameter.ToString(), out int parsed)) SelectedSubTab = parsed;
+    }
+
+    [RelayCommand]
+    private async Task ApplyResolutionPresetAsync(object? parameter)
+    {
+        int index = 0;
+        if (parameter is int i) index = i;
+        else if (parameter != null && int.TryParse(parameter.ToString(), out int parsed)) index = parsed;
+
+        SelectedResolutionIndex = index;
+        var (w, h, dpi, name) = index switch
+        {
+            0 => (1920, 1080, 240, "1080p FHD"),
+            1 => (2560, 1440, 320, "2K QHD"),
+            2 => (3840, 2160, 480, "4K UHD"),
+            3 => (1440, 1080, 240, "iPad View 4:3"),
+            4 => (2300, 1920, 320, "iPad Pro 4:3"),
+            5 => (1280, 720, 160, "720p Fast"),
+            _ => (1920, 1080, 240, "1080p FHD")
+        };
+
+        ResolutionStatusMessage = $"Applying {name}...";
+        var res = await _optimizer.ApplyResolutionPresetAsync(w, h, dpi, name);
+        ResolutionStatusMessage = res.Message;
+        CurrentResolutionDisplay = $"{w}x{h} ({dpi} DPI)";
+    }
+
+    [RelayCommand]
+    private async Task ApplyEngineSettingsAsync()
+    {
+        string engineName = SelectedEngineIndex switch
+        {
+            0 => "DirectX+ (Recommended)",
+            1 => "OpenGL+",
+            2 => "Vulkan",
+            3 => "DirectX Lite",
+            _ => "DirectX+"
+        };
+
+        int cores = SelectedCoresIndex switch
+        {
+            1 => 2,
+            2 => 4,
+            3 => 6,
+            4 => 8,
+            _ => 0 // Auto
+        };
+
+        int ram = SelectedRamIndex switch
+        {
+            1 => 2048,
+            2 => 4096,
+            3 => 8192,
+            4 => 12288,
+            _ => 0 // Auto
+        };
+
+        EngineHardwareStatus = "Applying engine & hardware parameters...";
+        var engineRes = await _optimizer.ApplyRenderEngineAsync(SelectedEngineIndex, engineName);
+        var hwRes = await _optimizer.ApplyHardwareAllocationAsync(cores, ram);
+        EngineHardwareStatus = $"{engineRes.Message} | {hwRes.Message}";
+    }
+
+    [RelayCommand]
+    private async Task ApplyDeviceProfileAsync(object? parameter)
+    {
+        int index = 0;
+        if (parameter is int i) index = i;
+        else if (parameter != null && int.TryParse(parameter.ToString(), out int parsed)) index = parsed;
+
+        SelectedDeviceIndex = index;
+        var (model, manufacturer, phoneName, fps) = index switch
+        {
+            0 => ("ASUS_AI2401_A", "asus", "ASUS ROG Phone 8 Pro", 120),
+            1 => ("SM-X910", "samsung", "Samsung Galaxy Tab S9 Ultra", 120),
+            2 => ("ASUS_I005D", "asus", "ASUS ROG Phone 5", 90),
+            3 => ("2210132C", "xiaomi", "Xiaomi 13 Pro", 120),
+            _ => ("ASUS_AI2401_A", "asus", "ASUS ROG Phone 8 Pro", 120)
+        };
+
+        DeviceSpoofStatus = $"Applying {phoneName}...";
+        var res = await _optimizer.ApplyDeviceProfileAsync(model, manufacturer, phoneName, fps);
+        DeviceSpoofStatus = res.Message;
+        CurrentDeviceModelText = phoneName;
+        Is120FpsUnlocked = (fps == 120);
+        Update120FpsTexts();
+    }
+
+    [RelayCommand]
+    private async Task ToggleCoreIsolationHvciAsync()
+    {
+        if (!_admin.IsRunningAsAdmin)
+        {
+            DoctorStatusMessage = "Administrator privileges required to change Core Isolation (HVCI).";
+            return;
+        }
+
+        bool targetState = !IsCoreIsolationHvciDisabled;
+        DoctorStatusMessage = "Configuring Core Isolation (HVCI)...";
+        // If targetState is true, we want it disabled for gaming
+        var res = await _optimizer.SetCoreIsolationHvciAsync(!targetState);
+        DoctorStatusMessage = res.Message;
+        if (res.Success)
+        {
+            IsCoreIsolationHvciDisabled = targetState;
+        }
+    }
+
+    [RelayCommand]
+    private async Task ToggleAppMarketAutoCloseAsync()
+    {
+        bool targetState = !IsAppMarketAutoCloseActive;
+        var res = await _optimizer.SetAppMarketAutoCloseAsync(targetState);
+        DoctorStatusMessage = res.Message;
+        if (res.Success)
+        {
+            IsAppMarketAutoCloseActive = targetState;
+        }
+    }
+
+    [RelayCommand]
+    private async Task SafeCloseGameLoopActionAsync()
+    {
+        StorageStatusMessage = "Closing GameLoop safely and flushing write caches...";
+        var res = await _optimizer.SafeCloseGameLoopAsync();
+        StorageStatusMessage = res.Message;
+    }
+
+    [RelayCommand]
+    private async Task CleanShaderCacheActionAsync()
+    {
+        StorageStatusMessage = "Purging shader cache and temp logs...";
+        var res = await _optimizer.CleanShaderAndTempCacheAsync();
+        StorageStatusMessage = res.Message;
     }
 }
 
