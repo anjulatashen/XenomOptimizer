@@ -37,7 +37,7 @@ public static class UpdateService
 {
     private static readonly HttpClient HttpClient = new()
     {
-        Timeout = TimeSpan.FromSeconds(30)
+        Timeout = TimeSpan.FromMinutes(10)
     };
 
     public static UpdateInfo? AvailableUpdate { get; private set; }
@@ -255,15 +255,25 @@ public static class UpdateService
         {
             bool downloadSuccess = false;
 
-            // 1. Try remote GitHub download if URL provided
+            // 1. Try remote GitHub download from provided or fallback URLs
+            var remoteUrls = new List<string>();
             if (!string.IsNullOrWhiteSpace(updateInfo.DownloadUrl))
             {
+                remoteUrls.Add(updateInfo.DownloadUrl);
+            }
+            remoteUrls.Add("https://github.com/anjulatashen/XenomOptimizer/raw/main/XenomOptimizer-Update.zip");
+            remoteUrls.Add("https://raw.githubusercontent.com/anjulatashen/XenomOptimizer/main/XenomOptimizer-Update.zip");
+            remoteUrls.Add("https://github.com/anjulatashen/XenomOptimizer/releases/download/v1.0.1/XenomOptimizer-Update.zip");
+
+            foreach (var url in remoteUrls.Distinct())
+            {
+                if (downloadSuccess) break;
                 try
                 {
                     progress?.Report(2.0); // Stage 1: Preparation begins
-                    await Task.Delay(300);
+                    await Task.Delay(200);
 
-                    using var response = await HttpClient.GetAsync(updateInfo.DownloadUrl, HttpCompletionOption.ResponseHeadersRead);
+                    using var response = await HttpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
                     if (response.IsSuccessStatusCode)
                     {
                         var totalBytes = response.Content.Headers.ContentLength ?? -1L;
@@ -297,12 +307,12 @@ public static class UpdateService
                     }
                     else
                     {
-                        Debug.WriteLine($"[UpdateService] Remote returned HTTP {response.StatusCode}. Falling back to local update package.");
+                        Debug.WriteLine($"[UpdateService] Remote URL {url} returned HTTP {response.StatusCode}. Trying next candidate.");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[UpdateService] Remote download exception: {ex.Message}. Falling back to local package.");
+                    Debug.WriteLine($"[UpdateService] Error downloading from {url}: {ex.Message}. Trying next candidate.");
                 }
             }
 

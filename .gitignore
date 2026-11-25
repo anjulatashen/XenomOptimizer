@@ -15,6 +15,7 @@ bld/
 publish/
 publish_*/
 *.zip
+!XenomOptimizer-Update.zip
 Setup/
 Installer/bin/
 Installer/obj/

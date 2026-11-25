@@ -1,6 +1,6 @@
 {
   "version": "1.0.1 Beta",
-  "downloadUrl": "https://github.com/anjulatashen/XenomOptimizer/releases/download/v1.0.1/XenomOptimizer-Update.zip",
+  "downloadUrl": "https://github.com/anjulatashen/XenomOptimizer/raw/main/XenomOptimizer-Update.zip",
   "releaseNotes": "— In-Game 120 FPS & Ultra Extreme Graphics\n— Custom Resolutions & 4:3 iPad View Mode\n— ROG Phone 8 & Flagship Device Profiles\n— DirectX+, OpenGL+ & Vulkan Rendering Backend\n— Host CPU Cores & System Memory Allocator\n— One-Click PC Doctor & HVCI Bypass\n— Safe Emulator Close & Shader Cache Cleaner",
   "mandatory": false
 }

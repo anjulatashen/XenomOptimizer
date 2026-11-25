@@ -231,7 +231,7 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 	private string _appUpdateNotes = "— In-Game 120 FPS & Ultra Extreme Graphics\n— Custom Resolutions & 4:3 iPad View Mode\n— ROG Phone 8 & Flagship Device Profiles\n— DirectX+, OpenGL+ & Vulkan Rendering Backend\n— Host CPU Cores & System Memory Allocator\n— One-Click PC Doctor & HVCI Bypass\n— Safe Emulator Close & Shader Cache Cleaner";
 
 	[ObservableProperty]
-	private string _appUpdateDownloadUrl = "https://github.com/anjulatashen/XenomOptimizer/releases/download/v1.0.1/XenomOptimizer-Update.zip";
+	private string _appUpdateDownloadUrl = "https://github.com/anjulatashen/XenomOptimizer/raw/main/XenomOptimizer-Update.zip";
 
 	[ObservableProperty]
 	private bool _isDownloadingAppUpdate;
@@ -3535,7 +3535,7 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 		{
 			Version = string.IsNullOrWhiteSpace(AppUpdateVersion) ? "1.0.1" : AppUpdateVersion.TrimStart('v'),
 			DownloadUrl = string.IsNullOrWhiteSpace(AppUpdateDownloadUrl)
-				? "https://github.com/anjulatashen/XenomOptimizer/releases/download/v1.0.1/XenomOptimizer-Update.zip"
+				? "https://github.com/anjulatashen/XenomOptimizer/raw/main/XenomOptimizer-Update.zip"
 				: AppUpdateDownloadUrl,
 			ReleaseNotes = AppUpdateNotes
 		};
