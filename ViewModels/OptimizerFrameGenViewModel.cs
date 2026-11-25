@@ -970,6 +970,83 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
     }
 
     [RelayCommand]
+    public async Task ApplyAllResponsivenessAsync()
+    {
+        IsApplyingAllTweaks = true;
+        TweakStatusMessage = "Closing GameLoop and applying all 4 Kernel & GPU Responsiveness tweaks...";
+
+        await Task.Run(() =>
+        {
+            SafeCloseGameLoopRunning();
+
+            foreach (var exe in GameLoopBinaries)
+            {
+                string ifeoPath = $@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\{exe}";
+                try
+                {
+                    using var key = Registry.LocalMachine.CreateSubKey(ifeoPath, RegistryKeyPermissionCheck.ReadWriteSubTree);
+                    if (key != null)
+                    {
+                        foreach (var item in ResponsivenessItems)
+                        {
+                            key.SetValue(item.KeyName, item.TargetValue, item.ValueKind);
+                        }
+                    }
+                }
+                catch { }
+
+                foreach (var item in ResponsivenessItems)
+                {
+                    string valType = item.ValueKind == RegistryValueKind.DWord ? "REG_DWORD" : "REG_SZ";
+                    RunRegCommand($@"add ""HKLM\{ifeoPath}"" /v ""{item.KeyName}"" /t {valType} /d ""{item.TargetValue}"" /f");
+                }
+            }
+        });
+
+        CheckAllRegistryStatuses();
+        TweakStatusMessage = "⚡ All 4 Kernel & GPU Responsiveness tweaks applied successfully!";
+        IsApplyingAllTweaks = false;
+    }
+
+    [RelayCommand]
+    public async Task RevertAllResponsivenessAsync()
+    {
+        IsApplyingAllTweaks = true;
+        TweakStatusMessage = "Closing GameLoop and reverting all 4 Kernel & GPU Responsiveness tweaks...";
+
+        await Task.Run(() =>
+        {
+            SafeCloseGameLoopRunning();
+
+            foreach (var exe in GameLoopBinaries)
+            {
+                string ifeoPath = $@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\{exe}";
+                try
+                {
+                    using var key = Registry.LocalMachine.OpenSubKey(ifeoPath, true);
+                    if (key != null)
+                    {
+                        foreach (var item in ResponsivenessItems)
+                        {
+                            key.DeleteValue(item.KeyName, false);
+                        }
+                    }
+                }
+                catch { }
+
+                foreach (var item in ResponsivenessItems)
+                {
+                    RunRegCommand($@"delete ""HKLM\{ifeoPath}"" /v ""{item.KeyName}"" /f");
+                }
+            }
+        });
+
+        CheckAllRegistryStatuses();
+        TweakStatusMessage = "↺ All 4 Kernel & GPU Responsiveness tweaks reverted to defaults.";
+        IsApplyingAllTweaks = false;
+    }
+
+    [RelayCommand]
     public async Task RevertAllToDefaultsAsync()
     {
         IsApplyingAllTweaks = true;
@@ -1056,6 +1133,12 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
         CheckAllRegistryStatuses();
         TweakStatusMessage = "↺ All GameLoop engine and latency tweaks successfully restored to defaults (custom keys removed).";
         IsApplyingAllTweaks = false;
+    }
+
+    [RelayCommand]
+    public async Task ToggleRegistryItemAsync(GameLoopRegistryItem item)
+    {
+        await ToggleTweakAsync(item);
     }
 
     [RelayCommand]
