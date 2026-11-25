@@ -489,6 +489,184 @@ public class SystemDetectionService : ISystemDetectionService
         });
     }
 
+    #region NVML Native Telemetry
+    internal static class NvmlNative
+    {
+        private static bool _initialized;
+        private static bool _initFailed;
+        private static IntPtr _deviceHandle = IntPtr.Zero;
+        private static readonly object _initLock = new();
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct NvmlUtilization
+        {
+            public uint Gpu;
+            public uint Memory;
+        }
+
+        [DllImport("nvml.dll", EntryPoint = "nvmlInit_v2")]
+        public static extern int NvmlInit();
+
+        [DllImport("nvml.dll", EntryPoint = "nvmlShutdown")]
+        public static extern int NvmlShutdown();
+
+        [DllImport("nvml.dll", EntryPoint = "nvmlDeviceGetHandleByIndex_v2")]
+        public static extern int NvmlDeviceGetHandleByIndex(uint index, out IntPtr device);
+
+        [DllImport("nvml.dll", EntryPoint = "nvmlDeviceGetUtilizationRates")]
+        public static extern int NvmlDeviceGetUtilizationRates(IntPtr device, out NvmlUtilization utilization);
+
+        public static bool TryGetGpuUsage(out double usagePercent)
+        {
+            usagePercent = 0.0;
+            if (_initFailed) return false;
+
+            lock (_initLock)
+            {
+                if (!_initialized && !_initFailed)
+                {
+                    try
+                    {
+                        var sysDir = Environment.GetFolderPath(Environment.SpecialFolder.System);
+                        if (!File.Exists(Path.Combine(sysDir, "nvml.dll")))
+                        {
+                            _initFailed = true;
+                            return false;
+                        }
+
+                        if (NvmlInit() == 0 && NvmlDeviceGetHandleByIndex(0, out _deviceHandle) == 0 && _deviceHandle != IntPtr.Zero)
+                        {
+                            _initialized = true;
+                        }
+                        else
+                        {
+                            _initFailed = true;
+                            return false;
+                        }
+                    }
+                    catch
+                    {
+                        _initFailed = true;
+                        return false;
+                    }
+                }
+
+                if (_initialized && _deviceHandle != IntPtr.Zero)
+                {
+                    try
+                    {
+                        if (NvmlDeviceGetUtilizationRates(_deviceHandle, out var util) == 0)
+                        {
+                            usagePercent = Math.Clamp(util.Gpu, 0.0, 100.0);
+                            return true;
+                        }
+                    }
+                    catch
+                    {
+                        // Fall back to counters
+                    }
+                }
+
+                return false;
+            }
+        }
+    }
+    #endregion
+
+    #region AMD ADL Native Telemetry
+    internal static class AmdAdlNative
+    {
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate IntPtr ADL_Main_Memory_Alloc(int size);
+
+        private static readonly ADL_Main_Memory_Alloc MemoryAllocCallback = size => Marshal.AllocHGlobal(size);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct ADLPMActivity
+        {
+            public int iSize;
+            public int iEngineClock;
+            public int iMemoryClock;
+            public int iVddc;
+            public int iActivityPercent;
+            public int iCurrentPerformanceLevel;
+            public int iCurrentBusSpeed;
+            public int iCurrentBusLanes;
+            public int iMaximumBusLanes;
+            public int iReserved;
+        }
+
+        [DllImport("atiadlxx.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int ADL_Main_Control_Create(ADL_Main_Memory_Alloc callback, int enumConnectedAdapters);
+
+        [DllImport("atiadlxx.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int ADL_Main_Control_Destroy();
+
+        [DllImport("atiadlxx.dll", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int ADL_Overdrive5_CurrentActivity_Get(int adapterIndex, ref ADLPMActivity activity);
+
+        private static bool _initialized;
+        private static bool _initFailed;
+        private static readonly object _initLock = new();
+
+        public static bool TryGetGpuUsage(out double usagePercent)
+        {
+            usagePercent = 0.0;
+            if (_initFailed) return false;
+
+            lock (_initLock)
+            {
+                if (!_initialized && !_initFailed)
+                {
+                    try
+                    {
+                        var sysDir = Environment.GetFolderPath(Environment.SpecialFolder.System);
+                        if (!File.Exists(Path.Combine(sysDir, "atiadlxx.dll")))
+                        {
+                            _initFailed = true;
+                            return false;
+                        }
+
+                        if (ADL_Main_Control_Create(MemoryAllocCallback, 1) == 0)
+                        {
+                            _initialized = true;
+                        }
+                        else
+                        {
+                            _initFailed = true;
+                            return false;
+                        }
+                    }
+                    catch
+                    {
+                        _initFailed = true;
+                        return false;
+                    }
+                }
+
+                if (_initialized)
+                {
+                    try
+                    {
+                        var activity = new ADLPMActivity { iSize = Marshal.SizeOf<ADLPMActivity>() };
+                        if (ADL_Overdrive5_CurrentActivity_Get(0, ref activity) == 0)
+                        {
+                            usagePercent = Math.Clamp(activity.iActivityPercent, 0.0, 100.0);
+                            return true;
+                        }
+                    }
+                    catch
+                    {
+                        // Fall back
+                    }
+                }
+
+                return false;
+            }
+        }
+    }
+    #endregion
+
     private void EnsureGpuCountersAsync()
     {
         if (_isGpuScanning) return;
@@ -503,7 +681,7 @@ public class SystemDetectionService : ISystemDetectionService
                 if (PerformanceCounterCategory.Exists("GPU Engine"))
                 {
                     var cat = new PerformanceCounterCategory("GPU Engine");
-                    var names = cat.GetInstanceNames().Where(n => n.EndsWith("engtype_3D")).ToList();
+                    var names = cat.GetInstanceNames().Where(n => n.EndsWith("engtype_3D")).Take(10).ToList();
                     foreach (var name in names)
                     {
                         try
@@ -536,6 +714,19 @@ public class SystemDetectionService : ISystemDetectionService
     {
         return Task.Run(() =>
         {
+            // 1. NVIDIA Cards: Official NVIDIA Management Library (NVML) direct hardware read
+            if (NvmlNative.TryGetGpuUsage(out double nvmlUsage))
+            {
+                return nvmlUsage;
+            }
+
+            // 2. AMD Radeon Cards: Official AMD Display Library (ADL) direct hardware read
+            if (AmdAdlNative.TryGetGpuUsage(out double adlUsage))
+            {
+                return adlUsage;
+            }
+
+            // 3. Fallback for Integrated Graphics / Intel / No Dedicated VGA: Safe performance counter sampler
             EnsureGpuCountersAsync();
 
             lock (_gpuLock)

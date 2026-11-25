@@ -20,8 +20,8 @@ public partial class MainWindow : Window
     {
         { "Dashboard", 0 },
         { "Windows", 1 },
-        { "Optimizer", 2 },
-        { "Registry", 3 },
+        { "Registry", 2 },
+        { "Optimizer", 3 },
         { "GameLoop", 4 },
         { "PUBG", 5 },
         { "Network", 6 },
@@ -32,13 +32,30 @@ public partial class MainWindow : Window
     };
     private int _currentIndex = 0;
     private SystemTrayService? _trayService;
+    private DispatcherTimer? _savePlacementTimer;
 
     public MainWindow()
     {
         InitializeComponent();
+        WindowPlacementService.PositionMainWindow(this);
         StateChanged += MainWindow_StateChanged;
         Loaded += MainWindow_Loaded;
         Closing += MainWindow_Closing;
+        LocationChanged += MainWindow_LocationChanged;
+    }
+
+    private void MainWindow_LocationChanged(object? sender, EventArgs e)
+    {
+        if (WindowState != WindowState.Normal) return;
+
+        _savePlacementTimer?.Stop();
+        _savePlacementTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(600) };
+        _savePlacementTimer.Tick += (s, ev) =>
+        {
+            _savePlacementTimer.Stop();
+            WindowPlacementService.Save(this);
+        };
+        _savePlacementTimer.Start();
     }
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -58,8 +75,8 @@ public partial class MainWindow : Window
         {
             NavDashboard,
             NavWindows,
-            NavOptimizer,
             NavRegistry,
+            NavOptimizer,
             NavGameLoop,
             NavPubg,
             NavNetwork,
@@ -90,6 +107,19 @@ public partial class MainWindow : Window
         XenomOptimizer.Services.UpdateService.CheckForUpdatesInBackground(
             "https://raw.githubusercontent.com/anjulatashen/XenomOptimizer/main/update.json"
         );
+
+        // Pre-warm views during application idle so XAML parsing, BAML resources,
+        // templates, and converters are already JITted and ready in memory before first tab click!
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            try
+            {
+                _ = new Views.WindowsOptimizationView();
+                _ = new Views.OptimizerFrameGenView();
+                _ = new Views.RegistryOptimizationView();
+            }
+            catch { }
+        }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
     }
 
     private void Vm_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -325,10 +355,6 @@ public partial class MainWindow : Window
             Duration = TimeSpan.FromMilliseconds(180),
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
         };
-        opacityAnim.Completed += (s, e) =>
-        {
-            SetButtonActiveDirectly(btn);
-        };
         whiteFill.BeginAnimation(UIElement.OpacityProperty, opacityAnim, HandoffBehavior.SnapshotAndReplace);
 
         // 4. Glyph Color -> Dark Charcoal (#101114)
@@ -452,6 +478,12 @@ public partial class MainWindow : Window
                     iconGlyph.Opacity = 0.0;
                     iconGlyph.Visibility = Visibility.Collapsed;
                 }
+                if (rb.Template.FindName("GameLoopVector", rb) is FrameworkElement glVectorLock)
+                {
+                    glVectorLock.BeginAnimation(UIElement.OpacityProperty, null);
+                    glVectorLock.Opacity = 0.0;
+                    glVectorLock.Visibility = Visibility.Collapsed;
+                }
 
                 // 2. Show the pure red lock icon
                 if (lockBox != null)
@@ -573,7 +605,26 @@ public partial class MainWindow : Window
                         gapTimer.Tick += (st, et) =>
                         {
                             gapTimer.Stop();
-                            if (iconGlyph != null)
+                            if (rb.Tag?.ToString() == "GAMELOOP")
+                            {
+                                if (iconGlyph != null) iconGlyph.Visibility = Visibility.Collapsed;
+                                if (rb.Template.FindName("GameLoopVector", rb) is FrameworkElement glVector)
+                                {
+                                    glVector.Visibility = Visibility.Visible;
+                                    glVector.BeginAnimation(UIElement.OpacityProperty, null);
+                                    var fadeInGl = new DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(160))
+                                    {
+                                        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                                    };
+                                    fadeInGl.Completed += (s2, e2) =>
+                                    {
+                                        glVector.BeginAnimation(UIElement.OpacityProperty, null);
+                                        glVector.Opacity = 1.0;
+                                    };
+                                    glVector.BeginAnimation(UIElement.OpacityProperty, fadeInGl);
+                                }
+                            }
+                            else if (iconGlyph != null)
                             {
                                 iconGlyph.Visibility = Visibility.Visible;
                                 iconGlyph.BeginAnimation(UIElement.OpacityProperty, null);
@@ -589,12 +640,11 @@ public partial class MainWindow : Window
                                 iconGlyph.BeginAnimation(UIElement.OpacityProperty, fadeInIcon);
                             }
 
-                            if (flyoutPopup != null && rb.IsMouseOver)
+                            if (flyoutPopup != null)
                             {
-                                flyoutPopup.Visibility = Visibility.Visible;
                                 flyoutPopup.BeginAnimation(UIElement.OpacityProperty, null);
-                                var fadeInFlyout = new DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(120));
-                                flyoutPopup.BeginAnimation(UIElement.OpacityProperty, fadeInFlyout);
+                                flyoutPopup.ClearValue(UIElement.OpacityProperty);
+                                flyoutPopup.ClearValue(UIElement.VisibilityProperty);
                             }
                         };
                         gapTimer.Start();
@@ -603,7 +653,17 @@ public partial class MainWindow : Window
                 }
                 else
                 {
-                    if (iconGlyph != null)
+                    if (rb.Tag?.ToString() == "GAMELOOP")
+                    {
+                        if (iconGlyph != null) iconGlyph.Visibility = Visibility.Collapsed;
+                        if (rb.Template.FindName("GameLoopVector", rb) is FrameworkElement glVector)
+                        {
+                            glVector.BeginAnimation(UIElement.OpacityProperty, null);
+                            glVector.Visibility = Visibility.Visible;
+                            glVector.Opacity = 1.0;
+                        }
+                    }
+                    else if (iconGlyph != null)
                     {
                         iconGlyph.BeginAnimation(UIElement.OpacityProperty, null);
                         iconGlyph.Visibility = Visibility.Visible;
@@ -637,9 +697,21 @@ public partial class MainWindow : Window
 
     private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
-        var optVm = App.Services.GetService(typeof(OptimizerFrameGenViewModel)) as OptimizerFrameGenViewModel;
-        optVm?.CleanExit();
-        _trayService?.Dispose();
+        try
+        {
+            _savePlacementTimer?.Stop();
+            WindowPlacementService.Save(this);
+            var optVm = App.Services.GetService(typeof(OptimizerFrameGenViewModel)) as OptimizerFrameGenViewModel;
+            optVm?.CleanExit();
+            var settingsService = App.Services.GetService(typeof(ISettingsService)) as ISettingsService;
+            settingsService?.Save();
+            _trayService?.Dispose();
+        }
+        catch { }
+        finally
+        {
+            Environment.Exit(0);
+        }
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -657,8 +729,7 @@ public partial class MainWindow : Window
 
     private void Minimize_Click(object sender, RoutedEventArgs e)
     {
-        // Executes the 100% native Windows OS DWM minimize animation
-        SystemCommands.MinimizeWindow(this);
+        _trayService?.MinimizeToTray();
     }
 
     private void Close_Click(object sender, RoutedEventArgs e)

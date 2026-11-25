@@ -4,10 +4,10 @@
         xmlns:vm="clr-namespace:XenomOptimizer.ViewModels"
         xmlns:views="clr-namespace:XenomOptimizer.Views"
         xmlns:gif="http://wpfanimatedgif.codeplex.com"
-        Title="LAG KILLER BY XENOM"
+        Title="LAG KILLER BY XENOM (Beta)"
         Icon="Assets/xenom.ico"
         Height="885" Width="1340"
-        WindowStartupLocation="CenterScreen"
+        WindowStartupLocation="Manual"
         Background="{StaticResource BgDarkestBrush}"
         WindowStyle="SingleBorderWindow"
         AllowsTransparency="False"
@@ -93,6 +93,13 @@
                                 </Setter.Value>
                             </Setter>
                         </DataTrigger>
+                        <DataTrigger Binding="{Binding IsPasscodeModalActive}" Value="True">
+                            <Setter Property="Effect">
+                                <Setter.Value>
+                                    <BlurEffect Radius="16" KernelType="Gaussian" RenderingBias="Performance"/>
+                                </Setter.Value>
+                            </Setter>
+                        </DataTrigger>
                     </Style.Triggers>
                 </Style>
             </Border.Style>
@@ -133,9 +140,10 @@
                                 </StackPanel>
                             </Border>
 
-                            <TextBlock Text="v1.0.0" FontFamily="{StaticResource PrimaryFont}"
-                                       FontSize="10" Foreground="{StaticResource TextMutedBrush}"
-                                       VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            <!-- Beta Label (Plain text without box or glow) -->
+                            <TextBlock Text="Beta" FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="10.5" FontWeight="SemiBold" Foreground="#38BDF8"
+                                       Margin="10,0,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
 
                         <!-- Title Bar Window Controls (Minimize, Close) with HitTestVisible -->
@@ -227,17 +235,18 @@
 
                                     <RadioButton x:Name="NavWindows" Style="{StaticResource HaulixSidebarButton}" Content="Windows Tweaks" Tag="&#xE770;"
                                                  IsChecked="{Binding IsWindowsActive, Mode=OneWay}"
+                                                 PreviewMouseLeftButtonDown="NavButton_PreviewMouseLeftButtonDown"
                                                  Command="{Binding NavigateToCommand}" CommandParameter="Windows"/>
+
+                                    <RadioButton x:Name="NavRegistry" Style="{StaticResource HaulixSidebarButton}" Content="GameLoop Installer &amp; Uninstaller" Tag="GAMELOOP"
+                                                 IsChecked="{Binding IsRegistryActive, Mode=OneWay}"
+                                                 PreviewMouseLeftButtonDown="NavButton_PreviewMouseLeftButtonDown"
+                                                 Command="{Binding NavigateToCommand}" CommandParameter="Registry"/>
 
                                     <RadioButton x:Name="NavOptimizer" Style="{StaticResource HaulixSidebarButton}" Content="Optimizer &amp; Frame Gen" Tag="&#xE768;"
                                                  IsChecked="{Binding IsOptimizerActive, Mode=OneWay}"
                                                  PreviewMouseLeftButtonDown="NavButton_PreviewMouseLeftButtonDown"
                                                  Command="{Binding NavigateToCommand}" CommandParameter="Optimizer"/>
-
-                                    <RadioButton x:Name="NavRegistry" Style="{StaticResource HaulixSidebarButton}" Content="Registry Tweaks" Tag="&#xE74C;"
-                                                 IsChecked="{Binding IsRegistryActive, Mode=OneWay}"
-                                                 PreviewMouseLeftButtonDown="NavButton_PreviewMouseLeftButtonDown"
-                                                 Command="{Binding NavigateToCommand}" CommandParameter="Registry"/>
 
                                     <RadioButton x:Name="NavGameLoop" Style="{StaticResource HaulixSidebarButton}" Content="GameLoop Engine" Tag="&#xE7FC;"
                                                  IsChecked="{Binding IsGameLoopActive, Mode=OneWay}"
@@ -323,5 +332,11 @@
                                             DataContext="{Binding WindowsVm}"
                                             Visibility="{Binding DataContext.IsInstructionModalActive, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"
                                             Panel.ZIndex="1003"/>
+
+        <!-- ═══ FULL-WINDOW PASSCODE LOCK MODAL (RESTRICTED SECTION OVERLAY) ═══ -->
+        <views:PasscodeModalControl x:Name="PasscodeModal"
+                                    WindowChrome.IsHitTestVisibleInChrome="True"
+                                    Visibility="{Binding IsPasscodeModalActive, Converter={StaticResource BoolToVis}}"
+                                    Panel.ZIndex="1005"/>
     </Grid>
 </Window>

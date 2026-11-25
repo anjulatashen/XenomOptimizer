@@ -868,6 +868,11 @@ public partial class WindowsOptimizationView : UserControl
 
         }
 
+        else if (e.PropertyName == nameof(WindowsOptimizationViewModel.SelectedAdvanceSubTabIndex))
+        {
+            AnimateAdvanceSubTabSwitch();
+        }
+
 
 
         else if (e.PropertyName == nameof(WindowsOptimizationViewModel.IsRescanningDrivers))
@@ -1189,7 +1194,7 @@ public partial class WindowsOptimizationView : UserControl
                 }
             }
 
-            Dispatcher.InvokeAsync(() => TriggerEntranceAnimation(force: true, animateScrollDots: true), DispatcherPriority.Normal);
+            Dispatcher.InvokeAsync(() => TriggerEntranceAnimation(force: true, animateScrollDots: true), DispatcherPriority.Loaded);
 
         }
 
@@ -1199,60 +1204,314 @@ public partial class WindowsOptimizationView : UserControl
 
     private DateTime _lastEntranceAnimationTime = DateTime.MinValue;
     private int _entranceAnimationEpoch = 0;
+    private int _subTabSwitchEpoch = 0;
 
+    private void AnimateAdvanceSubTabSwitch()
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.InvokeAsync(AnimateAdvanceSubTabSwitch);
+            return;
+        }
 
+        if (_subscribedVm == null) return;
+        int tab = _subscribedVm.SelectedAdvanceSubTabIndex;
+        int currentEpoch = ++_subTabSwitchEpoch;
+
+        // Reset and clear any existing animations cleanly to prevent queuing/freezing on rapid clicks
+        AdvanceTabActiveContainer?.BeginAnimation(UIElement.OpacityProperty, null);
+        LowEndTabActiveContainer?.BeginAnimation(UIElement.OpacityProperty, null);
+        AdvanceTabActiveTranslate?.BeginAnimation(TranslateTransform.XProperty, null);
+        AdvanceTabActiveTranslate?.BeginAnimation(TranslateTransform.YProperty, null);
+        LowEndTabActiveTranslate?.BeginAnimation(TranslateTransform.XProperty, null);
+        LowEndTabActiveTranslate?.BeginAnimation(TranslateTransform.YProperty, null);
+        AdvanceTabActiveScale?.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        AdvanceTabActiveScale?.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        LowEndTabActiveScale?.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        LowEndTabActiveScale?.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+
+        AdvanceSubTabCardMask?.BeginAnimation(FrameworkElement.MarginProperty, null);
+        AdvanceSubTabCardMask?.BeginAnimation(FrameworkElement.WidthProperty, null);
+
+        AdvanceTweaksPanel?.BeginAnimation(UIElement.OpacityProperty, null);
+        LowEndTweaksPanel?.BeginAnimation(UIElement.OpacityProperty, null);
+        AdvanceTweaksTranslate?.BeginAnimation(TranslateTransform.XProperty, null);
+        AdvanceTweaksTranslate?.BeginAnimation(TranslateTransform.YProperty, null);
+        LowEndTweaksTranslate?.BeginAnimation(TranslateTransform.XProperty, null);
+        LowEndTweaksTranslate?.BeginAnimation(TranslateTransform.YProperty, null);
+        AdvanceTweaksScale?.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        AdvanceTweaksScale?.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        LowEndTweaksScale?.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+        LowEndTweaksScale?.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+        AdvanceBottomFadeBrd?.BeginAnimation(UIElement.OpacityProperty, null);
+
+        // Apple Dynamic Island fluid spring & ease physics (matching Swith anime.mp4)
+        var smoothEaseOut = new CubicEase { EasingMode = EasingMode.EaseOut };
+        var smoothEaseIn = new CubicEase { EasingMode = EasingMode.EaseIn };
+        var fluidQuartOut = new QuarticEase { EasingMode = EasingMode.EaseOut };
+        var springBackOut = new BackEase { Amplitude = 0.20, EasingMode = EasingMode.EaseOut };
+
+        var exitDur = TimeSpan.FromMilliseconds(200);
+        var enterDur = TimeSpan.FromMilliseconds(380);
+        var morphDur = TimeSpan.FromMilliseconds(390);
+
+        if (tab == 1) // Switch to Low-End PC (Tab 1)
+        {
+            // 1. Advance Tab Header fades & scales out slightly to the left
+            if (AdvanceTabActiveContainer != null)
+            {
+                AdvanceTabActiveContainer.IsHitTestVisible = false;
+                var fadeOut = new DoubleAnimation { To = 0.0, Duration = exitDur, EasingFunction = smoothEaseOut };
+                AdvanceTabActiveContainer.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+            }
+            if (AdvanceTabActiveTranslate != null)
+            {
+                var slideOut = new DoubleAnimation { To = -18.0, Duration = exitDur, EasingFunction = smoothEaseOut };
+                AdvanceTabActiveTranslate.BeginAnimation(TranslateTransform.XProperty, slideOut);
+            }
+            if (AdvanceTabActiveScale != null)
+            {
+                var scaleOut = new DoubleAnimation { To = 0.95, Duration = exitDur, EasingFunction = smoothEaseOut };
+                AdvanceTabActiveScale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleOut);
+                AdvanceTabActiveScale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleOut);
+            }
+
+            // 2. Low-End PC Tab Header floats in from right with subtle spring bloom
+            if (LowEndTabActiveContainer != null)
+            {
+                LowEndTabActiveContainer.IsHitTestVisible = true;
+                if (LowEndTabActiveTranslate != null)
+                {
+                    LowEndTabActiveTranslate.X = 22.0;
+                    var slideIn = new DoubleAnimation { To = 0.0, Duration = enterDur, EasingFunction = fluidQuartOut };
+                    LowEndTabActiveTranslate.BeginAnimation(TranslateTransform.XProperty, slideIn);
+                }
+                if (LowEndTabActiveScale != null)
+                {
+                    LowEndTabActiveScale.ScaleX = 0.95;
+                    LowEndTabActiveScale.ScaleY = 0.95;
+                    var scaleIn = new DoubleAnimation { To = 1.0, Duration = enterDur, EasingFunction = springBackOut };
+                    LowEndTabActiveScale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleIn);
+                    LowEndTabActiveScale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleIn);
+                }
+                var fadeIn = new DoubleAnimation { To = 1.0, Duration = TimeSpan.FromMilliseconds(320), EasingFunction = smoothEaseOut };
+                LowEndTabActiveContainer.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+            }
+
+            // 3. Notch Mask smoothly stretches and glides across to under Low-End PC tab
+            if (AdvanceSubTabCardMask != null)
+            {
+                var marginAnim = new ThicknessAnimation { To = new Thickness(256, 0, 0, 0), Duration = morphDur, EasingFunction = fluidQuartOut };
+                var widthAnim = new DoubleAnimation { To = 279.0, Duration = morphDur, EasingFunction = fluidQuartOut };
+                AdvanceSubTabCardMask.BeginAnimation(FrameworkElement.MarginProperty, marginAnim);
+                AdvanceSubTabCardMask.BeginAnimation(FrameworkElement.WidthProperty, widthAnim);
+            }
+
+            // 4. Container top-left contour adapts
+            if (AdvanceSubTabContentContainer != null)
+            {
+                AdvanceSubTabContentContainer.CornerRadius = new CornerRadius(22, 22, 22, 22);
+            }
+
+            // 5. Card Panels: True organic cross-fade with Dynamic Island elastic bloom
+            if (AdvanceTweaksPanel != null)
+            {
+                AdvanceTweaksPanel.IsHitTestVisible = false;
+                var fadeOut = new DoubleAnimation { To = 0.0, Duration = exitDur, EasingFunction = smoothEaseIn };
+                fadeOut.Completed += (s, e) =>
+                {
+                    if (_subTabSwitchEpoch == currentEpoch && AdvanceTweaksPanel != null)
+                    {
+                        AdvanceTweaksPanel.Visibility = Visibility.Collapsed;
+                    }
+                };
+                AdvanceTweaksPanel.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+
+                if (AdvanceTweaksTranslate != null)
+                {
+                    var slideX = new DoubleAnimation { To = -20.0, Duration = exitDur, EasingFunction = smoothEaseIn };
+                    var slideY = new DoubleAnimation { To = 6.0, Duration = exitDur, EasingFunction = smoothEaseIn };
+                    AdvanceTweaksTranslate.BeginAnimation(TranslateTransform.XProperty, slideX);
+                    AdvanceTweaksTranslate.BeginAnimation(TranslateTransform.YProperty, slideY);
+                }
+                if (AdvanceTweaksScale != null)
+                {
+                    var scaleAnim = new DoubleAnimation { To = 0.96, Duration = exitDur, EasingFunction = smoothEaseIn };
+                    AdvanceTweaksScale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
+                    AdvanceTweaksScale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
+                }
+            }
+
+            if (LowEndTweaksPanel != null)
+            {
+                LowEndTweaksPanel.Visibility = Visibility.Visible;
+                LowEndTweaksPanel.IsHitTestVisible = true;
+                LowEndTweaksPanel.Opacity = 0.0;
+
+                if (LowEndTweaksTranslate != null)
+                {
+                    LowEndTweaksTranslate.X = 24.0;
+                    LowEndTweaksTranslate.Y = 8.0;
+                    var slideX = new DoubleAnimation(24.0, 0.0, enterDur) { EasingFunction = fluidQuartOut };
+                    var slideY = new DoubleAnimation(8.0, 0.0, enterDur) { EasingFunction = fluidQuartOut };
+                    LowEndTweaksTranslate.BeginAnimation(TranslateTransform.XProperty, slideX);
+                    LowEndTweaksTranslate.BeginAnimation(TranslateTransform.YProperty, slideY);
+                }
+                if (LowEndTweaksScale != null)
+                {
+                    LowEndTweaksScale.ScaleX = 0.96;
+                    LowEndTweaksScale.ScaleY = 0.96;
+                    var scaleAnim = new DoubleAnimation(0.96, 1.0, enterDur) { EasingFunction = springBackOut };
+                    LowEndTweaksScale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
+                    LowEndTweaksScale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
+                }
+                var fadeIn = new DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(300)) { EasingFunction = smoothEaseOut };
+                LowEndTweaksPanel.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+            }
+
+            // 6. Bottom Fade fades out on Low-End PC
+            if (AdvanceBottomFadeBrd != null)
+            {
+                var fadeOut = new DoubleAnimation { To = 0.0, Duration = exitDur, EasingFunction = smoothEaseOut };
+                AdvanceBottomFadeBrd.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+            }
+        }
+        else // Switch to Advance Tweaks (Tab 0)
+        {
+            // 1. Low-End PC Tab Header fades & scales out slightly to the right
+            if (LowEndTabActiveContainer != null)
+            {
+                LowEndTabActiveContainer.IsHitTestVisible = false;
+                var fadeOut = new DoubleAnimation { To = 0.0, Duration = exitDur, EasingFunction = smoothEaseOut };
+                LowEndTabActiveContainer.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+            }
+            if (LowEndTabActiveTranslate != null)
+            {
+                var slideOut = new DoubleAnimation { To = 18.0, Duration = exitDur, EasingFunction = smoothEaseOut };
+                LowEndTabActiveTranslate.BeginAnimation(TranslateTransform.XProperty, slideOut);
+            }
+            if (LowEndTabActiveScale != null)
+            {
+                var scaleOut = new DoubleAnimation { To = 0.95, Duration = exitDur, EasingFunction = smoothEaseOut };
+                LowEndTabActiveScale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleOut);
+                LowEndTabActiveScale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleOut);
+            }
+
+            // 2. Advance Tab Header floats in from left with subtle spring bloom
+            if (AdvanceTabActiveContainer != null)
+            {
+                AdvanceTabActiveContainer.IsHitTestVisible = true;
+                if (AdvanceTabActiveTranslate != null)
+                {
+                    AdvanceTabActiveTranslate.X = -22.0;
+                    var slideIn = new DoubleAnimation { To = 0.0, Duration = enterDur, EasingFunction = fluidQuartOut };
+                    AdvanceTabActiveTranslate.BeginAnimation(TranslateTransform.XProperty, slideIn);
+                }
+                if (AdvanceTabActiveScale != null)
+                {
+                    AdvanceTabActiveScale.ScaleX = 0.95;
+                    AdvanceTabActiveScale.ScaleY = 0.95;
+                    var scaleIn = new DoubleAnimation { To = 1.0, Duration = enterDur, EasingFunction = springBackOut };
+                    AdvanceTabActiveScale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleIn);
+                    AdvanceTabActiveScale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleIn);
+                }
+                var fadeIn = new DoubleAnimation { To = 1.0, Duration = TimeSpan.FromMilliseconds(320), EasingFunction = smoothEaseOut };
+                AdvanceTabActiveContainer.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+            }
+
+            // 3. Notch Mask slides back under Advance Tweaks tab
+            if (AdvanceSubTabCardMask != null)
+            {
+                var marginAnim = new ThicknessAnimation { To = new Thickness(1, 0, 0, 0), Duration = morphDur, EasingFunction = fluidQuartOut };
+                var widthAnim = new DoubleAnimation { To = 323.0, Duration = morphDur, EasingFunction = fluidQuartOut };
+                AdvanceSubTabCardMask.BeginAnimation(FrameworkElement.MarginProperty, marginAnim);
+                AdvanceSubTabCardMask.BeginAnimation(FrameworkElement.WidthProperty, widthAnim);
+            }
+
+            // 4. Container top-left contour adapts
+            if (AdvanceSubTabContentContainer != null)
+            {
+                AdvanceSubTabContentContainer.CornerRadius = new CornerRadius(0, 22, 22, 22);
+            }
+
+            // 5. Card Panels: True organic cross-fade with Dynamic Island elastic bloom
+            if (LowEndTweaksPanel != null)
+            {
+                LowEndTweaksPanel.IsHitTestVisible = false;
+                var fadeOut = new DoubleAnimation { To = 0.0, Duration = exitDur, EasingFunction = smoothEaseIn };
+                fadeOut.Completed += (s, e) =>
+                {
+                    if (_subTabSwitchEpoch == currentEpoch && LowEndTweaksPanel != null)
+                    {
+                        LowEndTweaksPanel.Visibility = Visibility.Collapsed;
+                    }
+                };
+                LowEndTweaksPanel.BeginAnimation(UIElement.OpacityProperty, fadeOut);
+
+                if (LowEndTweaksTranslate != null)
+                {
+                    var slideX = new DoubleAnimation { To = 20.0, Duration = exitDur, EasingFunction = smoothEaseIn };
+                    var slideY = new DoubleAnimation { To = 6.0, Duration = exitDur, EasingFunction = smoothEaseIn };
+                    LowEndTweaksTranslate.BeginAnimation(TranslateTransform.XProperty, slideX);
+                    LowEndTweaksTranslate.BeginAnimation(TranslateTransform.YProperty, slideY);
+                }
+                if (LowEndTweaksScale != null)
+                {
+                    var scaleAnim = new DoubleAnimation { To = 0.96, Duration = exitDur, EasingFunction = smoothEaseIn };
+                    LowEndTweaksScale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
+                    LowEndTweaksScale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
+                }
+            }
+
+            if (AdvanceTweaksPanel != null)
+            {
+                AdvanceTweaksPanel.Visibility = Visibility.Visible;
+                AdvanceTweaksPanel.IsHitTestVisible = true;
+                AdvanceTweaksPanel.Opacity = 0.0;
+
+                if (AdvanceTweaksTranslate != null)
+                {
+                    AdvanceTweaksTranslate.X = -24.0;
+                    AdvanceTweaksTranslate.Y = 8.0;
+                    var slideX = new DoubleAnimation(-24.0, 0.0, enterDur) { EasingFunction = fluidQuartOut };
+                    var slideY = new DoubleAnimation(8.0, 0.0, enterDur) { EasingFunction = fluidQuartOut };
+                    AdvanceTweaksTranslate.BeginAnimation(TranslateTransform.XProperty, slideX);
+                    AdvanceTweaksTranslate.BeginAnimation(TranslateTransform.YProperty, slideY);
+                }
+                if (AdvanceTweaksScale != null)
+                {
+                    AdvanceTweaksScale.ScaleX = 0.96;
+                    AdvanceTweaksScale.ScaleY = 0.96;
+                    var scaleAnim = new DoubleAnimation(0.96, 1.0, enterDur) { EasingFunction = springBackOut };
+                    AdvanceTweaksScale.BeginAnimation(ScaleTransform.ScaleXProperty, scaleAnim);
+                    AdvanceTweaksScale.BeginAnimation(ScaleTransform.ScaleYProperty, scaleAnim);
+                }
+                var fadeIn = new DoubleAnimation(0.0, 1.0, TimeSpan.FromMilliseconds(300)) { EasingFunction = smoothEaseOut };
+                AdvanceTweaksPanel.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+            }
+
+            // 6. Bottom Fade fades in on Advance Tweaks
+            if (AdvanceBottomFadeBrd != null)
+            {
+                var fadeIn = new DoubleAnimation { To = 1.0, Duration = enterDur, EasingFunction = smoothEaseOut };
+                AdvanceBottomFadeBrd.BeginAnimation(UIElement.OpacityProperty, fadeIn);
+            }
+        }
+
+        AdvanceSubTabScrollViewer?.ScrollToTop();
+    }
 
     private void PrepareEntranceElementsForInitialLoad()
-
     {
-
         try
-
         {
-
-            PrepareElement(PageHeaderGrid, fromY: -18, fromScale: 0.98);
-
-            PrepareElement(ProfileCardBorder, fromY: -26, fromScale: 0.95);
-
-            PrepareElement(DriverScannerCardGrid, fromY: -26, fromScale: 0.95);
-
-            PrepareElement(DashboardCollapsedBar, fromY: -26, fromScale: 0.95);
-
-            PrepareElement(DriverInstallationHost, fromY: -26, fromScale: 0.95);
-
-            PrepareElement(ServicesSlideHost, fromY: -26, fromScale: 0.96);
-
-            PrepareElement(AdvanceSlideHost, fromY: -26, fromScale: 0.96);
-
-            PrepareElement(ProfileHeaderGrid, fromY: -14, fromScale: 0.96);
-
-            PrepareElement(SpecsCardBorder, fromY: -16, fromScale: 0.96);
-
-            PrepareElement(SpecsListStack, fromY: 12, fromScale: 0.98);
-
-            PrepareElement(StatsTilesOuterCard, fromY: -16, fromScale: 0.96);
-
-
-
-            PrepareElement(StatTile1, fromY: -14, fromScale: 0.92);
-
-            PrepareElement(StatTile2, fromY: -14, fromScale: 0.92);
-
-            PrepareElement(StatTile3, fromY: -14, fromScale: 0.92);
-
-            PrepareElement(StatTile4, fromY: -14, fromScale: 0.92);
-
-            PrepareElement(StatTile5, fromY: -14, fromScale: 0.92);
-
-            PrepareElement(StatTile6, fromY: -14, fromScale: 0.92);
-
-
-
-            PrepareElement(ScannerHeaderGrid, fromY: -14, fromScale: 0.96);
-
-            PrepareElement(DriverNotchBtn, fromY: 18, fromScale: 0.92);
-
-            PrepareElement(DriverBoosterBottomCard, fromY: 18, fromScale: 0.95);
+            PrepareElement(PageHeaderGrid, fromY: -10, fromScale: 0.99);
+            PrepareElement(ProfileCardBorder, fromY: -10, fromScale: 0.99);
+            PrepareElement(DriverScannerCardGrid, fromY: -10, fromScale: 0.99);
+            PrepareElement(DashboardCollapsedBar, fromY: -10, fromScale: 0.99);
+            PrepareElement(DriverInstallationHost, fromY: -10, fromScale: 0.99);
+            PrepareElement(ServicesSlideHost, fromY: -10, fromScale: 0.99);
+            PrepareElement(AdvanceSlideHost, fromY: -10, fromScale: 0.99);
 
 
 
@@ -1372,108 +1631,83 @@ public partial class WindowsOptimizationView : UserControl
 
 
         if (!rightColumnOnly)
-
         {
-
             // 1. Top Header Row (Title, Subtitle, 3 Stat Badges, Guide & Download buttons)
-
             AnimateEntranceItem(PageHeaderGrid, delayMs: 0, fromY: -18, fromScale: 0.98, durationMs: 460, bounce: false);
-
-            ApplyHeaderButtonsVisualState(vm.HasCompletedDriverScan, animate: false);
-
+            if (vm.SelectedSlideIndex == 0)
+            {
+                ApplyHeaderButtonsVisualState(vm.HasCompletedDriverScan, animate: false);
+            }
+            else
+            {
+                HideHeaderStatsImmediate();
+            }
         }
-
         else
-
         {
-
-            ApplyHeaderButtonsVisualState(vm.HasCompletedDriverScan, animate: false);
-
+            if (vm.SelectedSlideIndex == 0)
+            {
+                ApplyHeaderButtonsVisualState(vm.HasCompletedDriverScan, animate: false);
+            }
+            else
+            {
+                HideHeaderStatsImmediate();
+            }
         }
-
-
 
         if (vm.SelectedSlideIndex == 0)
-
         {
-
             if (!rightColumnOnly)
-
             {
-
-                // 2. Left Profile Card & Sub-elements
-
+                // 2. Main Containers: Left Profile Card
+                // Drops down and settles with a lively spring bounce
                 AnimateEntranceItem(ProfileCardBorder, delayMs: 60, fromY: -26, fromScale: 0.95, durationMs: 520, bounce: true);
 
+                // 3. Left Profile Card Sub-elements:
+                // 3a. Profile Header (Avatar + Xenom name + Windows 11 Pro)
                 AnimateEntranceItem(ProfileHeaderGrid, delayMs: 140, fromY: -14, fromScale: 0.96, durationMs: 480, bounce: true);
 
+                // 3b. Hardware Specifications Card (OS, CPU, GPU, RAM, DirectX, Power)
                 AnimateEntranceItem(SpecsCardBorder, delayMs: 190, fromY: -16, fromScale: 0.96, durationMs: 500, bounce: true);
-
                 AnimateEntranceItem(SpecsListStack, delayMs: 240, fromY: 12, fromScale: 0.98, durationMs: 440, bounce: false);
 
+                // 3c. Bottom 6 Stat Tiles Card Outer Container
                 AnimateEntranceItem(StatsTilesOuterCard, delayMs: 250, fromY: -16, fromScale: 0.96, durationMs: 500, bounce: true);
 
-
-
-                // 6 Stat Tiles - Cascading 2x3 pairs with lively bounce
-
+                // 3d. The 6 Stat Tiles - Cascading 2x3 pairs with lively bounce
+                // Row 0: Windows License & OS Version
                 AnimateEntranceItem(StatTile1, delayMs: 280, fromY: -14, fromScale: 0.92, durationMs: 480, bounce: true);
-
                 AnimateEntranceItem(StatTile2, delayMs: 320, fromY: -14, fromScale: 0.92, durationMs: 480, bounce: true);
 
+                // Row 1: Processor Cores & RAM Frequency
                 AnimateEntranceItem(StatTile3, delayMs: 360, fromY: -14, fromScale: 0.92, durationMs: 480, bounce: true);
-
                 AnimateEntranceItem(StatTile4, delayMs: 400, fromY: -14, fromScale: 0.92, durationMs: 480, bounce: true);
 
+                // Row 2: GPU VRAM & OS Partition Type (NVMe SSD)
                 AnimateEntranceItem(StatTile5, delayMs: 440, fromY: -14, fromScale: 0.92, durationMs: 480, bounce: true);
-
                 AnimateEntranceItem(StatTile6, delayMs: 480, fromY: -14, fromScale: 0.92, durationMs: 480, bounce: true);
 
-
-
-                // 3. Right Column & Header Stats
-
                 if (vm.HasCompletedDriverScan)
-
                 {
-
                     AnimateHeaderStatsEntrance();
-
                 }
-
             }
-
-
 
             if (vm.IsDriverInstallationViewActive)
-
             {
-
-                // Driver Installation View: Ensure visibility and animate the collapsed bar + driver list dropping from above
-
                 UpdateDriverInstallationVisualState(true, animate: false);
-
-                AnimateEntranceItem(DashboardCollapsedBar, delayMs: rightColumnOnly ? 40 : 90, fromY: -26, fromScale: 0.95, durationMs: 520, bounce: true);
-
-                AnimateEntranceItem(DriverInstallationHost, delayMs: rightColumnOnly ? 100 : 160, fromY: -26, fromScale: 0.95, durationMs: 520, bounce: true);
-
+                AnimateEntranceItem(DashboardCollapsedBar, delayMs: 0, fromY: -16, fromScale: 0.96, durationMs: 480, bounce: true);
+                AnimateEntranceItem(DriverInstallationHost, delayMs: 60, fromY: -20, fromScale: 0.95, durationMs: 500, bounce: true);
                 StartInstallAllDriversBumpAnimation();
-
             }
-
             else
-
             {
-
-                // Expanded Scanner View
-
                 UpdateDriverInstallationVisualState(false, animate: false);
+                // Right Scanner Card: Drops down with lively spring bounce
+                AnimateEntranceItem(DriverScannerCardGrid, delayMs: 90, fromY: -26, fromScale: 0.95, durationMs: 520, bounce: true);
 
-                AnimateEntranceItem(DriverScannerCardGrid, delayMs: rightColumnOnly ? 40 : 90, fromY: -26, fromScale: 0.95, durationMs: 520, bounce: true);
-
-                AnimateEntranceItem(ScannerHeaderGrid, delayMs: rightColumnOnly ? 100 : 160, fromY: -14, fromScale: 0.96, durationMs: 480, bounce: true);
-
-
+                // Scanner Header ("Driver Scanner" + "Skip to Driver Installation >")
+                AnimateEntranceItem(ScannerHeaderGrid, delayMs: 160, fromY: -14, fromScale: 0.96, durationMs: 480, bounce: true);
 
                 if (vm.HasCompletedDriverScan)
                 {
@@ -1486,7 +1720,7 @@ public partial class WindowsOptimizationView : UserControl
                     if (PostScanCenterText != null && PostScanTextTrans != null)
                     {
                         PostScanCenterText.Visibility = Visibility.Visible;
-                        AnimateTranslateAndFade(PostScanCenterText, PostScanTextTrans, delayMs: rightColumnOnly ? 140 : 220, fromY: 16, durationMs: 460);
+                        AnimateTranslateAndFade(PostScanCenterText, PostScanTextTrans, delayMs: 220, fromY: 16, durationMs: 460);
                     }
                 }
                 else if (vm.IsScanningDrivers || vm.HasStartedScan)
@@ -1497,25 +1731,11 @@ public partial class WindowsOptimizationView : UserControl
                         PreScanCenterText.Visibility = Visibility.Collapsed;
                         PreScanCenterText.Opacity = 0.0;
                     }
-                    if (PreScanTextTrans != null)
-                    {
-                        PreScanTextTrans.BeginAnimation(TranslateTransform.XProperty, null);
-                        PreScanTextTrans.BeginAnimation(TranslateTransform.YProperty, null);
-                        PreScanTextTrans.X = 0;
-                        PreScanTextTrans.Y = 0;
-                    }
                     if (PostScanCenterText != null)
                     {
                         PostScanCenterText.BeginAnimation(UIElement.OpacityProperty, null);
                         PostScanCenterText.Visibility = Visibility.Collapsed;
                         PostScanCenterText.Opacity = 0.0;
-                    }
-                    if (PostScanTextTrans != null)
-                    {
-                        PostScanTextTrans.BeginAnimation(TranslateTransform.XProperty, null);
-                        PostScanTextTrans.BeginAnimation(TranslateTransform.YProperty, null);
-                        PostScanTextTrans.X = 0;
-                        PostScanTextTrans.Y = 20;
                     }
                 }
                 else
@@ -1529,86 +1749,53 @@ public partial class WindowsOptimizationView : UserControl
                     if (PreScanCenterText != null && PreScanTextTrans != null)
                     {
                         PreScanCenterText.Visibility = Visibility.Visible;
-                        AnimateTranslateAndFade(PreScanCenterText, PreScanTextTrans, delayMs: rightColumnOnly ? 140 : 220, fromY: 16, durationMs: 460);
+                        AnimateTranslateAndFade(PreScanCenterText, PreScanTextTrans, delayMs: 220, fromY: 16, durationMs: 460);
                     }
+                    StartShimmerAnimation();
                 }
 
+                // Notch Button (Driver Scan / Advanced Drivers)
+                AnimateEntranceItem(DriverNotchBtn, delayMs: 300, fromY: 18, fromScale: 0.92, durationMs: 500, bounce: true);
 
-
-                AnimateEntranceItem(DriverNotchBtn, delayMs: rightColumnOnly ? 200 : 300, fromY: 18, fromScale: 0.92, durationMs: 500, bounce: true);
-
-                AnimateEntranceItem(DriverBoosterBottomCard, delayMs: rightColumnOnly ? 250 : 360, fromY: 18, fromScale: 0.95, durationMs: 500, bounce: true);
-
+                // Bottom Extra Drivers Card (Driver Booster banner)
+                AnimateEntranceItem(DriverBoosterBottomCard, delayMs: 360, fromY: 18, fromScale: 0.95, durationMs: 500, bounce: true);
             }
-
         }
-
         else if (vm.SelectedSlideIndex == 1) // SLIDE 1: WINDOWS SERVICES
-
         {
-
-            AnimateEntranceItem(ServicesSlideHost, delayMs: 80, fromY: -26, fromScale: 0.96, durationMs: 520, bounce: true);
-
+            HideHeaderStatsImmediate();
+            AnimateEntranceItem(ServicesSlideHost, delayMs: 40, fromY: -20, fromScale: 0.96, durationMs: 480, bounce: true);
         }
-
         else if (vm.SelectedSlideIndex == 2) // SLIDE 2: ADVANCE OPTIMIZATIONS
-
         {
-
-            AnimateEntranceItem(AdvanceSlideHost, delayMs: 80, fromY: -26, fromScale: 0.96, durationMs: 520, bounce: true);
-
+            HideHeaderStatsImmediate();
+            AnimateEntranceItem(AdvanceSlideHost, delayMs: 40, fromY: -20, fromScale: 0.96, durationMs: 480, bounce: true);
         }
-
-
 
         if (!rightColumnOnly)
-
         {
-
             // 4. Bottom Pagination Dots (Slide 1 | 2 | 3 pills)
-
             if (animateScrollDots)
-
             {
-
-                AnimateEntranceItem(BottomPaginationDotsBorder, delayMs: 420, fromY: 14, fromScale: 0.90, durationMs: 460, bounce: true);
-
+                AnimateEntranceItem(BottomPaginationDotsBorder, delayMs: 30, fromY: 8, fromScale: 0.98, durationMs: 200, bounce: false);
                 if (vm.IsDownloadCompleted)
-
                 {
-
                     StartDownloadBumpAnimation();
-
                 }
-
             }
-
             else if (BottomPaginationDotsBorder != null)
-
             {
-
                 BottomPaginationDotsBorder.BeginAnimation(UIElement.OpacityProperty, null);
-
                 BottomPaginationDotsBorder.Opacity = 1.0;
-
                 BottomPaginationDotsBorder.RenderTransform = null;
-
             }
-
         }
-
         else if (BottomPaginationDotsBorder != null)
-
         {
-
             BottomPaginationDotsBorder.BeginAnimation(UIElement.OpacityProperty, null);
-
             BottomPaginationDotsBorder.Opacity = 1.0;
-
             BottomPaginationDotsBorder.RenderTransform = null;
-
         }
-
     }
 
 
@@ -5690,6 +5877,54 @@ public partial class WindowsOptimizationView : UserControl
 
     }
 
+    private void AdvanceSlideHost_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+    {
+        if (AdvanceSubTabScrollViewer != null && AdvanceSubTabScrollViewer.ScrollableHeight > 0)
+        {
+            AdvanceSubTabScrollViewer.ScrollToVerticalOffset(AdvanceSubTabScrollViewer.VerticalOffset - (e.Delta * 0.6));
+            e.Handled = true;
+        }
+    }
+
+    private void AdvanceSubTabScrollViewer_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+    {
+        if (sender is ScrollViewer sv && sv.ScrollableHeight > 0)
+        {
+            sv.ScrollToVerticalOffset(sv.VerticalOffset - (e.Delta * 0.6));
+            e.Handled = true;
+        }
+    }
+
+    private double _targetServicesScrollOffset = 0.0;
+
+    private void ServicesItemsScrollViewer_PreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)
+    {
+        if (sender is ScrollViewer sv && sv.ScrollableHeight > 0)
+        {
+            e.Handled = true;
+
+            // If user scrolled via scrollbar thumb or large difference, re-anchor
+            if (Math.Abs(_targetServicesScrollOffset - sv.VerticalOffset) > 60)
+            {
+                _targetServicesScrollOffset = sv.VerticalOffset;
+            }
+
+            // Gentle slow step size per wheel notch (26px)
+            double scrollStep = (e.Delta / 120.0) * 26.0;
+            _targetServicesScrollOffset = Math.Clamp(_targetServicesScrollOffset - scrollStep, 0, sv.ScrollableHeight);
+
+            var animation = new DoubleAnimation
+            {
+                From = sv.VerticalOffset,
+                To = _targetServicesScrollOffset,
+                Duration = TimeSpan.FromMilliseconds(240),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+
+            sv.BeginAnimation(XenomOptimizer.Converters.ScrollBarAutoHideHelper.AnimatedVerticalOffsetProperty, animation, HandoffBehavior.SnapshotAndReplace);
+        }
+    }
+
 
 
     private DateTime _lastSlideWheelTime = DateTime.MinValue;
@@ -7101,25 +7336,22 @@ public partial class WindowsOptimizationView : UserControl
 
 
     private void ShowHeaderStatsImmediate()
-
     {
-
         if (HeaderStatsPanel == null) return;
+        var vm = DataContext as WindowsOptimizationViewModel;
+        if (vm?.IsDriversSlideActive != true || !vm.HasCompletedDriverScan)
+        {
+            HideHeaderStatsImmediate();
+            return;
+        }
 
         HeaderStatsPanel.BeginAnimation(UIElement.OpacityProperty, null);
-
         HeaderStatsPanel.Visibility = Visibility.Visible;
-
         HeaderStatsPanel.Opacity = 1.0;
 
-
-
         ResetStatItemImmediate(HeaderStatItem1, Stat1Trans);
-
         ResetStatItemImmediate(HeaderStatItem2, Stat2Trans);
-
         ResetStatItemImmediate(HeaderStatItem3, Stat3Trans);
-
     }
 
 
@@ -7165,17 +7397,17 @@ public partial class WindowsOptimizationView : UserControl
 
 
     private void AnimateHeaderStatsEntrance()
-
     {
-
         if (HeaderStatsPanel == null) return;
-
-
+        var vm = DataContext as WindowsOptimizationViewModel;
+        if (vm?.IsDriversSlideActive != true || !vm.HasCompletedDriverScan)
+        {
+            HideHeaderStatsImmediate();
+            return;
+        }
 
         HeaderStatsPanel.BeginAnimation(UIElement.OpacityProperty, null);
-
         HeaderStatsPanel.Visibility = Visibility.Visible;
-
         HeaderStatsPanel.Opacity = 0.0;
 
 
@@ -8007,12 +8239,15 @@ public partial class WindowsOptimizationView : UserControl
 
 
     private void ApplyHeaderButtonsVisualState(bool isScanned, bool animate)
-
     {
-
         try
-
         {
+            var vm = DataContext as WindowsOptimizationViewModel;
+            if (vm?.IsDriversSlideActive != true)
+            {
+                HideHeaderStatsImmediate();
+                return;
+            }
 
             if (StandaloneDownloadBtn == null) return;
 

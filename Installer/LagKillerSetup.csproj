@@ -8,10 +8,15 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>LAG_Killer_Setup</AssemblyName>
     <RootNamespace>LagKillerSetup</RootNamespace>
-    <Version>1.0.0</Version>
-    <Product>LAG Killer by XENOM Setup</Product>
-    <Description>Installer for LAG Killer by XENOM</Description>
+    <Version>1.0.0-beta</Version>
+    <Product>LAG Killer by XENOM (Beta) Setup</Product>
+    <Description>Installer for LAG Killer by XENOM (Beta)</Description>
     <ApplicationIcon>xenom.ico</ApplicationIcon>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
 
   <ItemGroup>

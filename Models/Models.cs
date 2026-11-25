@@ -106,11 +106,13 @@ public class CleanupItem
 {
     public string Name { get; set; } = string.Empty;
     public string Path { get; set; } = string.Empty;
+    public List<string> AdditionalPaths { get; set; } = new();
     public string Description { get; set; } = string.Empty;
     public long SizeBytes { get; set; }
     public bool IsSelected { get; set; } = true;
     public bool IsScanned { get; set; }
     public int FileCount { get; set; }
+    public Func<long>? CustomCleanAction { get; set; }
 
     public string FormattedSize => FormatSize(SizeBytes);
 
@@ -151,10 +153,11 @@ public class AppSettings
     public string AccentColor { get; set; } = "Cyan";
     public string LogLevel { get; set; } = "INFO";
     public bool RestoreLastConfiguration { get; set; }
-    public bool HasRunInitialScan { get; set; } = false;
+    public bool HasRunInitialScan { get; set; } = true;
     public bool HasSeenWindowsGuide { get; set; } = false;
     public bool HasSeenOnboardingTaskV2 { get; set; } = false;
     public bool IsDriversInstalledMode { get; set; } = false;
+    public bool HasSkippedDriverScanner { get; set; } = false;
 
     // 6-Step Pipeline Guide Tracking
     public bool GuideStep1DriversCompleted { get; set; } = false;
@@ -163,4 +166,14 @@ public class AppSettings
     public bool GuideStep4RegistryCompleted { get; set; } = false;
     public bool GuideStep5GameLoopCompleted { get; set; } = false;
     public bool GuideStep6CleanupCompleted { get; set; } = false;
+
+    // Navigation and Slide State Persistence
+    public string LastActivePage { get; set; } = "Dashboard";
+    public int LastSelectedSlideIndex { get; set; } = 0;
+    public int ServicesPresetIndex { get; set; } = 0;
+
+    // Optimizer & Frame Gen Persistence
+    public int TargetFps { get; set; } = 90;
+    public int SelectedQualityIndex { get; set; } = 0;
+    public bool IsFrameGenActive { get; set; } = false;
 }

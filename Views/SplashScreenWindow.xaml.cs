@@ -26,6 +26,7 @@ public partial class SplashScreenWindow : Window
     {
         InitializeComponent();
         _mainWindow = mainWindow;
+        XenomOptimizer.Services.WindowPlacementService.PositionSplashScreen(this);
         Loaded += SplashScreenWindow_Loaded;
     }
 

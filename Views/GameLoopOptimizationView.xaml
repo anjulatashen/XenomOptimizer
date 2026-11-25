@@ -4,28 +4,23 @@
              xmlns:conv="clr-namespace:XenomOptimizer.Converters"
              xmlns:System="clr-namespace:System;assembly=mscorlib">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="28,24,28,32">
-        <StackPanel MaxWidth="1120">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="24,0,24,32">
+        <StackPanel MaxWidth="1200">
 
             <!-- ═══════════════════════════════════════════════════════════ -->
             <!-- HEADER SECTION WITH STATUS BADGE                            -->
             <!-- ═══════════════════════════════════════════════════════════ -->
-            <Grid Margin="0,0,0,20">
+            <Grid Height="64" Margin="0,26,0,26">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="GameLoop Pro Optimization Suite" FontSize="24" FontWeight="Bold"
-                                   Foreground="{StaticResource TextPrimaryBrush}" FontFamily="pack://application:,,,/Fonts/#Poppins, Segoe UI, sans-serif"/>
-                        <Border Background="#12251D" BorderBrush="#1C4B36" BorderThickness="1" CornerRadius="12" Padding="8,3" Margin="12,0,0,0" VerticalAlignment="Center">
-                            <TextBlock Text="PRO SUITE" FontSize="10.5" FontWeight="Bold" Foreground="#34D399"/>
-                        </Border>
-                    </StackPanel>
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                    <TextBlock Text="GameLoop Optimization" FontSize="28" FontWeight="Bold"
+                               Foreground="#FFFFFF" FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif" Margin="0,0,0,4"/>
                     <TextBlock Text="Engine tuning, safe 120 FPS unlocker, iPad view presets &amp; low-latency latency booster"
-                               Foreground="{StaticResource TextSecondaryBrush}" FontSize="13" Margin="0,4,0,0"/>
+                               Foreground="#9E9EA4" FontSize="13" FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"/>
                 </StackPanel>
 
                 <!-- Status Pill on Right -->
@@ -299,7 +294,7 @@
                                     <TextBlock Text="{Binding Fps120DetailText}" FontSize="12" Foreground="#CBD5E1" TextWrapping="Wrap" Margin="0,0,0,8"/>
                                     <StackPanel Orientation="Horizontal">
                                         <Border Background="#1E2436" CornerRadius="6" Padding="8,4" Margin="0,0,8,0">
-                                            <TextBlock Text="📱 Samsung SM-X910" FontSize="11" Foreground="#38BDF8"/>
+                                            <TextBlock Text="📱 Samsung SM-X920" FontSize="11" Foreground="#38BDF8"/>
                                         </Border>
                                         <Border Background="#1E2436" CornerRadius="6" Padding="8,4" Margin="0,0,8,0">
                                             <TextBlock Text="⚡ Engine -vm 100" FontSize="11" Foreground="#34D399"/>
@@ -542,6 +537,82 @@
                         </UniformGrid>
                     </StackPanel>
                 </Border>
+
+                <!-- GameLoop Complete Uninstaller & Nuclear System Wiper Card -->
+                <Border Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2" CornerRadius="18" Padding="24,20" Margin="0,0,0,20">
+                    <StackPanel>
+                        <TextBlock Text="🗑️ GameLoop Uninstaller &amp; Nuclear Cache Wiper" FontSize="17" FontWeight="Bold" Foreground="#F8FAFC" Margin="0,0,0,4"/>
+                        <TextBlock Text="Launch the official GameLoop uninstaller or run a comprehensive 7-step nuclear wipe to purge all residual registry hives, temp caches, drivers and directories across all drives." Foreground="#94A3B8" FontSize="12" Margin="0,0,0,16"/>
+
+                        <!-- Action Buttons -->
+                        <UniformGrid Columns="2" Rows="1" Margin="0,0,0,14">
+                            <!-- Button 1: Official Uninstaller -->
+                            <Border Background="#161924" BorderBrush="#3B1C22" BorderThickness="1" CornerRadius="14" Padding="16,14" Margin="0,0,8,0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Margin="0,0,0,6">
+                                        <TextBlock Text="🗑️ Official GameLoop Uninstaller" FontSize="14" FontWeight="Bold" Foreground="#EF4444"/>
+                                        <TextBlock Text="Runs official TUninstall.exe setup" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Row="1" Text="Launches the certified Tencent uninstaller wizard to cleanly remove the emulator components and game packages." FontSize="11.5" Foreground="#94A3B8" TextWrapping="Wrap" Margin="0,0,0,14"/>
+                                    <Button Grid.Row="2" Command="{Binding UninstallGameLoopCommand}" Cursor="Hand" Height="36">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="BtnBox" Background="#2A1215" BorderBrush="#DC2626" BorderThickness="1" CornerRadius="8">
+                                                    <TextBlock Text="🗑️ Uninstall GameLoop" FontSize="12" FontWeight="Bold" Foreground="#EF4444" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="BtnBox" Property="Background" Value="#3B171D"/>
+                                                        <Setter TargetName="BtnBox" Property="BorderBrush" Value="#EF4444"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
+                            </Border>
+
+                            <!-- Button 2: Nuclear Clean -->
+                            <Border Background="#161924" BorderBrush="#2F1C4A" BorderThickness="1" CornerRadius="14" Padding="16,14" Margin="8,0,0,0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Margin="0,0,0,6">
+                                        <TextBlock Text="🧹 Nuclear Deep Wiper (All Drives)" FontSize="14" FontWeight="Bold" Foreground="#A78BFA"/>
+                                        <TextBlock Text="Deletes registry, drivers, temp &amp; caches" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Row="1" Text="Terminates all Tencent daemons, deletes QMEmulatorService/aow_drv drivers, unloads QMConfig, deletes all HKCU/HKLM registry keys, wipes TxGameAssistant and TxGameDownload temp caches across all fixed drives." FontSize="11.5" Foreground="#94A3B8" TextWrapping="Wrap" Margin="0,0,0,14"/>
+                                    <Button Grid.Row="2" Command="{Binding NuclearCleanGameLoopCommand}" Cursor="Hand" Height="36">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="BtnBox2" Background="#231536" BorderBrush="#7C3AED" BorderThickness="1" CornerRadius="8">
+                                                    <TextBlock Text="🧹 Nuclear Clean (Registry &amp; Temp)" FontSize="12" FontWeight="Bold" Foreground="#A78BFA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="BtnBox2" Property="Background" Value="#321B4F"/>
+                                                        <Setter TargetName="BtnBox2" Property="BorderBrush" Value="#8B5CF6"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
+                            </Border>
+                        </UniformGrid>
+
+                        <!-- Status Message -->
+                        <TextBlock Text="{Binding CleanerStatusMessage}" FontSize="11.5" Foreground="#38BDF8" TextWrapping="Wrap" Visibility="{Binding CleanerStatusMessage, Converter={StaticResource StringToVis}}"/>
+                    </StackPanel>
+                </Border>
             </StackPanel>
 
             <!-- ═══════════════════════════════════════════════════════════ -->
@@ -746,7 +817,7 @@
                                 </Grid>
                             </Border>
 
-                            <!-- Device 1: Samsung Galaxy Tab S9 Ultra -->
+                            <!-- Device 1: Samsung Galaxy Tab S10+ (SM-X920) -->
                             <Border Background="#151926" BorderBrush="#252E46" BorderThickness="1" CornerRadius="14" Padding="16,14" Margin="0,0,0,10">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -768,12 +839,12 @@
                                     </Border>
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="Samsung Galaxy Tab S9 Ultra (SM-X910)" FontSize="14" FontWeight="Bold" Foreground="#F8FAFC"/>
+                                            <TextBlock Text="Samsung Galaxy Tab S10+ (SM-X920)" FontSize="14" FontWeight="Bold" Foreground="#F8FAFC"/>
                                             <Border Background="#16293D" BorderBrush="#1D4363" BorderThickness="1" CornerRadius="4" Padding="6,1.5" Margin="8,0,0,0">
-                                                <TextBlock Text="120 FPS TABLET" FontSize="9.5" FontWeight="Bold" Foreground="#38BDF8"/>
+                                                <TextBlock Text="120 FPS &amp; HDR 90" FontSize="9.5" FontWeight="Bold" Foreground="#38BDF8"/>
                                             </Border>
                                         </StackPanel>
-                                        <TextBlock Text="Official 120Hz high-refresh tablet model • Certified PUBG Ultra Extreme profile" FontSize="11.5" Foreground="#64748B" Margin="0,3,0,0"/>
+                                        <TextBlock Text="Official 120Hz high-refresh tablet model • Certified PUBG Ultra Extreme &amp; HDR 90 FPS profile" FontSize="11.5" Foreground="#64748B" Margin="0,3,0,0"/>
                                     </StackPanel>
                                     <Button Grid.Column="2" Style="{StaticResource SecondaryButton}" Content="Apply Profile" Command="{Binding ApplyDeviceProfileCommand}" CommandParameter="1" Height="32" Padding="14,0" Cursor="Hand"/>
                                 </Grid>
@@ -1037,6 +1108,82 @@
                                 </Grid>
                             </Border>
                         </UniformGrid>
+                    </StackPanel>
+                </Border>
+
+                <!-- GameLoop Complete Uninstaller & Nuclear System Wiper Card -->
+                <Border Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2" CornerRadius="18" Padding="24,20" Margin="0,0,0,20">
+                    <StackPanel>
+                        <TextBlock Text="🗑️ GameLoop Uninstaller &amp; Nuclear Cache Wiper" FontSize="17" FontWeight="Bold" Foreground="#F8FAFC" Margin="0,0,0,4"/>
+                        <TextBlock Text="Launch the official GameLoop uninstaller or run a comprehensive 7-step nuclear wipe to purge all residual registry hives, temp caches, drivers and directories across all drives." Foreground="#94A3B8" FontSize="12" Margin="0,0,0,16"/>
+
+                        <!-- Action Buttons -->
+                        <UniformGrid Columns="2" Rows="1" Margin="0,0,0,14">
+                            <!-- Button 1: Official Uninstaller -->
+                            <Border Background="#161924" BorderBrush="#3B1C22" BorderThickness="1" CornerRadius="14" Padding="16,14" Margin="0,0,8,0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Margin="0,0,0,6">
+                                        <TextBlock Text="🗑️ Official GameLoop Uninstaller" FontSize="14" FontWeight="Bold" Foreground="#EF4444"/>
+                                        <TextBlock Text="Runs official TUninstall.exe setup" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Row="1" Text="Launches the certified Tencent uninstaller wizard to cleanly remove the emulator components and game packages." FontSize="11.5" Foreground="#94A3B8" TextWrapping="Wrap" Margin="0,0,0,14"/>
+                                    <Button Grid.Row="2" Command="{Binding UninstallGameLoopCommand}" Cursor="Hand" Height="36">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="BtnBox" Background="#2A1215" BorderBrush="#DC2626" BorderThickness="1" CornerRadius="8">
+                                                    <TextBlock Text="🗑️ Uninstall GameLoop" FontSize="12" FontWeight="Bold" Foreground="#EF4444" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="BtnBox" Property="Background" Value="#3B171D"/>
+                                                        <Setter TargetName="BtnBox" Property="BorderBrush" Value="#EF4444"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
+                            </Border>
+
+                            <!-- Button 2: Nuclear Clean -->
+                            <Border Background="#161924" BorderBrush="#2F1C4A" BorderThickness="1" CornerRadius="14" Padding="16,14" Margin="8,0,0,0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Grid.Row="0" Margin="0,0,0,6">
+                                        <TextBlock Text="🧹 Nuclear Deep Wiper (All Drives)" FontSize="14" FontWeight="Bold" Foreground="#A78BFA"/>
+                                        <TextBlock Text="Deletes registry, drivers, temp &amp; caches" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Grid.Row="1" Text="Terminates all Tencent daemons, deletes QMEmulatorService/aow_drv drivers, unloads QMConfig, deletes all HKCU/HKLM registry keys, wipes TxGameAssistant and TxGameDownload temp caches across all fixed drives." FontSize="11.5" Foreground="#94A3B8" TextWrapping="Wrap" Margin="0,0,0,14"/>
+                                    <Button Grid.Row="2" Command="{Binding NuclearCleanGameLoopCommand}" Cursor="Hand" Height="36">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="BtnBox2" Background="#231536" BorderBrush="#7C3AED" BorderThickness="1" CornerRadius="8">
+                                                    <TextBlock Text="🧹 Nuclear Clean (Registry &amp; Temp)" FontSize="12" FontWeight="Bold" Foreground="#A78BFA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="BtnBox2" Property="Background" Value="#321B4F"/>
+                                                        <Setter TargetName="BtnBox2" Property="BorderBrush" Value="#8B5CF6"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
+                            </Border>
+                        </UniformGrid>
+
+                        <!-- Status Message -->
+                        <TextBlock Text="{Binding CleanerStatusMessage}" FontSize="11.5" Foreground="#38BDF8" TextWrapping="Wrap" Visibility="{Binding CleanerStatusMessage, Converter={StaticResource StringToVis}}"/>
                     </StackPanel>
                 </Border>
             </StackPanel>

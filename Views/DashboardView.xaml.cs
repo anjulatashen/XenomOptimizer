@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shapes;
@@ -345,5 +346,14 @@ public partial class DashboardView : UserControl
                 Source = vm,
                 Mode = BindingMode.OneWay
             });
+    }
+
+    private void StorageScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (sender is ScrollViewer sv && sv.ScrollableHeight > 0)
+        {
+            sv.ScrollToVerticalOffset(sv.VerticalOffset - (e.Delta / 3.0));
+            e.Handled = true;
+        }
     }
 }

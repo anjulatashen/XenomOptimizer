@@ -6,17 +6,23 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>XenomOptimizer</RootNamespace>
     <AssemblyName>XenomOptimizer</AssemblyName>
-    <Version>1.0.0</Version>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <Version>1.0.1-beta</Version>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
     <Company>Xenom</Company>
-    <Product>LAG Killer by XENOM</Product>
+    <Product>LAG Killer by XENOM (Beta)</Product>
     <Description>LAG Killer by XENOM - GameLoop &amp; PUBG Mobile Optimizer</Description>
     <ApplicationIcon>Assets\xenom.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="Installer\**;Setup\**;scratch\**" />
@@ -32,6 +38,7 @@
     <Resource Include="Assets\logo.png" />
     <Resource Include="Assets\topo_transparent.png" />
     <Resource Include="Assets\pubg.png" />
+    <Resource Include="Assets\gameloop_icon.png" />
     <Resource Include="Assets\animated.gif" />
     <Resource Include="Assets\discord.gif" />
     <Resource Include="Assets\driver_scanner.gif" />
@@ -40,6 +47,7 @@
     <Resource Include="Assets\Scroll_transparent.gif" />
     <Resource Include="Assets\kevin_nunez.png" />
     <Resource Include="Assets\social_*.png" />
+    <Resource Include="Assets\Styles\*.png" />
     <None Update="Assets\xenom.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -47,6 +55,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\pubg.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\gameloop_icon.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\animated.gif">
@@ -89,6 +100,15 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\dxwebsetup.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\Presets\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\Styles\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Magpie\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

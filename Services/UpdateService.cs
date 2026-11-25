@@ -83,6 +83,21 @@ public static class UpdateService
     }
 
     /// <summary>
+    /// Safely parses version string extracting numeric tokens (e.g. "1.0.1 Beta" or "v1.0.1" -> 1.0.1).
+    /// </summary>
+    public static bool TryParseVersion(string versionStr, out Version version)
+    {
+        version = new Version(1, 0, 0);
+        if (string.IsNullOrWhiteSpace(versionStr)) return false;
+        var match = System.Text.RegularExpressions.Regex.Match(versionStr, @"\d+(\.\d+)+");
+        if (match.Success)
+        {
+            return Version.TryParse(match.Value, out version!);
+        }
+        return false;
+    }
+
+    /// <summary>
     /// Asynchronously fetches update.json and evaluates version comparison.
     /// </summary>
     public static async Task CheckForUpdatesAsync(string updateJsonUrl, bool silentIfUpToDate = true)
@@ -105,16 +120,17 @@ public static class UpdateService
         }
 
         var currentVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0);
-        AvailableUpdate = updateInfo;
-        Application.Current?.Dispatcher?.Invoke(() =>
-        {
-            UpdateDetected?.Invoke(updateInfo);
-        });
 
-        if (Version.TryParse(updateInfo.Version, out var remoteVersion))
+        if (TryParseVersion(updateInfo.Version, out var remoteVersion))
         {
             if (remoteVersion > currentVersion)
             {
+                AvailableUpdate = updateInfo;
+                Application.Current?.Dispatcher?.Invoke(() =>
+                {
+                    UpdateDetected?.Invoke(updateInfo);
+                });
+
                 if (!silentIfUpToDate)
                 {
                     // If manually checked, switch to UI thread to show prompt
@@ -145,6 +161,9 @@ public static class UpdateService
             }
             else
             {
+                // App is already up-to-date! Ensure update modal is not triggered
+                AvailableUpdate = null;
+
                 if (!silentIfUpToDate)
                 {
                     await Application.Current.Dispatcher.InvokeAsync(() =>

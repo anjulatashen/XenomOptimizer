@@ -11,11 +11,13 @@
             <!-- Global Converters -->
             <conv:BoolToVisibilityConverter x:Key="BoolToVis"/>
             <conv:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"/>
+            <conv:InverseBooleanConverter x:Key="InvBoolConverter"/>
             <conv:StringToColorBrushConverter x:Key="StringToColorBrush"/>
             <conv:StringToVisibilityConverter x:Key="StringToVis"/>
             <conv:ScrollOffsetToOpacityConverter x:Key="ScrollOffsetToOpacity"/>
             <conv:DownloadPercentToHeightConverter x:Key="DownloadPercentToHeight"/>
             <conv:IntEqualsToVisibilityConverter x:Key="IntEqualsToVis"/>
+            <conv:EqualityToBooleanConverter x:Key="EqToBool"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

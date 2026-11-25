@@ -43,3 +43,14 @@ artifacts/
 scratch/
 frame_*.png
 sim_*.png
+__pycache__/
+*.bak
+*_wpftmp.csproj
+crop*.png
+btn_crop.png
+img5.png
+test_anim.xaml
+test_write.py
+apply_120fps_fix.py
+Fix_*.bat
+Fix_*.reg

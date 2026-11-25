@@ -77,6 +77,7 @@ public partial class DashboardViewModel : ObservableObject
 
     // Storage Drives (Multi-Disk detection)
     public ObservableCollection<DiskDriveInfo> StorageDrives { get; } = new();
+    [ObservableProperty] private string _storageDrivesCountText = "3 Drives";
 
     // State
     [ObservableProperty] private bool _isLoading = true;
@@ -106,7 +107,9 @@ public partial class DashboardViewModel : ObservableObject
         _settingsService = settingsService;
         _registryService = registryService;
         _isAdmin = adminService.IsRunningAsAdmin;
-        _hasRunInitialScan = _settingsService.Settings.HasRunInitialScan;
+        _hasRunInitialScan = true;
+        _settingsService.Settings.HasRunInitialScan = true;
+        _settingsService.Save();
 
         // Timer to refresh live stats every 1 second (Realtime telemetry)
         _refreshTimer = new DispatcherTimer
@@ -117,14 +120,8 @@ public partial class DashboardViewModel : ObservableObject
         _ = RefreshLiveStatsAsync();
         _refreshTimer.Start();
 
-        if (_hasRunInitialScan)
-        {
-            _ = LoadSystemInfoAsync();
-        }
-        else
-        {
-            IsLoading = false;
-        }
+        // Always auto-scan system hardware immediately on app launch
+        _ = LoadSystemInfoAsync();
     }
 
     private async Task LoadSystemInfoAsync()
@@ -162,6 +159,7 @@ public partial class DashboardViewModel : ObservableObject
                 d.TargetUsagePercent = d.UsagePercent;
                 StorageDrives.Add(d);
             }
+            StorageDrivesCountText = $"{StorageDrives.Count} {(StorageDrives.Count == 1 ? "Drive" : "Drives")}";
 
             var cDrive = StorageDrives.FirstOrDefault(d => d.DriveLetter.StartsWith("C", StringComparison.OrdinalIgnoreCase));
             SystemDriveType = cDrive?.MediaType ?? "NVMe SSD";
@@ -385,6 +383,7 @@ public partial class DashboardViewModel : ObservableObject
                 d.TargetUsagePercent = d.UsagePercent;
                 StorageDrives.Add(d);
             }
+            StorageDrivesCountText = $"{StorageDrives.Count} {(StorageDrives.Count == 1 ? "Drive" : "Drives")}";
 
             await Task.Delay(200);
             ScanProgressValue = 90;
@@ -649,43 +648,43 @@ public partial class DashboardViewModel : ObservableObject
                 applied++;
 
             // 2. Game Mode
-            var gameMode = _registryService.GetValue(@"Software\Microsoft\GameBar", "AllowAutoGameMode");
+            var gameMode = _registryService.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\GameBar", "AllowAutoGameMode");
             if (gameMode is int gm && gm == 1) applied++;
 
             // 3. Game DVR
-            var dvr = _registryService.GetValue(@"System\GameConfigStore", "GameDVR_Enabled");
+            var dvr = _registryService.GetValue(@"HKEY_CURRENT_USER\System\GameConfigStore", "GameDVR_Enabled");
             if (dvr is int d && d == 0) applied++;
 
             // 4. Game Bar AppCapture
-            var appCap = _registryService.GetValue(@"Software\Microsoft\Windows\CurrentVersion\GameDVR", "AppCaptureEnabled");
+            var appCap = _registryService.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\GameDVR", "AppCaptureEnabled");
             if (appCap is int ac && ac == 0) applied++;
 
             // 5. Network Throttling
-            var netThrottle = _registryService.GetValue(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile", "NetworkThrottlingIndex");
+            var netThrottle = _registryService.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile", "NetworkThrottlingIndex");
             if (netThrottle != null && (netThrottle.ToString() == "-1" || netThrottle.ToString() == "4294967295")) applied++;
 
             // 6. System Responsiveness
-            var sysResp = _registryService.GetValue(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile", "SystemResponsiveness");
+            var sysResp = _registryService.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile", "SystemResponsiveness");
             if (sysResp is int sr && sr == 0) applied++;
 
             // 7. Background Apps
-            var bgApps = _registryService.GetValue(@"Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications", "GlobalUserDisabled");
+            var bgApps = _registryService.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications", "GlobalUserDisabled");
             if (bgApps is int ba && ba == 1) applied++;
 
             // 8. Mouse Acceleration
-            var mouseSpeed = _registryService.GetValue(@"Control Panel\Mouse", "MouseSpeed");
+            var mouseSpeed = _registryService.GetValue(@"HKEY_CURRENT_USER\Control Panel\Mouse", "MouseSpeed");
             if (mouseSpeed != null && mouseSpeed.ToString() == "0") applied++;
 
             // 9. GPU Priority
-            var gpuPriority = _registryService.GetValue(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games", "GPU Priority");
+            var gpuPriority = _registryService.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games", "GPU Priority");
             if (gpuPriority is int gp && gp == 8) applied++;
 
             // 10. Priority
-            var priority = _registryService.GetValue(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games", "Priority");
+            var priority = _registryService.GetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games", "Priority");
             if (priority is int pr && pr == 6) applied++;
 
             // 11. Visual FX
-            var vfx = _registryService.GetValue(@"Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects", "VisualFXSetting");
+            var vfx = _registryService.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects", "VisualFXSetting");
             if (vfx is int fx && fx == 2) applied++;
 
             // 12. GameLoop Installed & Detected

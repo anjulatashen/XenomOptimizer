@@ -24,6 +24,16 @@ public class InverseBoolToVisibilityConverter : IValueConverter
         => value is Visibility.Collapsed;
 }
 
+/// <summary>Converts boolean to its inverse (true -> false, false -> true).</summary>
+public class InverseBooleanConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is bool b ? !b : true;
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => value is bool b ? !b : false;
+}
+
 /// <summary>Converts string to SolidColorBrush.</summary>
 public class StringToColorBrushConverter : IValueConverter
 {
@@ -318,6 +328,22 @@ public class IntEqualsToVisibilityConverter : IValueConverter
             return value.ToString() == parameter.ToString() ? Visibility.Visible : Visibility.Collapsed;
         }
         return Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}
+
+/// <summary>
+/// Compares value with parameter string/object, returns true if equal.
+/// </summary>
+public class EqualityToBooleanConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value == null && parameter == null) return true;
+        if (value == null || parameter == null) return false;
+        return string.Equals(value.ToString(), parameter.ToString(), StringComparison.OrdinalIgnoreCase);
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

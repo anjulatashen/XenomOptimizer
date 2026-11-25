@@ -206,7 +206,7 @@
                                     </Border>
                                 </StackPanel>
 
-                                <TextBlock Text="Xenom Optimizer" FontSize="20" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,4,0,2"/>
+                                <TextBlock Text="Xenom Optimizer Beta" FontSize="20" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,4,0,2"/>
                                 <TextBlock Text="Major performance &amp; GameLoop Pro suite optimizations are ready to install."
                                            FontSize="12" Foreground="#71717A" TextWrapping="Wrap"/>
 
@@ -215,7 +215,7 @@
 
                                 <!-- 2. Large Version Display (Clean Reference Style: e.g. $34 /user/mo) -->
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding AppUpdateVersion, FallbackValue='v1.0.1'}"
+                                    <TextBlock Text="{Binding AppUpdateVersion, FallbackValue='1.0.1 Beta'}"
                                                FontSize="28" FontWeight="Bold" Foreground="#FFFFFF"/>
                                     <TextBlock Text="/ latest release" FontSize="12" Foreground="#52525B"
                                                VerticalAlignment="Bottom" Margin="8,0,0,4"/>
@@ -591,7 +591,7 @@
                             <!-- 3. Bottom Row: Status Text with 1-to-3 Incrementing Dots Animation (Only visible during download and install) -->
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,22,0,0"
                                         Visibility="{Binding IsAppUpdateFinished, Converter={StaticResource InvBoolToVis}}">
-                                <TextBlock Text="{Binding AppUpdateBottomBaseText, FallbackValue='Installing Xenom Optimizer v1.0.1'}"
+                                <TextBlock Text="{Binding AppUpdateBottomBaseText, FallbackValue='Installing Xenom Optimizer Beta'}"
                                            FontSize="12.5" FontWeight="SemiBold" Foreground="#828898"/>
                                 <TextBlock Text="{Binding AppUpdateAnimatedDots, FallbackValue='...'}"
                                            FontSize="12.5" FontWeight="Bold" Foreground="#828898"/>

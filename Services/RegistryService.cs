@@ -42,6 +42,15 @@ public class RegistryService : IRegistryService
                 return false;
             }
 
+            if (valueKind == RegistryValueKind.DWord && value != null && value is not int)
+            {
+                try { value = unchecked((int)Convert.ToInt64(value)); } catch { }
+            }
+            else if (valueKind == RegistryValueKind.QWord && value != null && value is not long)
+            {
+                try { value = unchecked((long)Convert.ToUInt64(value)); } catch { }
+            }
+
             key.SetValue(valueName, value, valueKind);
             _log.Log("Registry", $"Set {keyPath}\\{valueName}", "SUCCESS", newValue: value.ToString());
             return true;

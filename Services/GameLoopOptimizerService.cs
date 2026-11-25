@@ -16,6 +16,7 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
     private readonly ILogService _log;
     private readonly IBackupService _backup;
     private readonly IGameLoopDetectionService _gameLoopDetection;
+    private readonly GameLoopCleanerService _cleaner = new();
 
     // GameLoop processes to optimize
     private static readonly string[] EmulatorProcesses =
@@ -608,18 +609,22 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
                 _registry.SetValue(tencentKey, "FPSLock", 0u, RegistryValueKind.DWord);
                 _registry.SetValue(tencentKey, "RenderOptimizeEnabled", 1u, RegistryValueKind.DWord);
                 _registry.SetValue(tencentKey, "LocalShaderCacheEnabled", 1u, RegistryValueKind.DWord);
+                _registry.SetValue(tencentKey, "RenderMode", 4u, RegistryValueKind.DWord);
+                _registry.SetValue(tencentKey, "ForceDirectX", 1u, RegistryValueKind.DWord);
+                _registry.SetValue(@"HKEY_CURRENT_USER\Software\Tencent\MobileGamePC\GameSaves", "FpsLevel", 5u, RegistryValueKind.DWord);
 
-                // 2. Set Device Model to Official 120Hz Supported Device (Samsung Galaxy Tab S9 - SM-X910)
+                // 2. Set Device Model to Official 120Hz Supported Device (Samsung Galaxy Tab S9 Ultra - SM-X910)
                 _registry.SetValue(tencentKey, "VMDeviceModel", "SM-X910", RegistryValueKind.String);
                 _registry.SetValue(tencentKey, "VMDeviceManufacturer", "SAMSUNG", RegistryValueKind.String);
                 _registry.SetValue(tencentKey, "VMPhoneDevice", "Samsung SM-X910", RegistryValueKind.String);
+                _registry.SetValue(tencentKey, "AdbDisable", 0u, RegistryValueKind.DWord);
             }
             else
             {
                 _registry.SetValue(tencentKey, "com.tencent.ig_FPSLevel", 90u, RegistryValueKind.DWord);
                 _registry.SetValue(tencentKey, "fps_max", 90u, RegistryValueKind.DWord);
-                _registry.SetValue(tencentKey, "VMDeviceModel", "SM-X920", RegistryValueKind.String);
-                _registry.SetValue(tencentKey, "VMPhoneDevice", "Asus ROG 2", RegistryValueKind.String);
+                _registry.SetValue(tencentKey, "VMDeviceModel", "ASUS_I005D", RegistryValueKind.String);
+                _registry.SetValue(tencentKey, "VMPhoneDevice", "Asus ROG 5", RegistryValueKind.String);
             }
 
             // 3. Update GameLoop Config.ini if found
@@ -648,7 +653,7 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
 
             await _backup.EndSessionAsync();
             var status = enable
-                ? "120 FPS Ultra Mode unlocked successfully! Device model set to Samsung SM-X910 (Galaxy Tab S9 120Hz)."
+                ? "120 FPS & HDR 90 FPS Ultra Mode unlocked successfully! Device model set to Samsung SM-X920 (Galaxy Tab S10+ 120Hz)."
                 : "Restored stock 90 FPS configuration.";
             _log.Log("GameLoop", status, "SUCCESS");
             return OptimizationResult.Succeeded(status);
@@ -668,7 +673,7 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
             var fpsVal = _registry.GetValue(tencentKey, "com.tencent.ig_FPSLevel")?.ToString();
             var modelVal = _registry.GetValue(tencentKey, "VMDeviceModel")?.ToString();
 
-            return (fpsVal == "120" || modelVal == "SM-X910");
+            return (fpsVal == "120" || modelVal == "SM-X920" || modelVal == "SM-X910");
         });
     }
 
@@ -1195,7 +1200,7 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
             try
             {
                 int terminatedCount = 0;
-                var targets = new[] { "AndroidProcess", "aow_exe", "AppMarket", "QMEmulatorService", "TBSGameLive", "AndroidEmulator" };
+                var targets = new[] { "AndroidProcess", "aow_exe", "AppMarket", "QMEmulatorService", "TBSGameLive", "AndroidEmulator", "AndroidEmulatorEn" };
                 foreach (var name in targets)
                 {
                     var procs = Process.GetProcessesByName(name);
@@ -1230,56 +1235,54 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
 
     public Task<OptimizationResult> CleanShaderAndTempCacheAsync()
     {
-        return Task.Run(async () =>
+        return Task.Run(() =>
         {
             try
             {
-                long bytesFreed = 0;
-                var candidateDirs = new List<string>
-                {
-                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Tencent"),
-                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Tencent"),
-                    Path.Combine(Path.GetTempPath(), "Tencent")
-                };
-
-                var installPath = await _gameLoopDetection.GetInstallPathAsync();
-                if (installPath != null)
-                {
-                    candidateDirs.Add(Path.Combine(installPath, "ShaderCache"));
-                    candidateDirs.Add(Path.Combine(installPath, "DxShaderCache"));
-                    candidateDirs.Add(Path.Combine(installPath, "TxGameAssistant", "UI", "ShaderCache"));
-                }
-
-                foreach (var dir in candidateDirs)
-                {
-                    if (Directory.Exists(dir))
-                    {
-                        try
-                        {
-                            var files = Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories);
-                            foreach (var f in files)
-                            {
-                                try
-                                {
-                                    var fi = new FileInfo(f);
-                                    bytesFreed += fi.Length;
-                                    fi.Delete();
-                                }
-                                catch { }
-                            }
-                        }
-                        catch { }
-                    }
-                }
-
-                double mb = bytesFreed / (1024.0 * 1024.0);
-                string msg = $"Cleared GameLoop shader caches and temp files ({mb:F1} MB freed).";
+                int deletedFiles = _cleaner.DeepCachePurge();
+                string msg = $"Cleared Tencent AppData, Windows/User Temp, Prefetch, Thumbnails, Error Reports & Recycle Bin ({deletedFiles} files removed, locked files skipped).";
                 _log.Log("GameLoop", msg, "SUCCESS");
                 return OptimizationResult.Succeeded(msg);
             }
             catch (Exception ex)
             {
                 return OptimizationResult.Failed($"Error clearing shader cache: {ex.Message}");
+            }
+        });
+    }
+
+    public Task<OptimizationResult> LaunchOfficialUninstallAsync()
+    {
+        return Task.Run(() =>
+        {
+            try
+            {
+                bool launched = _cleaner.LaunchOfficialUninstall(out string message);
+                _log.Log("GameLoop", message, launched ? "INFO" : "WARNING");
+                return launched
+                    ? OptimizationResult.Succeeded(message)
+                    : OptimizationResult.Failed(message);
+            }
+            catch (Exception ex)
+            {
+                return OptimizationResult.Failed($"Error starting uninstaller: {ex.Message}");
+            }
+        });
+    }
+
+    public Task<OptimizationResult> FullNuclearCleanGameLoopAsync()
+    {
+        return Task.Run(() =>
+        {
+            try
+            {
+                var res = _cleaner.FullNuclearClean(msg => _log.Log("GameLoopCleaner", msg, "INFO"));
+                _log.Log("GameLoopCleaner", res.SummaryMessage, "SUCCESS");
+                return OptimizationResult.Succeeded(res.SummaryMessage);
+            }
+            catch (Exception ex)
+            {
+                return OptimizationResult.Failed($"Error running Nuclear Clean: {ex.Message}");
             }
         });
     }

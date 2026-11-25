@@ -4,7 +4,7 @@
         Title="Xenom Optimizer"
         Icon="pack://application:,,,/Assets/xenom.ico"
         Height="360" Width="360"
-        WindowStartupLocation="CenterScreen"
+        WindowStartupLocation="Manual"
         Background="Transparent"
         WindowStyle="None"
         AllowsTransparency="True"

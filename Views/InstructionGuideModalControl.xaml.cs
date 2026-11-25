@@ -59,7 +59,8 @@ public partial class InstructionGuideModalControl : UserControl
     {
         if (e.PropertyName == nameof(WindowsOptimizationViewModel.ActiveGuideStep) ||
             e.PropertyName == nameof(WindowsOptimizationViewModel.GuideCompletedCount) ||
-            e.PropertyName == nameof(WindowsOptimizationViewModel.IsAllGuideStepsDone))
+            e.PropertyName == nameof(WindowsOptimizationViewModel.IsAllGuideStepsDone) ||
+            e.PropertyName == nameof(WindowsOptimizationViewModel.IsDriversIncludedMode))
         {
             Dispatcher.InvokeAsync(() => UpdateNotchAndProgress(animate: true));
         }

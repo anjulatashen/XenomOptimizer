@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
@@ -16,6 +17,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
@@ -32,6 +34,15 @@ public enum DownloadItemKindType
 {
 	DriverBooster,
 	DirectX
+}
+
+public enum OptimizationCategoryMode
+{
+	All,
+	UltraGaming,
+	NormalGaming,
+	OfficeWork,
+	PrivacyFocus
 }
 
 public partial class WindowsOptimizationViewModel : ObservableObject
@@ -53,6 +64,11 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 	[ObservableProperty]
 	private bool _isLoading = false;
 
+	partial void OnIsLoadingChanged(bool value)
+	{
+		OnPropertyChanged(nameof(CanUndo));
+	}
+
 	[ObservableProperty]
 	private string _statusMessage = "";
 
@@ -62,11 +78,39 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 	[ObservableProperty]
 	private bool _isDriversIncludedMode = true;
 
+	public bool IsNewUserToggleVisible => (_settings?.Settings?.HasSeenWindowsGuide == true) || !IsDriversIncludedMode || HasSkippedDriverScanner;
+
 	[ObservableProperty]
 	private bool _hasVisitedDriverInstallationView = false;
 
 	[ObservableProperty]
 	private int _selectedOnboardingPath = 0;
+
+	[ObservableProperty]
+	private int _selectedAdvanceSubTabIndex = 0; // 0 = Advance Tweaks, 1 = Low-End PC
+
+	public bool IsAdvanceSubTabActive => SelectedAdvanceSubTabIndex == 0;
+	public bool IsLowEndSubTabActive => SelectedAdvanceSubTabIndex == 1;
+
+	partial void OnSelectedAdvanceSubTabIndexChanged(int value)
+	{
+		OnPropertyChanged(nameof(IsAdvanceSubTabActive));
+		OnPropertyChanged(nameof(IsLowEndSubTabActive));
+		NotifyPresetProperties();
+	}
+
+	[RelayCommand]
+	public void SwitchAdvanceSubTab(string tab)
+	{
+		if (tab == "1" || tab.Equals("LowEnd", StringComparison.OrdinalIgnoreCase))
+		{
+			SelectedAdvanceSubTabIndex = 1;
+		}
+		else
+		{
+			SelectedAdvanceSubTabIndex = 0;
+		}
+	}
 
 	[ObservableProperty]
 	private bool _isConfirmDialogVisible;
@@ -85,6 +129,8 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 
 	[ObservableProperty]
 	private string _confirmDialogButtonColor = "#8B5CF6";
+
+	private OptimizationCardViewModel? _pendingUltimateCard;
 
 	[ObservableProperty]
 	private bool _isInstructionModalVisible;
@@ -176,10 +222,10 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 	private bool _isDownloadCompleted;
 
 	[ObservableProperty]
-	private bool _isAppUpdateAvailable = true;
+	private bool _isAppUpdateAvailable = false;
 
 	[ObservableProperty]
-	private string _appUpdateVersion = "1.0.1";
+	private string _appUpdateVersion = "1.0.1 Beta";
 
 	[ObservableProperty]
 	private string _appUpdateNotes = "— In-Game 120 FPS & Ultra Extreme Graphics\n— Custom Resolutions & 4:3 iPad View Mode\n— ROG Phone 8 & Flagship Device Profiles\n— DirectX+, OpenGL+ & Vulkan Rendering Backend\n— Host CPU Cores & System Memory Allocator\n— One-Click PC Doctor & HVCI Bypass\n— Safe Emulator Close & Shader Cache Cleaner";
@@ -206,7 +252,7 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 	private string _appUpdateStatusText = "Preparation";
 
 	[ObservableProperty]
-	private string _appUpdateProgressSubtitle = "Installing Xenom Optimizer v1.0.1...";
+	private string _appUpdateProgressSubtitle = "Installing Xenom Optimizer Beta...";
 
 	[ObservableProperty]
 	private int _appUpdateStep = 1;
@@ -224,7 +270,7 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 	private bool _isBox4Active;
 
 	[ObservableProperty]
-	private string _appUpdateBottomBaseText = "Downloading Xenom Optimizer v1.0.1";
+	private string _appUpdateBottomBaseText = "Downloading Xenom Optimizer Beta";
 
 	[ObservableProperty]
 	private string _appUpdateAnimatedDots = "...";
@@ -432,6 +478,1460 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 
 	[ObservableProperty]
 	private string _statDriveType = "NVMe SSD";
+
+	[ObservableProperty]
+	private double _ramUsagePercent = 50.0;
+
+	[ObservableProperty]
+	private string _ramUsagePercentText = "50%";
+
+	[ObservableProperty]
+	private string _ramAvailableText = "8.0 GB Free";
+
+	[ObservableProperty]
+	private string _ramUsedText = "8.0 GB Used";
+
+	[ObservableProperty]
+	private string _ramTotalText = "16 GB";
+
+	[ObservableProperty]
+	private bool _isRamPurging;
+
+	[ObservableProperty]
+	private double _ramPurgeProgress = 0.0;
+
+	[ObservableProperty]
+	private bool _isRamPurgeDone = false;
+
+	[ObservableProperty]
+	private string _ramPurgeButtonText = "Flush Standby RAM";
+
+	[ObservableProperty]
+	private bool _isPurgeTextVisible = true;
+
+	public GridLength PurgeFillGridWidth => new GridLength(Math.Max(0.0001, RamPurgeProgress), GridUnitType.Star);
+	public GridLength PurgeEmptyGridWidth => new GridLength(Math.Max(0.0001, 100.0 - RamPurgeProgress), GridUnitType.Star);
+
+	public bool CanCleanRam => !IsRamPurging;
+
+	public string CpuModelShortText
+	{
+		get
+		{
+			if (string.IsNullOrWhiteSpace(CpuModelText) || CpuModelText.Contains("Detecting"))
+				return "CPU";
+			string s = CpuModelText.Replace("Intel(R) Core(TM)", "").Replace("Intel(R)", "").Replace("AMD Ryzen(TM)", "Ryzen").Replace("AMD Ryzen", "Ryzen").Replace("Processor", "").Trim();
+			return s.Length > 12 ? s.Substring(0, 12).Trim() : s;
+		}
+	}
+
+	public string GpuModelShortText
+	{
+		get
+		{
+			if (string.IsNullOrWhiteSpace(GpuModelText) || GpuModelText.Contains("Detecting"))
+				return "GPU";
+			string s = GpuModelText.Replace("NVIDIA GeForce", "").Replace("AMD Radeon", "Radeon").Replace("Intel(R) UHD Graphics", "Intel UHD").Trim();
+			return s.Length > 12 ? s.Substring(0, 12).Trim() : s;
+		}
+	}
+
+	[ObservableProperty]
+	private OptimizationCategoryMode _selectedCategoryMode = OptimizationCategoryMode.All;
+
+	public bool IsAllCategorySelected => SelectedCategoryMode == OptimizationCategoryMode.All;
+	public bool IsUltraGamingCategorySelected => SelectedCategoryMode == OptimizationCategoryMode.UltraGaming;
+	public bool IsNormalGamingCategorySelected => SelectedCategoryMode == OptimizationCategoryMode.NormalGaming;
+	public bool IsOfficeWorkCategorySelected => SelectedCategoryMode == OptimizationCategoryMode.OfficeWork;
+	public bool IsPrivacyFocusCategorySelected => SelectedCategoryMode == OptimizationCategoryMode.PrivacyFocus;
+
+	
+	[ObservableProperty]
+	private bool _isCustomCategoryModalOpen;
+
+	[ObservableProperty]
+	private int _selectedCustomSlot = 4;
+
+	[ObservableProperty]
+	private string _customModeNameInput = "Office & Work";
+
+	[ObservableProperty]
+	private string _customMode4Name = "Office &\nWork";
+
+	[ObservableProperty]
+	private string _customMode5Name = "Privacy\nFocus";
+
+	public bool IsMode4Customized { get; set; }
+	public bool IsMode5Customized { get; set; }
+
+	public List<string> CustomMode4Services { get; } = new();
+	public List<string> CustomMode5Services { get; } = new();
+
+	public ObservableCollection<CustomServiceSelectionItem> CustomModalServiceItems { get; } = new();
+
+	[ObservableProperty]
+	private bool _isSlot4Empty;
+
+	[ObservableProperty]
+	private bool _isSlot5Empty;
+
+	[ObservableProperty]
+	private bool _isManageSlotsMode;
+
+	[ObservableProperty]
+	private bool _isCustomPresetEditActive;
+
+	[ObservableProperty]
+	private int _editingCustomSlot = 4;
+
+	[ObservableProperty]
+	private int _selectedCustomServicesCount;
+
+	[ObservableProperty]
+	private bool _shouldShakeSlot4;
+
+	[ObservableProperty]
+	private bool _shouldShakeSlot5;
+
+	public string CustomPresetTopButtonText => SelectedCustomServicesCount > 0 ? "Save" : "Cancel";
+	public string CustomPresetTopButtonIcon => SelectedCustomServicesCount > 0 ? "\uE73E" : "\uE711";
+	public string CustomPresetTopButtonForeground => SelectedCustomServicesCount > 0 ? "#000000" : "#A0A8B8";
+	public string CustomPresetTopButtonBackground => SelectedCustomServicesCount > 0 ? "#FFFFFF" : "#1E2028";
+	public string CustomPresetTopButtonBorderBrush => SelectedCustomServicesCount > 0 ? "Transparent" : "#353A48";
+	public string CustomPresetTopButtonToolTip => SelectedCustomServicesCount > 0
+		? "Save this Custom Preset with selected services"
+		: "Cancel custom preset creation and restore previous settings";
+
+	public string ServicesHeaderSubtitle => IsCustomPresetEditActive
+		? "Select services to include in your Custom Preset (click checkboxes)"
+		: "Toggle individual optimizations or disable background services";
+
+	public string ManageSlotsButtonText => IsManageSlotsMode ? "Done" : "Add";
+	public string ManageSlotsButtonIcon => IsManageSlotsMode ? "\uE73E" : "\uE710";
+	public string ManageSlotsButtonForeground => IsManageSlotsMode ? "#000000" : "#E2E8F0";
+	public string ManageSlotsButtonBackground => IsManageSlotsMode ? "#FFFFFF" : "#181A22";
+	public string ManageSlotsButtonBorderBrush => IsManageSlotsMode ? "Transparent" : "#252733";
+
+	public double Card3Opacity => IsCustomPresetEditActive ? 0.35 : 1.0;
+	public bool IsCard3Enabled => !IsCustomPresetEditActive;
+
+	public bool IsSlot4CustomPresetIconVisible => !IsSlot4Empty && IsMode4Customized;
+	public bool IsSlot4GlyphIconVisible => IsSlot4Empty || !IsMode4Customized;
+
+	public bool IsSlot5CustomPresetIconVisible => !IsSlot5Empty && IsMode5Customized;
+	public bool IsSlot5GlyphIconVisible => IsSlot5Empty || !IsMode5Customized;
+
+	public bool CanDeleteSlot4 => IsManageSlotsMode && !IsSlot4Empty;
+	public bool CanDeleteSlot5 => IsManageSlotsMode && !IsSlot5Empty;
+
+	public string Slot4Icon => IsSlot4Empty ? "\uE710" : (IsMode4Customized ? "\uE790" : "\uE8F1");
+	public string Slot5Icon => IsSlot5Empty ? "\uE710" : (IsMode5Customized ? "\uE790" : "\uE72E");
+	public string Slot4Label => IsSlot4Empty ? "Add\nPreset" : CustomMode4Name;
+	public string Slot5Label => IsSlot5Empty ? "Add\nPreset" : CustomMode5Name;
+
+	private string? _slot4BackupName;
+	private List<string>? _slot4BackupServices;
+	private bool _slot4WasCustomized;
+	private bool _slot4WasEmpty;
+
+	private string? _slot5BackupName;
+	private List<string>? _slot5BackupServices;
+	private bool _slot5WasCustomized;
+	private bool _slot5WasEmpty;
+
+	private readonly Dictionary<string, bool> _initialUserPcStates = new(StringComparer.OrdinalIgnoreCase);
+
+	private string GetConfigDirectory()
+	{
+		var appDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XenomOptimizer");
+		Directory.CreateDirectory(appDir);
+		return appDir;
+	}
+
+	private void LoadCustomCategoryConfig()
+	{
+		try
+		{
+			var filePath = Path.Combine(GetConfigDirectory(), "custom_modes_config.json");
+			if (File.Exists(filePath))
+			{
+				var json = File.ReadAllText(filePath);
+				var cfg = JsonSerializer.Deserialize<CustomCategoryConfigFile>(json);
+				if (cfg != null)
+				{
+					IsMode4Customized = cfg.IsMode4Customized;
+					IsSlot4Empty = cfg.IsSlot4Empty;
+					CustomMode4Name = string.IsNullOrWhiteSpace(cfg.Mode4Name) ? (IsSlot4Empty ? "Add\nPreset" : "Office &\nWork") : cfg.Mode4Name;
+					CustomMode4Services.Clear();
+					if (cfg.Mode4Services != null) CustomMode4Services.AddRange(cfg.Mode4Services);
+
+					IsMode5Customized = cfg.IsMode5Customized;
+					IsSlot5Empty = cfg.IsSlot5Empty;
+					CustomMode5Name = string.IsNullOrWhiteSpace(cfg.Mode5Name) ? (IsSlot5Empty ? "Add\nPreset" : "Privacy\nFocus") : cfg.Mode5Name;
+					CustomMode5Services.Clear();
+					if (cfg.Mode5Services != null) CustomMode5Services.AddRange(cfg.Mode5Services);
+				}
+			}
+		}
+		catch { }
+	}
+
+	private void SaveCustomCategoryConfig()
+	{
+		try
+		{
+			var filePath = Path.Combine(GetConfigDirectory(), "custom_modes_config.json");
+			var cfg = new CustomCategoryConfigFile
+			{
+				IsMode4Customized = IsMode4Customized,
+				IsSlot4Empty = IsSlot4Empty,
+				Mode4Name = CustomMode4Name,
+				Mode4Services = CustomMode4Services.ToList(),
+				IsMode5Customized = IsMode5Customized,
+				IsSlot5Empty = IsSlot5Empty,
+				Mode5Name = CustomMode5Name,
+				Mode5Services = CustomMode5Services.ToList()
+			};
+			var json = JsonSerializer.Serialize(cfg, new JsonSerializerOptions { WriteIndented = true });
+			File.WriteAllText(filePath, json);
+		}
+		catch { }
+	}
+
+	private void InitializeUserPcInitialState()
+	{
+		try
+		{
+			var filePath = Path.Combine(GetConfigDirectory(), "user_initial_pc_state.json");
+			if (File.Exists(filePath))
+			{
+				var json = File.ReadAllText(filePath);
+				var loaded = JsonSerializer.Deserialize<Dictionary<string, bool>>(json);
+				if (loaded != null && loaded.Count > 0)
+				{
+					_initialUserPcStates.Clear();
+					foreach (var kvp in loaded)
+					{
+						_initialUserPcStates[kvp.Key] = kvp.Value;
+					}
+					// Also record any Advance and Low-End cards that weren't in the snapshot previously
+					bool addedNew = false;
+					foreach (var card in AdvanceOptimizations.Concat(LowEndOptimizations))
+					{
+						if (!_initialUserPcStates.ContainsKey(card.Id))
+						{
+							_initialUserPcStates[card.Id] = card.IsOptimal;
+							addedNew = true;
+						}
+					}
+					if (addedNew)
+					{
+						var saveJson = JsonSerializer.Serialize(_initialUserPcStates, new JsonSerializerOptions { WriteIndented = true });
+						File.WriteAllText(filePath, saveJson);
+					}
+					return;
+				}
+			}
+
+			// First run snapshot of all cards across all tabs
+			_initialUserPcStates.Clear();
+			foreach (var card in ServicesOptimizations.Concat(AdvanceOptimizations).Concat(LowEndOptimizations))
+			{
+				_initialUserPcStates[card.Id] = card.IsOptimal;
+			}
+			var firstSaveJson = JsonSerializer.Serialize(_initialUserPcStates, new JsonSerializerOptions { WriteIndented = true });
+			File.WriteAllText(filePath, firstSaveJson);
+		}
+		catch { }
+	}
+
+	[RelayCommand]
+	public void OpenCustomCategoryModal() => ToggleManageSlots();
+
+	[RelayCommand]
+	public void ToggleManageSlots()
+	{
+		if (IsCustomPresetEditActive)
+		{
+			TriggerShakeCategory();
+			StatusMessage = "Please tick services and Save, or Cancel to discard.";
+			return;
+		}
+
+		IsManageSlotsMode = !IsManageSlotsMode;
+		NotifyAllCustomStateProperties();
+	}
+
+	[RelayCommand]
+	public void DeleteSlot(string slotStr)
+	{
+		if (IsCustomPresetEditActive) return;
+
+		int slot = int.TryParse(slotStr, out var s) ? s : 4;
+		if (slot == 4)
+		{
+			_slot4BackupName = CustomMode4Name == "Add\nPreset" ? "Office &\nWork" : CustomMode4Name;
+			_slot4BackupServices = CustomMode4Services.ToList();
+			_slot4WasCustomized = IsMode4Customized;
+			_slot4WasEmpty = false;
+
+			IsSlot4Empty = true;
+			IsMode4Customized = true;
+			CustomMode4Name = "Add\nPreset";
+			CustomMode4Services.Clear();
+
+			if (SelectedCategoryMode == OptimizationCategoryMode.OfficeWork)
+			{
+				SelectedCategoryMode = OptimizationCategoryMode.All;
+				UpdateFilteredServices();
+			}
+		}
+		else if (slot == 5)
+		{
+			_slot5BackupName = CustomMode5Name == "Add\nPreset" ? "Privacy\nFocus" : CustomMode5Name;
+			_slot5BackupServices = CustomMode5Services.ToList();
+			_slot5WasCustomized = IsMode5Customized;
+			_slot5WasEmpty = false;
+
+			IsSlot5Empty = true;
+			IsMode5Customized = true;
+			CustomMode5Name = "Add\nPreset";
+			CustomMode5Services.Clear();
+
+			if (SelectedCategoryMode == OptimizationCategoryMode.PrivacyFocus)
+			{
+				SelectedCategoryMode = OptimizationCategoryMode.All;
+				UpdateFilteredServices();
+			}
+		}
+
+		SaveCustomCategoryConfig();
+		IsManageSlotsMode = false;
+		IsCustomPresetEditActive = false;
+
+		foreach (var card in ServicesOptimizations)
+		{
+			card.IsInCustomEditMode = false;
+			card.IsCustomSelected = false;
+		}
+
+		UpdateFilteredServices();
+		NotifyAllCustomStateProperties();
+		StatusMessage = $"Slot {slot} deleted. Click '+' in the slot to create your Custom Preset.";
+	}
+
+	public void StartCustomPresetCreation(int slot)
+	{
+		EditingCustomSlot = slot;
+		if (slot == 4)
+		{
+			_slot4BackupName = CustomMode4Name == "Add\nPreset" ? "Office &\nWork" : CustomMode4Name;
+			_slot4BackupServices = CustomMode4Services.ToList();
+			_slot4WasCustomized = IsMode4Customized;
+			_slot4WasEmpty = IsSlot4Empty;
+
+			IsSlot4Empty = false;
+			CustomMode4Name = "Custom\nPreset";
+			IsMode4Customized = true;
+			SelectedCategoryMode = OptimizationCategoryMode.OfficeWork;
+		}
+		else
+		{
+			_slot5BackupName = CustomMode5Name == "Add\nPreset" ? "Privacy\nFocus" : CustomMode5Name;
+			_slot5BackupServices = CustomMode5Services.ToList();
+			_slot5WasCustomized = IsMode5Customized;
+			_slot5WasEmpty = IsSlot5Empty;
+
+			IsSlot5Empty = false;
+			CustomMode5Name = "Custom\nPreset";
+			IsMode5Customized = true;
+			SelectedCategoryMode = OptimizationCategoryMode.PrivacyFocus;
+		}
+
+		IsCustomPresetEditActive = true;
+		IsManageSlotsMode = false;
+
+		foreach (var card in ServicesOptimizations)
+		{
+			card.IsInCustomEditMode = true;
+			card.IsCustomSelected = false; // Start with 0 so button is Cancel!
+			card.CategoryOpacity = 0.35;
+		}
+
+		SelectedCustomServicesCount = 0;
+		NotifyAllCustomStateProperties();
+		StatusMessage = "Select services for Custom Preset using checkboxes. Click Save when done.";
+	}
+
+	[RelayCommand]
+	public void HandleCustomPresetTopButton()
+	{
+		if (!IsCustomPresetEditActive) return;
+
+		if (SelectedCustomServicesCount > 0)
+		{
+			SaveCustomPreset();
+		}
+		else
+		{
+			CancelCustomPreset();
+		}
+	}
+
+	public void SaveCustomPreset()
+	{
+		var selectedCards = ServicesOptimizations.Where(c => c.IsCustomSelected).ToList();
+		var selectedIds = selectedCards.Select(c => c.Id).ToList();
+		if (selectedIds.Count == 0)
+		{
+			TriggerShakeCategory();
+			StatusMessage = "You must select at least 1 service to save a Custom Preset.";
+			return;
+		}
+
+		if (EditingCustomSlot == 4)
+		{
+			CustomMode4Services.Clear();
+			CustomMode4Services.AddRange(selectedIds);
+			CustomMode4Name = "Custom\nPreset";
+			IsMode4Customized = true;
+			IsSlot4Empty = false;
+			SelectedCategoryMode = OptimizationCategoryMode.OfficeWork;
+		}
+		else
+		{
+			CustomMode5Services.Clear();
+			CustomMode5Services.AddRange(selectedIds);
+			CustomMode5Name = "Custom\nPreset";
+			IsMode5Customized = true;
+			IsSlot5Empty = false;
+			SelectedCategoryMode = OptimizationCategoryMode.PrivacyFocus;
+		}
+
+		SaveCustomCategoryConfig();
+
+		IsCustomPresetEditActive = false;
+		foreach (var card in ServicesOptimizations)
+		{
+			card.IsInCustomEditMode = false;
+		}
+
+		// "eka create kalata passe eka on akranna denna"
+		// Immediately apply & turn ON the selected services in the created preset, and turn OFF excluded ones!
+		foreach (var card in ServicesOptimizations)
+		{
+			if (selectedCards.Contains(card))
+			{
+				card.IsOptimal = true;
+				_ = card.ApplyAsync();
+			}
+			else if (card.IsOptimal)
+			{
+				card.IsOptimal = false;
+				_ = card.RestoreAsync();
+			}
+		}
+
+		NotifyAllCustomStateProperties();
+		UpdateFilteredServices();
+		DisplayedCategoryTotal = CurrentCategoryTotalCount;
+		TriggerMilestoneAnimation();
+		StatusMessage = "Custom Preset saved and turned ON successfully!";
+	}
+
+	public void CancelCustomPreset()
+	{
+		if (EditingCustomSlot == 4)
+		{
+			CustomMode4Name = _slot4BackupName ?? "Office &\nWork";
+			CustomMode4Services.Clear();
+			if (_slot4BackupServices != null && _slot4BackupServices.Count > 0)
+			{
+				CustomMode4Services.AddRange(_slot4BackupServices);
+			}
+			IsMode4Customized = _slot4WasCustomized;
+			IsSlot4Empty = _slot4WasEmpty;
+		}
+		else
+		{
+			CustomMode5Name = _slot5BackupName ?? "Privacy\nFocus";
+			CustomMode5Services.Clear();
+			if (_slot5BackupServices != null && _slot5BackupServices.Count > 0)
+			{
+				CustomMode5Services.AddRange(_slot5BackupServices);
+			}
+			IsMode5Customized = _slot5WasCustomized;
+			IsSlot5Empty = _slot5WasEmpty;
+		}
+
+		SaveCustomCategoryConfig();
+
+		IsCustomPresetEditActive = false;
+		foreach (var card in ServicesOptimizations)
+		{
+			card.IsInCustomEditMode = false;
+		}
+
+		SelectedCategoryMode = OptimizationCategoryMode.All;
+		NotifyAllCustomStateProperties();
+		UpdateFilteredServices();
+		DisplayedCategoryTotal = CurrentCategoryTotalCount;
+		TriggerMilestoneAnimation();
+		StatusMessage = "Custom Preset creation cancelled.";
+	}
+
+	public void TriggerShakeCategory()
+	{
+		if (EditingCustomSlot == 4)
+		{
+			ShouldShakeSlot4 = true;
+			_ = Task.Run(async () =>
+			{
+				await Task.Delay(360);
+				Application.Current?.Dispatcher?.Invoke(() => ShouldShakeSlot4 = false);
+			});
+		}
+		else if (EditingCustomSlot == 5)
+		{
+			ShouldShakeSlot5 = true;
+			_ = Task.Run(async () =>
+			{
+				await Task.Delay(360);
+				Application.Current?.Dispatcher?.Invoke(() => ShouldShakeSlot5 = false);
+			});
+		}
+	}
+
+	private void NotifyAllCustomStateProperties()
+	{
+		OnPropertyChanged(nameof(IsCustomPresetEditActive));
+		OnPropertyChanged(nameof(ServicesHeaderSubtitle));
+		OnPropertyChanged(nameof(SelectedCustomServicesCount));
+		OnPropertyChanged(nameof(CustomPresetTopButtonText));
+		OnPropertyChanged(nameof(CustomPresetTopButtonIcon));
+		OnPropertyChanged(nameof(CustomPresetTopButtonForeground));
+		OnPropertyChanged(nameof(CustomPresetTopButtonBackground));
+		OnPropertyChanged(nameof(CustomPresetTopButtonBorderBrush));
+		OnPropertyChanged(nameof(CustomPresetTopButtonToolTip));
+		OnPropertyChanged(nameof(IsSlot4Empty));
+		OnPropertyChanged(nameof(IsSlot5Empty));
+		OnPropertyChanged(nameof(Slot4Icon));
+		OnPropertyChanged(nameof(Slot5Icon));
+		OnPropertyChanged(nameof(Slot4Label));
+		OnPropertyChanged(nameof(Slot5Label));
+		OnPropertyChanged(nameof(CanDeleteSlot4));
+		OnPropertyChanged(nameof(CanDeleteSlot5));
+		OnPropertyChanged(nameof(Card3Opacity));
+		OnPropertyChanged(nameof(IsCard3Enabled));
+		OnPropertyChanged(nameof(IsSlot4CustomPresetIconVisible));
+		OnPropertyChanged(nameof(IsSlot4GlyphIconVisible));
+		OnPropertyChanged(nameof(IsSlot5CustomPresetIconVisible));
+		OnPropertyChanged(nameof(IsSlot5GlyphIconVisible));
+		OnPropertyChanged(nameof(ManageSlotsButtonText));
+		OnPropertyChanged(nameof(ManageSlotsButtonIcon));
+		OnPropertyChanged(nameof(ManageSlotsButtonForeground));
+		OnPropertyChanged(nameof(ManageSlotsButtonBackground));
+		OnPropertyChanged(nameof(ManageSlotsButtonBorderBrush));
+		OnPropertyChanged(nameof(IsAllCategorySelected));
+		OnPropertyChanged(nameof(IsUltraGamingCategorySelected));
+		OnPropertyChanged(nameof(IsNormalGamingCategorySelected));
+		OnPropertyChanged(nameof(IsOfficeWorkCategorySelected));
+		OnPropertyChanged(nameof(IsPrivacyFocusCategorySelected));
+	}
+
+	public ObservableCollection<OptimizationCardViewModel> FilteredServicesOptimizations { get; } = new();
+
+	[RelayCommand]
+	public void SelectCategory(string category)
+	{
+		if (IsCustomPresetEditActive)
+		{
+			if (SelectedCustomServicesCount == 0)
+			{
+				CancelCustomPreset();
+			}
+			else
+			{
+				TriggerShakeCategory();
+				StatusMessage = "Please tick services and click Save, or Cancel to discard.";
+				return;
+			}
+		}
+
+		if (Enum.TryParse<OptimizationCategoryMode>(category, true, out var mode))
+		{
+			if (mode == OptimizationCategoryMode.OfficeWork && IsSlot4Empty)
+			{
+				StartCustomPresetCreation(4);
+				return;
+			}
+			if (mode == OptimizationCategoryMode.PrivacyFocus && IsSlot5Empty)
+			{
+				StartCustomPresetCreation(5);
+				return;
+			}
+
+			SelectedCategoryMode = mode;
+			OnPropertyChanged(nameof(IsAllCategorySelected));
+			OnPropertyChanged(nameof(IsUltraGamingCategorySelected));
+			OnPropertyChanged(nameof(IsNormalGamingCategorySelected));
+			OnPropertyChanged(nameof(IsOfficeWorkCategorySelected));
+			OnPropertyChanged(nameof(IsPrivacyFocusCategorySelected));
+
+			// "me catogarry eka maru akraddi hide wenawane service tika ethakota ewa off welama hide wennai ahdanna one"
+			// When switching category/preset:
+			// Allowed services turn ON (IsOptimal = true, ApplyAsync)
+			// Unallowed services turn OFF (IsOptimal = false, RestoreAsync)
+			_isUpdatingPreset = true;
+			try
+			{
+				foreach (var card in ServicesOptimizations)
+				{
+					bool isAllowed = IsCardInMode(card, mode);
+					if (isAllowed)
+					{
+						if (!card.IsOptimal)
+						{
+							card.IsOptimal = true;
+							_ = card.ApplyAsync();
+						}
+					}
+					else
+					{
+						if (card.IsOptimal)
+						{
+							card.IsOptimal = false;
+							_ = card.RestoreAsync();
+						}
+					}
+				}
+			}
+			finally
+			{
+				_isUpdatingPreset = false;
+			}
+
+			UpdateFilteredServices();
+			OnPropertyChanged(nameof(CurrentCategoryTotalCount));
+			DisplayedCategoryTotal = CurrentCategoryTotalCount;
+		TriggerMilestoneAnimation();
+		}
+	}
+
+
+	public bool IsCardInMode(OptimizationCardViewModel card, OptimizationCategoryMode mode)
+	{
+		string id = (card.Id ?? "").ToLowerInvariant();
+		return mode switch
+		{
+			OptimizationCategoryMode.All => true,
+			OptimizationCategoryMode.UltraGaming => true,
+			OptimizationCategoryMode.NormalGaming => !id.Contains("printer") && !id.Contains("phone"),
+			OptimizationCategoryMode.OfficeWork => IsSlot4Empty ? false : (IsMode4Customized
+				? CustomMode4Services.Contains(card.Id)
+				: !id.Contains("printer") && !id.Contains("phone") && !id.Contains("browser") && !id.Contains("sysmain") && !id.Contains("bg_apps") && !id.Contains("backgroundapps")),
+			OptimizationCategoryMode.PrivacyFocus => IsSlot5Empty ? false : (IsMode5Customized
+				? CustomMode5Services.Contains(card.Id)
+				: id.Contains("telemetry") || id.Contains("wer") || id.Contains("tips") || id.Contains("location") || id.Contains("activity") || id.Contains("copilot") || id.Contains("delivery")),
+			_ => true
+		};
+	}
+
+	public void UpdateFilteredServices()
+	{
+		if (IsCustomPresetEditActive)
+		{
+			foreach (var card in ServicesOptimizations)
+			{
+				card.IsCategoryAllowed = true;
+				card.CategoryOpacity = card.IsCustomSelected ? 1.0 : 0.35;
+			}
+			return;
+		}
+
+		if (FilteredServicesOptimizations.Count != ServicesOptimizations.Count)
+		{
+			FilteredServicesOptimizations.Clear();
+			foreach (var card in ServicesOptimizations)
+			{
+				bool isAllowed = IsCardInMode(card, SelectedCategoryMode);
+				card.IsCategoryAllowed = isAllowed;
+				card.CategoryOpacity = isAllowed ? 1.0 : 0.35;
+				FilteredServicesOptimizations.Add(card);
+			}
+		}
+		else
+		{
+			foreach (var card in ServicesOptimizations)
+			{
+				bool isAllowed = IsCardInMode(card, SelectedCategoryMode);
+				card.IsCategoryAllowed = isAllowed;
+				card.CategoryOpacity = isAllowed ? 1.0 : 0.35;
+			}
+		}
+	}
+
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(ServicesOptimizedRatioText))]
+	private int _animatedMilestoneCount = 0;
+
+	[ObservableProperty]
+	private bool _isMilestoneCompleted = false;
+
+	private int _displayedCategoryTotal = 15;
+
+	public int DisplayedCategoryTotal
+	{
+		get => _displayedCategoryTotal;
+		set
+		{
+			if (SetProperty(ref _displayedCategoryTotal, value))
+			{
+				OnPropertyChanged(nameof(ServicesOptimizedRatioText));
+			}
+		}
+	}
+
+	public int CurrentCategoryTotalCount
+	{
+		get
+		{
+			int count = ServicesOptimizations.Count(c => IsCardInMode(c, SelectedCategoryMode));
+			return count > 0 ? count : (ServicesOptimizations.Count > 0 ? ServicesOptimizations.Count : 12);
+		}
+	}
+
+	public string ServicesOptimizedRatioText => $"{AnimatedMilestoneCount}/{DisplayedCategoryTotal}";
+
+	private int _milestoneAnimationId = 0;
+
+	public void TriggerMilestoneAnimation()
+	{
+		int target = ServicesOptimizations.Count(c => IsCardInMode(c, SelectedCategoryMode) && c.IsOptimal);
+		int targetTotal = CurrentCategoryTotalCount;
+
+		if (targetTotal >= DisplayedCategoryTotal)
+		{
+			DisplayedCategoryTotal = targetTotal;
+		}
+
+		OnPropertyChanged(nameof(CurrentCategoryTotalCount));
+		OnPropertyChanged(nameof(ServicesOptimizedRatioText));
+
+		int animId = ++_milestoneAnimationId;
+		int current = AnimatedMilestoneCount;
+
+		if (current == target)
+		{
+			DisplayedCategoryTotal = targetTotal;
+			IsMilestoneCompleted = (target == targetTotal && targetTotal > 0);
+			OnPropertyChanged(nameof(ServicesOptimizedRatioText));
+			return;
+		}
+
+		_ = Task.Run(async () =>
+		{
+			try
+			{
+				int diff = Math.Abs(target - current);
+				int stepDelay = diff > 10 ? 40 : (diff > 5 ? 45 : (diff > 2 ? 50 : 60));
+
+				while (current != target)
+				{
+					if (_milestoneAnimationId != animId) return;
+
+					if (current < target) current++;
+					else current--;
+
+					int stepVal = current;
+					var dispatcher = Application.Current?.Dispatcher;
+					if (dispatcher != null)
+					{
+						await dispatcher.InvokeAsync(() =>
+						{
+							if (_milestoneAnimationId != animId) return;
+							AnimatedMilestoneCount = stepVal;
+							if (stepVal <= targetTotal || DisplayedCategoryTotal < targetTotal)
+							{
+								DisplayedCategoryTotal = targetTotal;
+							}
+							IsMilestoneCompleted = (stepVal == targetTotal && targetTotal > 0);
+							OnPropertyChanged(nameof(ServicesOptimizedRatioText));
+						});
+					}
+					else
+					{
+						AnimatedMilestoneCount = stepVal;
+						if (stepVal <= targetTotal || DisplayedCategoryTotal < targetTotal)
+						{
+							DisplayedCategoryTotal = targetTotal;
+						}
+						IsMilestoneCompleted = (stepVal == targetTotal && targetTotal > 0);
+						OnPropertyChanged(nameof(ServicesOptimizedRatioText));
+					}
+
+					await Task.Delay(stepDelay);
+				}
+
+				var dispEnd = Application.Current?.Dispatcher;
+				if (dispEnd != null)
+				{
+					await dispEnd.InvokeAsync(() =>
+					{
+						if (_milestoneAnimationId != animId) return;
+						DisplayedCategoryTotal = targetTotal;
+						IsMilestoneCompleted = (target == targetTotal && targetTotal > 0);
+						OnPropertyChanged(nameof(ServicesOptimizedRatioText));
+					});
+				}
+			}
+			catch
+			{
+			}
+		});
+	}
+
+	private bool _isUpdatingPreset;
+	private CancellationTokenSource? _presetAnimationCts;
+	private int _servicesPresetIndex = 0; // 0 = Custom, 1 = Recommended, 2 = Restore User PC, 3 = Windows Defaults
+	private int _advancePresetIndex = 0;
+	private int _lowEndPresetIndex = 0;
+
+	public int CurrentPresetIndex
+	{
+		get
+		{
+			if (SelectedSlideIndex == 1) return _servicesPresetIndex;
+			if (SelectedAdvanceSubTabIndex == 1) return _lowEndPresetIndex;
+			return _advancePresetIndex;
+		}
+		set
+		{
+			if (SelectedSlideIndex == 1)
+			{
+				_servicesPresetIndex = value;
+				_settings.Settings.ServicesPresetIndex = value;
+				_settings.Save();
+			}
+			else if (SelectedAdvanceSubTabIndex == 1) _lowEndPresetIndex = value;
+			else _advancePresetIndex = value;
+		}
+	}
+
+	private readonly Stack<TabUndoAction> _undoStack = new();
+	private bool _isUndoing;
+
+	public bool CanUndo => _undoStack.Count > 0 && !IsLoading && !_isUndoing;
+
+	public void RecordSnapshot(string description)
+	{
+		if (_isUpdatingPreset || _isUndoing || IsLoading) return;
+		var allCards = ServicesOptimizations.Concat(AdvanceOptimizations).Concat(LowEndOptimizations).ToList();
+		if (allCards.Count == 0) return;
+
+		var currentStates = allCards.ToDictionary(c => c.Id, c => c.IsOptimal);
+
+		if (_undoStack.Count > 0)
+		{
+			var top = _undoStack.Peek();
+			if (top.ServicesPresetIndex == _servicesPresetIndex &&
+				top.AdvancePresetIndex == _advancePresetIndex &&
+				top.LowEndPresetIndex == _lowEndPresetIndex &&
+				top.CardStates.Count == currentStates.Count &&
+				top.CardStates.All(kv => currentStates.TryGetValue(kv.Key, out bool val) && val == kv.Value))
+			{
+				return;
+			}
+		}
+
+		var snapshot = new TabUndoAction
+		{
+			Description = description,
+			CardStates = currentStates,
+			ServicesPresetIndex = _servicesPresetIndex,
+			AdvancePresetIndex = _advancePresetIndex,
+			LowEndPresetIndex = _lowEndPresetIndex,
+			PresetIndex = CurrentPresetIndex
+		};
+		_undoStack.Push(snapshot);
+		OnPropertyChanged(nameof(CanUndo));
+	}
+
+	[RelayCommand]
+	public async Task UndoLastActionAsync()
+	{
+		if (_undoStack.Count == 0 || _isUndoing || IsLoading) return;
+
+		_isUndoing = true;
+		_isUpdatingPreset = true;
+		IsLoading = true;
+		OnPropertyChanged(nameof(CanUndo));
+
+		try
+		{
+			var targetSnapshot = _undoStack.Pop();
+			StatusMessage = $"Undoing: {targetSnapshot.Description}...";
+
+			var allCards = ServicesOptimizations.Concat(AdvanceOptimizations).Concat(LowEndOptimizations).ToList();
+			foreach (var card in allCards)
+			{
+				if (targetSnapshot.CardStates.TryGetValue(card.Id, out bool wasOptimal))
+				{
+					if (card.IsOptimal != wasOptimal)
+					{
+						if (wasOptimal)
+						{
+							await card.ApplyAsync();
+						}
+						else
+						{
+							await card.RestoreAsync();
+						}
+						card.IsOptimal = wasOptimal;
+					}
+				}
+			}
+
+			_servicesPresetIndex = targetSnapshot.ServicesPresetIndex;
+			_advancePresetIndex = targetSnapshot.AdvancePresetIndex;
+			_lowEndPresetIndex = targetSnapshot.LowEndPresetIndex;
+			StatusMessage = $"Undone: {targetSnapshot.Description}";
+		}
+		catch (Exception ex)
+		{
+			StatusMessage = $"Undo error: {ex.Message}";
+		}
+		finally
+		{
+			IsLoading = false;
+			_isUpdatingPreset = false;
+			_isUndoing = false;
+			OnPropertyChanged(nameof(CanUndo));
+			NotifyPresetProperties();
+			DisplayedCategoryTotal = CurrentCategoryTotalCount;
+			TriggerMilestoneAnimation();
+		}
+	}
+
+	private void NotifyPresetProperties()
+	{
+		OnPropertyChanged(nameof(IsAppRecommendedActive));
+		OnPropertyChanged(nameof(IsCompetitiveKernelBoostActive));
+		OnPropertyChanged(nameof(IsRestoreUserPcActive));
+		OnPropertyChanged(nameof(IsWindowsDefaultsActive));
+	}
+
+	public bool IsAppRecommendedActive
+	{
+		get => CurrentPresetIndex == 1;
+		set
+		{
+			if (CurrentPresetIndex == (value ? 1 : 0)) return;
+			CurrentPresetIndex = value ? 1 : 0;
+			NotifyPresetProperties();
+			if (value)
+			{
+				RecordSnapshot("Xenom Recommended Preset");
+				_ = SetAppRecommendedAsync(true);
+			}
+			else
+			{
+				RecordSnapshot("Deselect Xenom Recommended");
+				_ = SetAppRecommendedAsync(false);
+			}
+		}
+	}
+
+	public bool IsCompetitiveKernelBoostActive
+	{
+		get => CurrentPresetIndex == 4;
+		set
+		{
+			if (CurrentPresetIndex == (value ? 4 : 0)) return;
+			CurrentPresetIndex = value ? 4 : 0;
+			NotifyPresetProperties();
+			if (value)
+			{
+				RecordSnapshot("Competitive Kernel Boost Preset");
+				_ = ApplyAllSlide2Async();
+			}
+			else
+			{
+				RecordSnapshot("Deselect Competitive Kernel Boost");
+				_ = RestoreDefaultsConfirmedAsync();
+			}
+		}
+	}
+
+	public bool IsRestoreUserPcActive
+	{
+		get => CurrentPresetIndex == 2;
+		set
+		{
+			if (CurrentPresetIndex == (value ? 2 : 0)) return;
+			CurrentPresetIndex = value ? 2 : 0;
+			NotifyPresetProperties();
+			if (value)
+			{
+				RecordSnapshot("Restore User PC Preset");
+				_ = ApplyRestoreUserPcAsync();
+			}
+			else
+			{
+				RecordSnapshot("Deselect Restore User PC");
+				_ = ApplyWindowsFactoryResetAsync();
+			}
+		}
+	}
+
+	public bool IsWindowsDefaultsActive
+	{
+		get => CurrentPresetIndex == 3;
+		set
+		{
+			if (CurrentPresetIndex == (value ? 3 : 0)) return;
+			CurrentPresetIndex = value ? 3 : 0;
+			NotifyPresetProperties();
+			if (value)
+			{
+				RecordSnapshot("Windows Stock Defaults Preset");
+				_ = ApplyWindowsFactoryResetAsync();
+			}
+			else
+			{
+				RecordSnapshot("Deselect Windows Defaults");
+				_ = SetAppRecommendedAsync(false);
+			}
+		}
+	}
+
+	public void SetActivePresetIndex(int index)
+	{
+		CurrentPresetIndex = index;
+		NotifyPresetProperties();
+	}
+
+	public async Task SetAppRecommendedAsync(bool enable)
+	{
+		_presetAnimationCts?.Cancel();
+		_presetAnimationCts = new CancellationTokenSource();
+		var token = _presetAnimationCts.Token;
+
+		_isUpdatingPreset = true;
+		CurrentPresetIndex = enable ? 1 : 0;
+		IsLoading = true;
+		NotifyPresetProperties();
+		try
+		{
+			if (enable)
+			{
+				if (SelectedSlideIndex == 1)
+				{
+					StatusMessage = "Applying Xenom Recommended optimizations for Unused Services...";
+					var cardsToRestore = new List<OptimizationCardViewModel>();
+					var cardsToApply = new List<OptimizationCardViewModel>();
+					foreach (var card in ServicesOptimizations)
+					{
+						string id = (card.Id ?? "").ToLowerInvariant();
+						string name = (card.Name ?? "").ToLowerInvariant();
+						bool isExcludedFromRecommended = id.Contains("wersvc") || id.Contains("error") || id.Contains("game_mode") || name.Contains("error reporting") || name.Contains("game mode");
+						if (isExcludedFromRecommended && card.IsOptimal)
+						{
+							cardsToRestore.Add(card);
+						}
+						else if (!isExcludedFromRecommended && !card.IsOptimal)
+						{
+							cardsToApply.Add(card);
+						}
+					}
+					var tasks = new List<Task>();
+					foreach (var card in cardsToRestore)
+					{
+						card.IsOptimal = false;
+						tasks.Add(card.RestoreAsync());
+						try { await Task.Delay(35, token); } catch (OperationCanceledException) { return; }
+					}
+					foreach (var card in cardsToApply)
+					{
+						card.IsOptimal = true;
+						tasks.Add(card.ApplyAsync());
+						try { await Task.Delay(35, token); } catch (OperationCanceledException) { return; }
+					}
+					await Task.WhenAll(tasks);
+					StatusMessage = "Xenom Recommended services applied successfully.";
+				}
+				else if (SelectedAdvanceSubTabIndex == 1)
+				{
+					StatusMessage = "Applying Xenom Recommended optimizations for Low-End PC...";
+					var cardsToApply = LowEndOptimizations
+						.Where(c => c.Id != "win_ultimate_performance" && c.IsSupported && (!c.RequiresAdmin || _admin.IsRunningAsAdmin) && !c.IsOptimal)
+						.ToList();
+
+					var applyTasks = new List<Task>();
+					foreach (var card in cardsToApply)
+					{
+						card.IsOptimal = true;
+						applyTasks.Add(card.ApplyAsync());
+						try { await Task.Delay(35, token); } catch (OperationCanceledException) { return; }
+					}
+					await Task.WhenAll(applyTasks);
+					StatusMessage = "Xenom Recommended Low-End PC optimizations applied successfully.";
+				}
+				else
+				{
+					StatusMessage = "Applying Xenom Recommended optimizations for Advance Tweaks...";
+					var cardsToApply = AdvanceOptimizations
+						.Where(c => c.IsSupported && (!c.RequiresAdmin || _admin.IsRunningAsAdmin) && !c.IsOptimal)
+						.ToList();
+
+					var applyTasks = new List<Task>();
+					foreach (var card in cardsToApply)
+					{
+						card.IsOptimal = true;
+						applyTasks.Add(card.ApplyAsync());
+						try { await Task.Delay(35, token); } catch (OperationCanceledException) { return; }
+					}
+					await Task.WhenAll(applyTasks);
+
+					try
+					{
+						_registry.SetValue("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers", "HwSchMode", 2u, RegistryValueKind.DWord);
+						_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile", "SystemResponsiveness", 0u, RegistryValueKind.DWord);
+						_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile", "NetworkThrottlingIndex", 0xFFFFFFFFu, RegistryValueKind.DWord);
+						_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games", "Priority", 8u, RegistryValueKind.DWord);
+						_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games", "Scheduling Category", "High", RegistryValueKind.String);
+						_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games", "SFIO Priority", "High", RegistryValueKind.String);
+					}
+					catch { }
+
+					StatusMessage = "Xenom Recommended Advance Tweaks applied successfully.";
+				}
+			}
+			else
+			{
+				if (SelectedSlideIndex == 1)
+				{
+					StatusMessage = "Restoring Unused Services...";
+					var cardsToRestore = ServicesOptimizations.Where(c => c.IsOptimal).ToList();
+					var tasks = new List<Task>();
+					foreach (var card in cardsToRestore)
+					{
+						card.IsOptimal = false;
+						tasks.Add(card.RestoreAsync());
+						try { await Task.Delay(35, token); } catch (OperationCanceledException) { return; }
+					}
+					await Task.WhenAll(tasks);
+					StatusMessage = "Restored Unused Services back to defaults.";
+				}
+				else if (SelectedAdvanceSubTabIndex == 1)
+				{
+					StatusMessage = "Restoring Low-End PC tweaks...";
+					var cardsToRestore = LowEndOptimizations.Where(c => c.IsOptimal).ToList();
+					var tasks = new List<Task>();
+					foreach (var card in cardsToRestore)
+					{
+						card.IsOptimal = false;
+						tasks.Add(card.RestoreAsync());
+						try { await Task.Delay(35, token); } catch (OperationCanceledException) { return; }
+					}
+					await Task.WhenAll(tasks);
+					StatusMessage = "Restored Low-End PC tweaks back to defaults.";
+				}
+				else
+				{
+					StatusMessage = "Restoring Advance Tweaks...";
+					var cardsToRestore = AdvanceOptimizations.Where(c => c.IsOptimal).ToList();
+					var tasks = new List<Task>();
+					foreach (var card in cardsToRestore)
+					{
+						card.IsOptimal = false;
+						tasks.Add(card.RestoreAsync());
+						try { await Task.Delay(35, token); } catch (OperationCanceledException) { return; }
+					}
+					await Task.WhenAll(tasks);
+					StatusMessage = "Restored Advance Tweaks back to defaults.";
+				}
+			}
+		}
+		catch (Exception ex)
+		{
+			StatusMessage = "Error updating profile: " + ex.Message;
+		}
+		finally
+		{
+			IsLoading = false;
+			_isUpdatingPreset = false;
+			NotifyPresetProperties();
+			DisplayedCategoryTotal = CurrentCategoryTotalCount;
+		TriggerMilestoneAnimation();
+		}
+	}
+
+	[RelayCommand]
+	public async Task RestoreUserPcStateAsync() => await ApplyRestoreUserPcAsync();
+
+	[RelayCommand]
+	public async Task DisableAllServicesAsync()
+	{
+		if (_isUpdatingPreset || _isUndoing || IsLoading) return;
+		RecordSnapshot($"Disable All ({SelectedCategoryMode})");
+		_isUpdatingPreset = true;
+		_servicesPresetIndex = 1;
+		IsLoading = true;
+		NotifyPresetProperties();
+		StatusMessage = $"Disabling background services for {SelectedCategoryMode}...";
+		try
+		{
+			var targetList = ServicesOptimizations.Where(c => IsCardInMode(c, SelectedCategoryMode)).ToList();
+			foreach (var card in targetList)
+			{
+				if (!card.IsOptimal)
+				{
+					await card.ApplyAsync();
+				}
+			}
+			StatusMessage = $"All {SelectedCategoryMode} services disabled.";
+		}
+		catch (Exception ex)
+		{
+			StatusMessage = "Error disabling services: " + ex.Message;
+		}
+		finally
+		{
+			IsLoading = false;
+			_isUpdatingPreset = false;
+			NotifyPresetProperties();
+			DisplayedCategoryTotal = CurrentCategoryTotalCount;
+		TriggerMilestoneAnimation();
+		}
+	}
+
+	public async Task ApplyRestoreUserPcAsync()
+	{
+		_presetAnimationCts?.Cancel();
+		_presetAnimationCts = new CancellationTokenSource();
+		var token = _presetAnimationCts.Token;
+
+		_isUpdatingPreset = true;
+		IsLoading = true;
+		CurrentPresetIndex = 2;
+		StatusMessage = "Restoring user PC initial state...";
+		try
+		{
+			if (SelectedSlideIndex == 1)
+			{
+				var cardsToChange = ServicesOptimizations
+					.Where(c => {
+						bool wasDisabled = _initialUserPcStates.TryGetValue(c.Id, out bool val) && val;
+						return c.IsOptimal != wasDisabled;
+					})
+					.ToList();
+
+				var tasks = new List<Task>();
+				foreach (var card in cardsToChange)
+				{
+					bool wasDisabled = _initialUserPcStates.TryGetValue(card.Id, out bool val) && val;
+					card.IsOptimal = wasDisabled;
+					tasks.Add(wasDisabled ? card.ApplyAsync() : card.RestoreAsync());
+					try { await Task.Delay(35, token); } catch (OperationCanceledException) { return; }
+				}
+				await Task.WhenAll(tasks);
+				StatusMessage = "Restored user PC state for Unused Services.";
+			}
+			else if (SelectedAdvanceSubTabIndex == 1)
+			{
+				var cardsToChange = LowEndOptimizations
+					.Where(c => {
+						bool wasOptimal = _initialUserPcStates.TryGetValue(c.Id, out bool val) && val;
+						return c.IsOptimal != wasOptimal;
+					})
+					.ToList();
+
+				var tasks = new List<Task>();
+				foreach (var card in cardsToChange)
+				{
+					bool wasOptimal = _initialUserPcStates.TryGetValue(card.Id, out bool val) && val;
+					card.IsOptimal = wasOptimal;
+					tasks.Add(wasOptimal ? card.ApplyAsync() : card.RestoreAsync());
+					try { await Task.Delay(35, token); } catch (OperationCanceledException) { return; }
+				}
+				await Task.WhenAll(tasks);
+				StatusMessage = "Restored user PC state for Low-End PC.";
+			}
+			else
+			{
+				var cardsToChange = AdvanceOptimizations
+					.Where(c => {
+						bool wasOptimal = _initialUserPcStates.TryGetValue(c.Id, out bool val) && val;
+						return c.IsOptimal != wasOptimal;
+					})
+					.ToList();
+
+				var tasks = new List<Task>();
+				foreach (var card in cardsToChange)
+				{
+					bool wasOptimal = _initialUserPcStates.TryGetValue(card.Id, out bool val) && val;
+					card.IsOptimal = wasOptimal;
+					tasks.Add(wasOptimal ? card.ApplyAsync() : card.RestoreAsync());
+					try { await Task.Delay(35, token); } catch (OperationCanceledException) { return; }
+				}
+				await Task.WhenAll(tasks);
+				StatusMessage = "Restored user PC state for Advance Tweaks.";
+			}
+		}
+		catch (Exception ex)
+		{
+			StatusMessage = "Restore error: " + ex.Message;
+		}
+		finally
+		{
+			IsLoading = false;
+			_isUpdatingPreset = false;
+			NotifyPresetProperties();
+			DisplayedCategoryTotal = CurrentCategoryTotalCount;
+		TriggerMilestoneAnimation();
+		}
+	}
+
+	[RelayCommand]
+	public async Task RestoreWindowsFactoryDefaultsAsync() => await ApplyWindowsFactoryResetAsync();
+
+	public async Task ApplyWindowsFactoryResetAsync()
+	{
+		_presetAnimationCts?.Cancel();
+		_presetAnimationCts = new CancellationTokenSource();
+		var token = _presetAnimationCts.Token;
+
+		_isUpdatingPreset = true;
+		IsLoading = true;
+		CurrentPresetIndex = 3;
+		try
+		{
+			if (SelectedSlideIndex == 1)
+			{
+				StatusMessage = "Resetting all services to factory Windows defaults...";
+			try { _registry.SetValue("HKEY_CURRENT_USER\\Software\\Microsoft\\GameBar", "AllowAutoGameMode", 1u, RegistryValueKind.DWord); } catch { }
+			try { _registry.SetValue("HKEY_CURRENT_USER\\Software\\Microsoft\\GameBar", "AutoGameModeEnabled", 1u, RegistryValueKind.DWord); } catch { }
+			try { _registry.SetValue("HKEY_CURRENT_USER\\System\\GameConfigStore", "GameDVR_Enabled", 1u, RegistryValueKind.DWord); } catch { }
+			try { _registry.SetValue("HKEY_CURRENT_USER\\System\\GameConfigStore", "GameDVR_FSEBehaviorMode", 0u, RegistryValueKind.DWord); } catch { }
+			try { _registry.SetValue("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR", "AppCaptureEnabled", 1u, RegistryValueKind.DWord); } catch { }
+			try { _registry.SetValue("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\BackgroundAccessApplications", "GlobalUserDisabled", 0u, RegistryValueKind.DWord); } catch { }
+			try { _registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization", "DODownloadMode", 1u, RegistryValueKind.DWord); } catch { }
+			try { _registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\DeliveryOptimization\\Config", "DODownloadMode", 1u, RegistryValueKind.DWord); } catch { }
+			try { _registry.DeleteValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection", "AllowTelemetry"); } catch { }
+			try { _registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\Windows Error Reporting", "Disabled", 0u, RegistryValueKind.DWord); } catch { }
+			try { _registry.SetValue("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager", "SubscribedContent-338389Enabled", 1u, RegistryValueKind.DWord); } catch { }
+			try { _registry.DeleteValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent", "DisableConsumerFeatures"); } catch { }
+			try { _registry.SetValue("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\SysMain", "Start", 2u, RegistryValueKind.DWord); } catch { }
+			try { _registry.DeleteValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Edge", "BackgroundModeEnabled"); } catch { }
+			try { _registry.SetValue(@"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\PhoneSvc", "Start", 3u, RegistryValueKind.DWord); } catch { }
+			try { _registry.SetValue(@"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Spooler", "Start", 2u, RegistryValueKind.DWord); } catch { }
+			try { _registry.SetValue(@"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\lfsvc", "Start", 3u, RegistryValueKind.DWord); } catch { }
+			try { _registry.SetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System", "PublishUserActivities", 1u, RegistryValueKind.DWord); } catch { }
+			try { _registry.SetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\System", "UploadUserActivities", 1u, RegistryValueKind.DWord); } catch { }
+			try { _registry.DeleteValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot", "TurnOffWindowsCopilot"); } catch { }
+
+			try
+			{
+				var psi = new System.Diagnostics.ProcessStartInfo("sc.exe", "start Spooler") { CreateNoWindow = true, UseShellExecute = false };
+				System.Diagnostics.Process.Start(psi);
+			} catch { }
+
+			var servicesToTurnOff = ServicesOptimizations.Where(c => c.IsOptimal).ToList();
+			var servicesTasks = new List<Task>();
+			foreach (var card in servicesToTurnOff)
+			{
+				card.IsOptimal = false;
+				servicesTasks.Add(card.RestoreAsync());
+				try { await Task.Delay(35, token); } catch (OperationCanceledException) { return; }
+			}
+			await Task.WhenAll(servicesTasks);
+
+				StatusMessage = "All services reset to fresh Windows clean install defaults (all toggles turned OFF).";
+			}
+			else if (SelectedAdvanceSubTabIndex == 1)
+			{
+				StatusMessage = "Resetting Low-End PC tweaks to Windows defaults...";
+				try
+				{
+					_registry.SetValue("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects", "VisualFXSetting", 0u, RegistryValueKind.DWord);
+					_registry.SetValue("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", "EnableTransparency", 1u, RegistryValueKind.DWord);
+				}
+				catch { }
+
+				var cardsToTurnOff = LowEndOptimizations.Where(c => c.IsOptimal).ToList();
+				var tasks = new List<Task>();
+				foreach (var card in cardsToTurnOff)
+				{
+					card.IsOptimal = false;
+					tasks.Add(card.RestoreAsync());
+					try { await Task.Delay(35, token); } catch (OperationCanceledException) { return; }
+				}
+				await Task.WhenAll(tasks);
+				StatusMessage = "Low-End PC tweaks reset to Windows factory defaults.";
+			}
+			else
+			{
+				StatusMessage = "Resetting Advance Tweaks to Windows defaults...";
+				try
+				{
+					Process.Start(new ProcessStartInfo
+					{
+						FileName = "powercfg",
+						Arguments = "/setactive 381b4222-f694-41f0-9685-ff5bb260df2e",
+						CreateNoWindow = true,
+						UseShellExecute = false
+					})?.WaitForExit();
+				}
+				catch { }
+
+				try
+				{
+					_registry.SetValue("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers", "HwSchMode", 1u, RegistryValueKind.DWord);
+					_registry.SetValue("HKEY_CURRENT_USER\\Control Panel\\Mouse", "MouseSpeed", "1", RegistryValueKind.String);
+					_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile", "SystemResponsiveness", 20u, RegistryValueKind.DWord);
+					_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile", "NetworkThrottlingIndex", 10u, RegistryValueKind.DWord);
+					_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games", "Priority", 2u, RegistryValueKind.DWord);
+					_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games", "Scheduling Category", "Medium", RegistryValueKind.String);
+					_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games", "SFIO Priority", "Normal", RegistryValueKind.String);
+				}
+				catch { }
+
+				var cardsToTurnOff = AdvanceOptimizations.Where(c => c.IsOptimal).ToList();
+				var tasks = new List<Task>();
+				foreach (var card in cardsToTurnOff)
+				{
+					card.IsOptimal = false;
+					tasks.Add(card.RestoreAsync());
+					try { await Task.Delay(35, token); } catch (OperationCanceledException) { return; }
+				}
+				await Task.WhenAll(tasks);
+				StatusMessage = "Advance Tweaks reset to Windows clean install defaults.";
+			}
+		}
+		catch (Exception ex)
+		{
+			StatusMessage = "Reset error: " + ex.Message;
+		}
+		finally
+		{
+			IsLoading = false;
+			_isUpdatingPreset = false;
+			NotifyPresetProperties();
+			DisplayedCategoryTotal = CurrentCategoryTotalCount;
+		TriggerMilestoneAnimation();
+		}
+	}
+
+	partial void OnCpuModelTextChanged(string value)
+	{
+		OnPropertyChanged(nameof(CpuModelShortText));
+	}
+
+	partial void OnGpuModelTextChanged(string value)
+	{
+		OnPropertyChanged(nameof(GpuModelShortText));
+	}
 
 	private CancellationTokenSource? _downloadCts;
 
@@ -1953,13 +3453,21 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 
 		_isInstructionModalVisible = !_settings.Settings.HasSeenOnboardingTaskV2;
 		_isDriversIncludedMode = !_settings.Settings.IsDriversInstalledMode;
+		_hasSkippedDriverScanner = _settings.Settings.HasSkippedDriverScanner;
 		_selectedOnboardingPath = ((!_isDriversIncludedMode) ? 1 : 0);
+		_servicesPresetIndex = _settings.Settings.ServicesPresetIndex;
 		if (!_isDriversIncludedMode)
 		{
 			_selectedSlideIndex = 1;
 		}
+		else if (_settings.Settings.LastSelectedSlideIndex > 0)
+		{
+			_selectedSlideIndex = _settings.Settings.LastSelectedSlideIndex;
+		}
 		try
 		{
+			UpdateRamStats();
+			int ramTickCount = 0;
 			DispatcherTimer dispatcherTimer = new DispatcherTimer
 			{
 				Interval = TimeSpan.FromSeconds(1.0)
@@ -1967,6 +3475,11 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 			dispatcherTimer.Tick += (object? s, EventArgs e) =>
 			{
 				CurrentClockTimeText = DateTime.Now.ToString("h:mm tt");
+				ramTickCount++;
+				if (ramTickCount % 2 == 0)
+				{
+					UpdateRamStats();
+				}
 			};
 			dispatcherTimer.Start();
 		}
@@ -1982,21 +3495,36 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 		// Hook into UpdateService to detect updates
 		UpdateService.UpdateDetected += (update) =>
 		{
-			Application.Current?.Dispatcher?.Invoke(() =>
+			var curVer = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0);
+			if (UpdateService.TryParseVersion(update.Version, out var remVer) && remVer > curVer)
 			{
-				IsAppUpdateAvailable = true;
-				AppUpdateVersion = update.Version;
-				AppUpdateNotes = update.ReleaseNotes ?? "Major Software Update with new optimizations.";
-				AppUpdateDownloadUrl = update.DownloadUrl;
-			});
+				Application.Current?.Dispatcher?.Invoke(() =>
+				{
+					IsAppUpdateAvailable = true;
+					AppUpdateVersion = update.Version.Contains("Beta", StringComparison.OrdinalIgnoreCase) 
+						? update.Version 
+						: $"{update.Version} Beta";
+					AppUpdateNotes = update.ReleaseNotes ?? "Major Software Update with new optimizations.";
+					AppUpdateDownloadUrl = update.DownloadUrl;
+				});
+			}
 		};
 
-		IsAppUpdateAvailable = true;
-		if (UpdateService.AvailableUpdate != null)
+		var currentAssyVer = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version ?? new Version(1, 0, 0);
+		if (UpdateService.AvailableUpdate != null && 
+		    UpdateService.TryParseVersion(UpdateService.AvailableUpdate.Version, out var initialRemVer) && 
+		    initialRemVer > currentAssyVer)
 		{
-			AppUpdateVersion = UpdateService.AvailableUpdate.Version;
+			IsAppUpdateAvailable = true;
+			AppUpdateVersion = UpdateService.AvailableUpdate.Version.Contains("Beta", StringComparison.OrdinalIgnoreCase) 
+				? UpdateService.AvailableUpdate.Version 
+				: $"{UpdateService.AvailableUpdate.Version} Beta";
 			AppUpdateNotes = UpdateService.AvailableUpdate.ReleaseNotes ?? "Major Software Update with new optimizations.";
 			AppUpdateDownloadUrl = UpdateService.AvailableUpdate.DownloadUrl;
+		}
+		else
+		{
+			IsAppUpdateAvailable = false;
 		}
 	}
 
@@ -2899,6 +4427,8 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 		ServicesOptimizations.Clear();
 		AdvanceOptimizations.Clear();
 		LowEndOptimizations.Clear();
+		_undoStack.Clear();
+		OnPropertyChanged(nameof(CanUndo));
 		List<IOptimization> optimizations = WindowsOptimizations.GetAll(_registry, _backup, _log);
 		foreach (IOptimization opt in optimizations)
 		{
@@ -2921,19 +4451,125 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 				Optimization = opt
 			};
 			Optimizations.Add(card);
-			if (opt.Category == "Unused Services" || opt.Category == "Windows Gaming Settings" || opt.Category == "Background Activity")
+			if (opt.Category == "Unused Services" || opt.Category == "Background Activity")
 			{
+				card.BeforeChangeAction = (c) =>
+				{
+					if (!_isUpdatingPreset && !_isUndoing && !IsLoading)
+					{
+						RecordSnapshot($"Toggle {c.Name}");
+					}
+				};
+				card.StatusChangedAction = () =>
+				{
+					if (_isUpdatingPreset || _isUndoing) return;
+					_servicesPresetIndex = 0;
+					DisplayedCategoryTotal = CurrentCategoryTotalCount;
+					TriggerMilestoneAnimation();
+					NotifyPresetProperties();
+				};
+				card.CustomSelectionChangedAction = _ =>
+				{
+					SelectedCustomServicesCount = ServicesOptimizations.Count(x => x.IsCustomSelected);
+					NotifyAllCustomStateProperties();
+				};
 				ServicesOptimizations.Add(card);
 			}
 			else if (opt.Category == "Low-End PC")
 			{
+				card.BeforeChangeAction = (c) =>
+				{
+					if (!_isUpdatingPreset && !_isUndoing && !IsLoading)
+					{
+						RecordSnapshot($"Toggle {c.Name}");
+					}
+				};
+				if (card.Id == "win_ultimate_performance")
+				{
+					card.RequestToggleConfirm = c =>
+					{
+						_pendingUltimateCard = c;
+						ConfirmDialogTitle = "Ultimate Performance Warning";
+						ConfirmDialogMessage = "මෙම සැකසුම මඟින් CPU හා Hard Drive / SSD වල සියලු Power Saving සහ Sleep States අක්‍රිය කරයි. නිරන්තරයෙන් උපරිම බලයෙන් ක්‍රියාත්මක වන බැවින් Hard Drive / Battery ආයු කාලය ඉක්මනින් අඩු වීමේ ඉඩකඩක් ඇත.\n\nඔබට මෙය අත්‍යවශ්‍ය නම් පමණක් සක්‍රිය කරන්න.\n\n(Disables all CPU and disk sleep states. May reduce hard drive / SSD lifespan.)";
+						ConfirmDialogAction = "UltimatePerformance";
+						ConfirmDialogButtonText = "I Understand, Apply";
+						ConfirmDialogButtonColor = "#C8FF00";
+						IsConfirmDialogVisible = true;
+					};
+					card.StatusChangedAction = () =>
+					{
+						if (!_isUpdatingPreset && !_isUndoing)
+						{
+							_lowEndPresetIndex = 0;
+							NotifyPresetProperties();
+						}
+						_ = App.Current?.Dispatcher?.InvokeAsync(async () =>
+						{
+							await Task.Delay(100);
+							await RefreshPowerPlanCardsAsync();
+						});
+					};
+				}
+				else
+				{
+					card.StatusChangedAction = () =>
+					{
+						if (_isUpdatingPreset || _isUndoing) return;
+						_lowEndPresetIndex = 0;
+						NotifyPresetProperties();
+					};
+				}
 				LowEndOptimizations.Add(card);
 			}
 			else
 			{
+				card.BeforeChangeAction = (c) =>
+				{
+					if (!_isUpdatingPreset && !_isUndoing && !IsLoading)
+					{
+						RecordSnapshot($"Toggle {c.Name}");
+					}
+				};
+				if (card.Id == "win_power_plan")
+				{
+					card.StatusChangedAction = () =>
+					{
+						if (!_isUpdatingPreset && !_isUndoing)
+						{
+							_advancePresetIndex = 0;
+							NotifyPresetProperties();
+						}
+						_ = App.Current?.Dispatcher?.InvokeAsync(async () =>
+						{
+							await Task.Delay(100);
+							await RefreshPowerPlanCardsAsync();
+						});
+					};
+				}
+				else
+				{
+					card.StatusChangedAction = () =>
+					{
+						if (_isUpdatingPreset || _isUndoing) return;
+						_advancePresetIndex = 0;
+						NotifyPresetProperties();
+					};
+				}
 				AdvanceOptimizations.Add(card);
 			}
 		}
+		LoadCustomCategoryConfig();
+		InitializeUserPcInitialState();
+		UpdateFilteredServices();
+		DisplayedCategoryTotal = CurrentCategoryTotalCount;
+		TriggerMilestoneAnimation();
+		NotifyPresetProperties();
+	}
+
+	[RelayCommand]
+	public async Task ApplyAllSlide2Async()
+	{
+		await ApplyAllConfirmedAsync();
 	}
 
 	[RelayCommand]
@@ -2950,8 +4586,16 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 			{
 				return;
 			}
-			ConfirmDialogTitle = "Apply Advance & Low-End Optimizations?";
-			ConfirmDialogMessage = "Are you sure you want to apply recommended optimizations for Advance & Low-End PC? Only settings on this tab will be applied.";
+			if (SelectedAdvanceSubTabIndex == 1)
+			{
+				ConfirmDialogTitle = "Apply Low-End PC Optimizations?";
+				ConfirmDialogMessage = "Are you sure you want to apply recommended optimizations for Low-End PC (Potato Boost)? Only settings in this category will be applied.";
+			}
+			else
+			{
+				ConfirmDialogTitle = "Apply Advance Tweaks Optimizations?";
+				ConfirmDialogMessage = "Are you sure you want to apply recommended optimizations for Advance Tweaks (Kernel & Latency)? Only settings in this category will be applied.";
+			}
 		}
 		ConfirmDialogAction = "ApplyAll";
 		ConfirmDialogButtonText = "Yes, Apply All";
@@ -2973,8 +4617,16 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 			{
 				return;
 			}
-			ConfirmDialogTitle = "Restore Advance & Low-End Defaults?";
-			ConfirmDialogMessage = "Are you sure you want to restore default Windows settings for Advance & Low-End PC? Other tabs will remain unaffected.";
+			if (SelectedAdvanceSubTabIndex == 1)
+			{
+				ConfirmDialogTitle = "Restore Low-End PC Defaults?";
+				ConfirmDialogMessage = "Are you sure you want to restore default Windows settings for Low-End PC? Other tabs will remain unaffected.";
+			}
+			else
+			{
+				ConfirmDialogTitle = "Restore Advance Tweaks Defaults?";
+				ConfirmDialogMessage = "Are you sure you want to restore default Windows settings for Advance Tweaks? Other tabs will remain unaffected.";
+			}
 		}
 		ConfirmDialogAction = "RestoreDefaults";
 		ConfirmDialogButtonText = "Yes, Restore Defaults";
@@ -2994,12 +4646,56 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 		{
 			await RestoreDefaultsConfirmedAsync();
 		}
+		else if (ConfirmDialogAction == "UltimatePerformance")
+		{
+			if (_pendingUltimateCard != null)
+			{
+				var target = _pendingUltimateCard;
+				_pendingUltimateCard = null;
+				target.IsOptimal = true;
+				target.NotifyToggleChanged();
+				await target.ApplyAsync();
+				await RefreshPowerPlanCardsAsync();
+			}
+		}
+	}
+
+	private async Task RefreshPowerPlanCardsAsync()
+	{
+		try
+		{
+			var highPerfCard = AdvanceOptimizations.FirstOrDefault(x => x.Id == "win_power_plan");
+			var ultimateCard = LowEndOptimizations.FirstOrDefault(x => x.Id == "win_ultimate_performance");
+
+			if (highPerfCard != null && highPerfCard.Optimization != null)
+			{
+				var st = await highPerfCard.Optimization.GetCurrentStateAsync();
+				highPerfCard.CurrentValue = st.CurrentValue;
+				highPerfCard.IsOptimal = st.IsOptimal;
+				highPerfCard.NotifyToggleChanged();
+			}
+
+			if (ultimateCard != null && ultimateCard.Optimization != null)
+			{
+				var st = await ultimateCard.Optimization.GetCurrentStateAsync();
+				ultimateCard.CurrentValue = st.CurrentValue;
+				ultimateCard.IsOptimal = st.IsOptimal;
+				ultimateCard.NotifyToggleChanged();
+			}
+		}
+		catch { }
 	}
 
 	[RelayCommand]
 	private void CancelAction()
 	{
 		IsConfirmDialogVisible = false;
+		if (ConfirmDialogAction == "UltimatePerformance" && _pendingUltimateCard != null)
+		{
+			_pendingUltimateCard.IsOptimal = false;
+			_pendingUltimateCard.NotifyToggleChanged();
+			_pendingUltimateCard = null;
+		}
 	}
 
 	[RelayCommand]
@@ -3029,6 +4725,7 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 		_settings.Settings.HasSeenOnboardingTaskV2 = true;
 		_settings.Settings.HasSeenWindowsGuide = true;
 		_settings.Save();
+		OnPropertyChanged(nameof(IsNewUserToggleVisible));
 		IsInstructionModalVisible = false;
 	}
 
@@ -3254,6 +4951,7 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 		_settings.Settings.HasSeenOnboardingTaskV2 = true;
 		_settings.Settings.HasSeenWindowsGuide = true;
 		_settings.Save();
+		OnPropertyChanged(nameof(IsNewUserToggleVisible));
 		IsInstructionModalVisible = false;
 	}
 
@@ -3468,6 +5166,8 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 
 	partial void OnSelectedSlideIndexChanged(int value)
 	{
+		_settings.Settings.LastSelectedSlideIndex = value;
+		_settings.Save();
 		MarkGuideStepCompleted(value + 1);
 		OnPropertyChanged(nameof(IsDriversSlideActive));
 		OnPropertyChanged(nameof(IsServicesSlideActive));
@@ -3480,15 +5180,29 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 		OnPropertyChanged(nameof(IsHeaderStatsVisible));
 		OnPropertyChanged(nameof(IsBigDownloadButtonVisible));
 		OnPropertyChanged(nameof(CanNavigateToNextSlide));
+		NotifyPresetProperties();
 		RequestEntranceAnimation?.Invoke(false);
+		if (value == 1)
+		{
+			DisplayedCategoryTotal = CurrentCategoryTotalCount;
+		TriggerMilestoneAnimation();
+		}
 	}
 
 	partial void OnIsDriversIncludedModeChanged(bool value)
 	{
+		if (value)
+		{
+			HasSkippedDriverScanner = false;
+			_settings.Settings.HasSkippedDriverScanner = false;
+		}
 		if (!value && SelectedSlideIndex == 0)
 		{
 			SelectedSlideIndex = 1;
 		}
+		_settings.Settings.IsDriversInstalledMode = !value;
+		_settings.Save();
+		OnPropertyChanged(nameof(IsNewUserToggleVisible));
 		OnPropertyChanged(nameof(IsDriversSlideActive));
 		OnPropertyChanged(nameof(IsServicesSlideActive));
 		OnPropertyChanged(nameof(IsAdvanceSlideActive));
@@ -3499,6 +5213,7 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 		OnPropertyChanged(nameof(IsBigDownloadButtonVisible));
 		OnPropertyChanged(nameof(Is2StepTimelineBarVisible));
 		OnPropertyChanged(nameof(CanNavigateToNextSlide));
+		OnPropertyChanged(nameof(IsDriversInstalledPathSelected));
 	}
 
 	partial void OnSelectedOnboardingPathChanged(int value)
@@ -3567,6 +5282,9 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 
 	partial void OnHasSkippedDriverScannerChanged(bool value)
 	{
+		_settings.Settings.HasSkippedDriverScanner = value;
+		_settings.Save();
+		OnPropertyChanged(nameof(IsNewUserToggleVisible));
 		OnPropertyChanged(nameof(IsSkipArrowOnlyMode));
 		OnPropertyChanged(nameof(CanClickSkipButton));
 		OnPropertyChanged(nameof(SkipButtonToolTip));
@@ -4784,17 +6502,46 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 		try
 		{
 			await _backup.StartSessionAsync();
-			int count = 0;
-			List<OptimizationCardViewModel> targetList = ((SelectedSlideIndex == 1) ? ServicesOptimizations.ToList() : AdvanceOptimizations.Concat(LowEndOptimizations).ToList());
-			string tabName = ((SelectedSlideIndex == 1) ? "Unused Services" : "Advance & Low-End PC");
-			StatusMessage = "Applying recommended optimizations for " + tabName + "...";
-			foreach (OptimizationCardViewModel card in targetList.Where((OptimizationCardViewModel c) => c.IsSupported && !c.IsOptimal))
+			List<OptimizationCardViewModel> targetList;
+			string tabName;
+			if (SelectedSlideIndex == 1)
 			{
-				if ((!card.RequiresAdmin || _admin.IsRunningAsAdmin) && await card.ApplyAsync())
+				targetList = ServicesOptimizations.ToList();
+				tabName = "Unused Services";
+			}
+			else if (SelectedAdvanceSubTabIndex == 1)
+			{
+				targetList = LowEndOptimizations.ToList();
+				tabName = "Low-End PC";
+			}
+			else
+			{
+				targetList = AdvanceOptimizations.ToList();
+				tabName = "Advance Tweaks";
+			}
+			StatusMessage = "Applying recommended optimizations for " + tabName + "...";
+			var unoptimalCards = targetList.Where((OptimizationCardViewModel c) => c.IsSupported && !c.IsOptimal).ToList();
+			if (unoptimalCards.Count == 0)
+			{
+				StatusMessage = $"All settings for {tabName} are already optimal.";
+				return;
+			}
+
+			var applyTasks = new List<Task<bool>>();
+			foreach (OptimizationCardViewModel card in unoptimalCards)
+			{
+				if (!card.RequiresAdmin || _admin.IsRunningAsAdmin)
 				{
-					count++;
+					// Sequential animated toggle flip: triggers smooth sliding animation
+					card.IsOptimal = true;
+					applyTasks.Add(card.ApplyAsync());
+					await Task.Delay(85);
 				}
 			}
+
+			bool[] results = await Task.WhenAll(applyTasks);
+			int count = results.Count(r => r);
+
 			await _backup.EndSessionAsync();
 			StatusMessage = $"Applied {count} recommended optimizations for {tabName} successfully.";
 		}
@@ -4806,6 +6553,7 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 		finally
 		{
 			IsLoading = false;
+			NotifyPresetProperties();
 		}
 	}
 
@@ -4833,34 +6581,46 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 			}
 			else if (SelectedSlideIndex == 2)
 			{
-				StatusMessage = "Restoring default settings for Advance & Low-End PC...";
-				try
+				if (SelectedAdvanceSubTabIndex == 1)
 				{
-					Process.Start(new ProcessStartInfo
+					StatusMessage = "Restoring default settings for Low-End PC...";
+					_registry.SetValue("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects", "VisualFXSetting", 0u, RegistryValueKind.DWord);
+					_registry.SetValue("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", "EnableTransparency", 1u, RegistryValueKind.DWord);
+					foreach (OptimizationCardViewModel card2 in LowEndOptimizations)
 					{
-						FileName = "powercfg",
-						Arguments = "/setactive 381b4222-f694-41f0-9685-ff5bb260df2e",
-						CreateNoWindow = true,
-						UseShellExecute = false
-					})?.WaitForExit();
+						await card2.RestoreAsync();
+					}
+					StatusMessage = "Restored default settings for Low-End PC successfully.";
 				}
-				catch
+				else
 				{
+					StatusMessage = "Restoring default settings for Advance Tweaks...";
+					try
+					{
+						Process.Start(new ProcessStartInfo
+						{
+							FileName = "powercfg",
+							Arguments = "/setactive 381b4222-f694-41f0-9685-ff5bb260df2e",
+							CreateNoWindow = true,
+							UseShellExecute = false
+						})?.WaitForExit();
+					}
+					catch
+					{
+					}
+					_registry.SetValue("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers", "HwSchMode", 1u, RegistryValueKind.DWord);
+					_registry.SetValue("HKEY_CURRENT_USER\\Control Panel\\Mouse", "MouseSpeed", "1", RegistryValueKind.String);
+					_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile", "SystemResponsiveness", 20u, RegistryValueKind.DWord);
+					_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile", "NetworkThrottlingIndex", 10u, RegistryValueKind.DWord);
+					_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games", "Priority", 2u, RegistryValueKind.DWord);
+					_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games", "Scheduling Category", "Medium", RegistryValueKind.String);
+					_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games", "SFIO Priority", "Normal", RegistryValueKind.String);
+					foreach (OptimizationCardViewModel card2 in AdvanceOptimizations)
+					{
+						await card2.RestoreAsync();
+					}
+					StatusMessage = "Restored default settings for Advance Tweaks successfully.";
 				}
-				_registry.SetValue("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers", "HwSchMode", 1u, RegistryValueKind.DWord);
-				_registry.SetValue("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects", "VisualFXSetting", 0u, RegistryValueKind.DWord);
-				_registry.SetValue("HKEY_CURRENT_USER\\Control Panel\\Mouse", "MouseSpeed", "1", RegistryValueKind.String);
-				_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile", "SystemResponsiveness", 20u, RegistryValueKind.DWord);
-				_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile", "NetworkThrottlingIndex", 10u, RegistryValueKind.DWord);
-				_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games", "Priority", 2u, RegistryValueKind.DWord);
-				_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games", "Scheduling Category", "Medium", RegistryValueKind.String);
-				_registry.SetValue("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile\\Tasks\\Games", "SFIO Priority", "Normal", RegistryValueKind.String);
-				_registry.SetValue("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", "EnableTransparency", 1u, RegistryValueKind.DWord);
-				foreach (OptimizationCardViewModel card2 in AdvanceOptimizations.Concat(LowEndOptimizations))
-				{
-					await card2.RestoreAsync();
-				}
-				StatusMessage = "Restored default settings for Advance & Low-End PC successfully.";
 			}
 			await LoadOptimizationsAsync();
 			_log.Log("Windows", $"Restored defaults for slide {SelectedSlideIndex}", "SUCCESS");
@@ -4874,19 +6634,80 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 		finally
 		{
 			IsLoading = false;
+			CurrentPresetIndex = 3;
+			NotifyPresetProperties();
 		}
 	}
+
+	[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+	private class MEMORYSTATUSEX
+	{
+		public uint dwLength;
+		public uint dwMemoryLoad;
+		public ulong ullTotalPhys;
+		public ulong ullAvailPhys;
+		public ulong ullTotalPageFile;
+		public ulong ullAvailPageFile;
+		public ulong ullTotalVirtual;
+		public ulong ullAvailVirtual;
+		public ulong ullAvailExtendedVirtual;
+
+		public MEMORYSTATUSEX()
+		{
+			dwLength = (uint)Marshal.SizeOf(typeof(MEMORYSTATUSEX));
+		}
+	}
+
+	[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+	[return: MarshalAs(UnmanagedType.Bool)]
+	private static extern bool GlobalMemoryStatusEx([In, Out] MEMORYSTATUSEX lpBuffer);
 
 	[DllImport("psapi.dll")]
 	private static extern int EmptyWorkingSet(nint hwProc);
 
+	public void UpdateRamStats()
+	{
+		try
+		{
+			MEMORYSTATUSEX memStatus = new MEMORYSTATUSEX();
+			if (GlobalMemoryStatusEx(memStatus))
+			{
+				double totalGb = (double)memStatus.ullTotalPhys / 1073741824.0;
+				double availGb = (double)memStatus.ullAvailPhys / 1073741824.0;
+				double usedGb = Math.Max(0.0, totalGb - availGb);
+				double percent = (double)memStatus.dwMemoryLoad;
+
+				RamUsagePercent = Math.Max(1.0, Math.Min(100.0, percent));
+				RamUsagePercentText = $"{Math.Round(percent)}%";
+				RamAvailableText = $"{availGb:0.0} GB Free";
+				RamUsedText = $"{usedGb:0.0} GB Used";
+				RamTotalText = $"{Math.Round(totalGb)} GB";
+			}
+		}
+		catch
+		{
+		}
+	}
+
 	[RelayCommand]
 	private async Task CleanStandbyRamAsync()
 	{
-		StatusMessage = "Flushing RAM standby cache and working sets...";
+		if (IsRamPurging) return;
+		IsRamPurging = true;
+		IsRamPurgeDone = false;
+		IsPurgeTextVisible = false;
+		OnPropertyChanged(nameof(CanCleanRam));
+		RamPurgeProgress = 0.0;
+		OnPropertyChanged(nameof(PurgeFillGridWidth));
+		OnPropertyChanged(nameof(PurgeEmptyGridWidth));
+
 		try
 		{
-			await Task.Run(() =>
+			MEMORYSTATUSEX before = new MEMORYSTATUSEX();
+			GlobalMemoryStatusEx(before);
+			ulong beforeAvail = before.ullAvailPhys;
+
+			Task purgeTask = Task.Run(() =>
 			{
 				Process[] processes = Process.GetProcesses();
 				foreach (Process process in processes)
@@ -4906,13 +6727,80 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 				GC.Collect();
 				GC.WaitForPendingFinalizers();
 			});
-			StatusMessage = "Standby RAM flushed successfully! Physical memory reclaimed.";
+
+			for (int step = 1; step <= 25; step++)
+			{
+				double p = (double)step / 25.0 * 100.0;
+				RamPurgeProgress = p;
+				OnPropertyChanged(nameof(PurgeFillGridWidth));
+				OnPropertyChanged(nameof(PurgeEmptyGridWidth));
+				await Task.Delay(35);
+			}
+
+			await purgeTask;
+			await Task.Delay(100);
+			UpdateRamStats();
+
+			RamPurgeProgress = 100.0;
+			OnPropertyChanged(nameof(PurgeFillGridWidth));
+			OnPropertyChanged(nameof(PurgeEmptyGridWidth));
+			IsRamPurgeDone = true;
+			RamPurgeButtonText = "Done";
+			IsPurgeTextVisible = true;
+
+			MEMORYSTATUSEX after = new MEMORYSTATUSEX();
+			GlobalMemoryStatusEx(after);
+			ulong afterAvail = after.ullAvailPhys;
+
+			long freedBytes = (long)afterAvail - (long)beforeAvail;
+			if (freedBytes > 0)
+			{
+				double freedMb = (double)freedBytes / 1048576.0;
+				if (freedMb >= 1024.0)
+					StatusMessage = $"Standby RAM purged! Freed {freedMb / 1024.0:0.1} GB physical memory.";
+				else
+					StatusMessage = $"Standby RAM purged! Freed {Math.Round(freedMb)} MB physical memory.";
+			}
+			else
+			{
+				StatusMessage = "Standby RAM & working sets purged successfully!";
+			}
 			_log.Log("Windows", "Cleaned Standby RAM memory list", "SUCCESS");
+
+			// Keep "Done" with green background visible for 1.8 seconds
+			await Task.Delay(1800);
+
+			// Smoothly transition from green back to gray button
+			IsPurgeTextVisible = false;
+			for (int step = 15; step >= 0; step--)
+			{
+				RamPurgeProgress = (double)step / 15.0 * 100.0;
+				OnPropertyChanged(nameof(PurgeFillGridWidth));
+				OnPropertyChanged(nameof(PurgeEmptyGridWidth));
+				await Task.Delay(15);
+			}
+			RamPurgeProgress = 0.0;
+			OnPropertyChanged(nameof(PurgeFillGridWidth));
+			OnPropertyChanged(nameof(PurgeEmptyGridWidth));
+			IsRamPurgeDone = false;
+			RamPurgeButtonText = "Flush Standby RAM";
+			IsPurgeTextVisible = true;
 		}
 		catch (Exception ex)
 		{
 			Exception ex2 = ex;
 			StatusMessage = "RAM clean error: " + ex2.Message;
+			RamPurgeProgress = 0.0;
+			OnPropertyChanged(nameof(PurgeFillGridWidth));
+			OnPropertyChanged(nameof(PurgeEmptyGridWidth));
+			IsRamPurgeDone = false;
+			RamPurgeButtonText = "Flush Standby RAM";
+			IsPurgeTextVisible = true;
+		}
+		finally
+		{
+			IsRamPurging = false;
+			OnPropertyChanged(nameof(CanCleanRam));
 		}
 	}
 
@@ -5483,8 +7371,10 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 		// When skipped before scan: Discard/hide Drivers Hub entirely and navigate to 2nd slide (Unused Services)
 		IsDriversIncludedMode = false;
 		_settings.Settings.IsDriversInstalledMode = true;
-		_settings.Save();
 		HasSkippedDriverScanner = true;
+		_settings.Settings.HasSkippedDriverScanner = true;
+		_settings.Save();
+		OnPropertyChanged(nameof(IsNewUserToggleVisible));
 		SelectedSlideIndex = 1;
 		IsDriverInstallationViewActive = false;
 		TriggerEntranceAnimation(animateScrollDots: false);
@@ -5726,6 +7616,16 @@ public partial class ScannedDriverItemViewModel : ObservableObject
 	}
 }
 
+public class TabUndoAction
+{
+	public string Description { get; set; } = "";
+	public Dictionary<string, bool> CardStates { get; set; } = new();
+	public int ServicesPresetIndex { get; set; }
+	public int AdvancePresetIndex { get; set; }
+	public int LowEndPresetIndex { get; set; }
+	public int PresetIndex { get; set; }
+}
+
 public partial class OptimizationCardViewModel : ObservableObject
 {
 	[ObservableProperty]
@@ -5736,6 +7636,126 @@ public partial class OptimizationCardViewModel : ObservableObject
 
 	[ObservableProperty]
 	private bool _isOptimal;
+
+	partial void OnIsOptimalChanged(bool value)
+	{
+		OnPropertyChanged(nameof(IsToggled));
+		StatusChangedAction?.Invoke();
+	}
+
+	[ObservableProperty]
+	private bool _isCategoryAllowed = true;
+
+	[ObservableProperty]
+	private double _categoryOpacity = 1.0;
+
+	[ObservableProperty]
+	private bool _isInCustomEditMode;
+
+	[ObservableProperty]
+	private bool _isCustomSelected;
+
+	public Action<OptimizationCardViewModel>? CustomSelectionChangedAction { get; set; }
+
+	partial void OnIsCustomSelectedChanged(bool value)
+	{
+		if (IsInCustomEditMode)
+		{
+			CategoryOpacity = value ? 1.0 : 0.35;
+		}
+		OnPropertyChanged(nameof(IsLockedBadgeVisible));
+		CustomSelectionChangedAction?.Invoke(this);
+	}
+
+	partial void OnIsInCustomEditModeChanged(bool value)
+	{
+		OnPropertyChanged(nameof(IsLockedBadgeVisible));
+		OnPropertyChanged(nameof(RowCursor));
+	}
+
+	public bool IsLockedBadgeVisible => !IsInCustomEditMode && !IsCategoryAllowed;
+
+	public Cursor RowCursor => IsInCustomEditMode ? Cursors.Hand : Cursors.Arrow;
+
+	[RelayCommand]
+	public void ToggleCustomSelection()
+	{
+		if (IsInCustomEditMode)
+		{
+			IsCustomSelected = !IsCustomSelected;
+		}
+	}
+
+	partial void OnIsCategoryAllowedChanged(bool value)
+	{
+		if (!value && IsOptimal)
+		{
+			IsOptimal = false;
+			_ = Task.Run(async () =>
+			{
+				try
+				{
+					if (Optimization != null)
+					{
+						await Optimization.RestoreAsync();
+					}
+				}
+				catch { }
+			});
+		}
+		OnPropertyChanged(nameof(IsToggled));
+		OnPropertyChanged(nameof(CanToggleSwitch));
+		OnPropertyChanged(nameof(ToggleToolTip));
+		OnPropertyChanged(nameof(IsLockedBadgeVisible));
+	}
+
+	partial void OnIsBusyChanged(bool value)
+	{
+	}
+
+	public bool CanToggleSwitch => IsCategoryAllowed;
+
+	public string ToggleToolTip => IsCategoryAllowed
+		? "Toggle to Optimize / Restore default PC setting"
+		: "Locked in current mode (Click 'All Services' or 'Ultra Gaming' to unlock)";
+
+	public Action<OptimizationCardViewModel>? BeforeChangeAction { get; set; }
+	public Action<OptimizationCardViewModel>? RequestToggleConfirm { get; set; }
+
+	public void NotifyToggleChanged()
+	{
+		OnPropertyChanged(nameof(IsToggled));
+	}
+
+	public bool IsToggled
+	{
+		get => IsOptimal;
+		set
+		{
+			if (!IsCategoryAllowed) return;
+			if (IsOptimal != value && !_isApplying)
+			{
+				BeforeChangeAction?.Invoke(this);
+				if (value)
+				{
+					if (RequestToggleConfirm != null)
+					{
+						RequestToggleConfirm(this);
+						return;
+					}
+					// Immediate visual feedback (0ms toggle animation)
+					IsOptimal = true;
+					_ = ApplyAsync();
+				}
+				else
+				{
+					// Immediate visual feedback (0ms toggle animation)
+					IsOptimal = false;
+					_ = RestoreAsync();
+				}
+			}
+		}
+	}
 
 	[ObservableProperty]
 	private bool _isSupported = true;
@@ -5762,7 +7782,30 @@ public partial class OptimizationCardViewModel : ObservableObject
 
 	public bool IsAdmin { get; set; }
 
+	public Action? StatusChangedAction { get; set; }
+
 	public IOptimization? Optimization { get; set; }
+
+	public string IconGlyph
+	{
+		get
+		{
+			string s = (Id ?? "").ToLowerInvariant();
+			if (s.Contains("gpu") || s.Contains("graphics") || s.Contains("dpc") || s.Contains("hags")) return "\uE790";
+			if (s.Contains("cpu") || s.Contains("quantum") || s.Contains("priority") || s.Contains("unparking") || s.Contains("separation")) return "\uE950";
+			if (s.Contains("power") || s.Contains("throttling") || s.Contains("ultimate")) return "\uE7E8";
+			if (s.Contains("mouse")) return "\uE962";
+			if (s.Contains("network") || s.Contains("tcp") || s.Contains("qos") || s.Contains("throttling_index")) return "\uE968";
+			if (s.Contains("game") || s.Contains("fse") || s.Contains("dvr") || s.Contains("presence") || s.Contains("gameloop")) return "\uE7FC";
+			if (s.Contains("search") || s.Contains("bing") || s.Contains("indexing")) return "\uE721";
+			if (s.Contains("memory") || s.Contains("ram") || s.Contains("compression")) return "\uE74D";
+			if (s.Contains("tick") || s.Contains("clock")) return "\uE823";
+			if (s.Contains("bloatware") || s.Contains("apps") || s.Contains("delivery") || s.Contains("telemetry")) return "\uE71D";
+			if (s.Contains("visual") || s.Contains("transparency")) return "\uE790";
+			if (s.Contains("widget") || s.Contains("feed")) return "\uE774";
+			return "\uE945";
+		}
+	}
 
 	public string RiskText
 	{
@@ -5816,62 +7859,129 @@ public partial class OptimizationCardViewModel : ObservableObject
 
 
 
+	private bool _isApplying;
+
 	[RelayCommand]
 	public async Task<bool> ApplyAsync()
 	{
-		if (Optimization == null || IsBusy)
+		if (Optimization == null || _isApplying)
 		{
 			return false;
 		}
+		_isApplying = true;
 		IsBusy = true;
 		try
 		{
-			OptimizationResult result = await Optimization.ApplyAsync();
+			OptimizationResult result = await Task.Run(() => Optimization.ApplyAsync());
 			if (result.Success)
 			{
-				OptimizationState state = await Optimization.GetCurrentStateAsync();
-				CurrentValue = state.CurrentValue;
-				IsOptimal = state.IsOptimal;
+				IsOptimal = true;
+				if (!string.IsNullOrEmpty(result.NewValue))
+				{
+					CurrentValue = result.NewValue;
+				}
+				else if (!string.IsNullOrEmpty(RecommendedValue))
+				{
+					CurrentValue = RecommendedValue;
+				}
 				StatusMessage = result.Message;
 			}
 			else
 			{
+				IsOptimal = false;
 				StatusMessage = "Failed: " + result.Message;
 			}
 			return result.Success;
 		}
+		catch (Exception ex)
+		{
+			IsOptimal = false;
+			StatusMessage = "Failed: " + ex.Message;
+			return false;
+		}
 		finally
 		{
 			IsBusy = false;
+			_isApplying = false;
+			OnPropertyChanged(nameof(IsToggled));
 		}
 	}
 
 	[RelayCommand]
 	public async Task RestoreAsync()
 	{
-		if (Optimization == null || IsBusy)
+		if (Optimization == null || _isApplying)
 		{
 			return;
 		}
+		_isApplying = true;
 		IsBusy = true;
 		try
 		{
-			OptimizationResult result = await Optimization.RestoreAsync();
+			OptimizationResult result = await Task.Run(() => Optimization.RestoreAsync());
 			if (result.Success)
 			{
-				OptimizationState state = await Optimization.GetCurrentStateAsync();
-				CurrentValue = state.CurrentValue;
-				IsOptimal = state.IsOptimal;
+				IsOptimal = false;
+				if (!string.IsNullOrEmpty(result.NewValue))
+				{
+					CurrentValue = result.NewValue;
+				}
+				else if (!string.IsNullOrEmpty(result.PreviousValue))
+				{
+					CurrentValue = result.PreviousValue;
+				}
 				StatusMessage = "Restored to original value.";
 			}
 			else
 			{
+				if (IsCategoryAllowed)
+				{
+					IsOptimal = true;
+				}
+				else
+				{
+					IsOptimal = false;
+				}
 				StatusMessage = "Restore failed: " + result.Message;
 			}
 		}
+		catch (Exception ex)
+		{
+			StatusMessage = "Restore failed: " + ex.Message;
+		}
 		finally
 		{
+			if (!IsCategoryAllowed)
+			{
+				IsOptimal = false;
+			}
 			IsBusy = false;
+			_isApplying = false;
+			OnPropertyChanged(nameof(IsToggled));
 		}
 	}
+}
+
+
+public partial class CustomServiceSelectionItem : ObservableObject
+{
+	public string Id { get; set; } = "";
+	public string Name { get; set; } = "";
+	public string Description { get; set; } = "";
+
+	[ObservableProperty]
+	private bool _isSelected;
+}
+
+public class CustomCategoryConfigFile
+{
+	public bool IsMode4Customized { get; set; }
+	public bool IsSlot4Empty { get; set; }
+	public string Mode4Name { get; set; } = "Office &\nWork";
+	public List<string> Mode4Services { get; set; } = new();
+
+	public bool IsMode5Customized { get; set; }
+	public bool IsSlot5Empty { get; set; }
+	public string Mode5Name { get; set; } = "Privacy\nFocus";
+	public List<string> Mode5Services { get; set; } = new();
 }

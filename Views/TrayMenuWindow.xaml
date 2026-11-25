@@ -1,0 +1,113 @@
+<Window x:Class="XenomOptimizer.Views.TrayMenuWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="TrayMenu"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Focusable="False"
+        ResizeMode="NoResize"
+        SizeToContent="WidthAndHeight"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
+
+    <Window.Resources>
+        <!-- Standard Menu Item Style -->
+        <Style x:Key="TrayMenuItemStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Height" Value="28" />
+            <Setter Property="Margin" Value="0,1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="4" Padding="12,0,12,0">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Left" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#2D2D32" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Exit Menu Item Style (Red) -->
+        <Style x:Key="TrayMenuExitStyle" TargetType="Button" BasedOn="{StaticResource TrayMenuItemStyle}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" CornerRadius="4" Padding="12,0,12,0">
+                            <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Left" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#342022" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- Outer transparent padding allows 360-degree DropShadow to blur with zero edge clipping -->
+    <Border Background="Transparent" Padding="16">
+        <!-- NZXT CAM Modern Dark Container -->
+        <Border x:Name="MenuCardBorder"
+                Background="#1C1C1E"
+                BorderBrush="#333338"
+                BorderThickness="1"
+                CornerRadius="8"
+                Width="162"
+                Padding="3,5,3,5">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="16" ShadowDepth="0" Color="#000000" Opacity="0.65" />
+            </Border.Effect>
+
+            <StackPanel>
+                <!-- 1. Turn On FPS / Turn Off FPS -->
+                <Button x:Name="BtnFps" Style="{StaticResource TrayMenuItemStyle}" Click="BtnFps_Click" PreviewMouseLeftButtonUp="BtnFps_PreviewMouseLeftButtonUp">
+                    <TextBlock x:Name="TxtFps" Text="Turn On FPS" Foreground="#DCDCDC" FontFamily="Segoe UI" FontSize="12" />
+                </Button>
+
+                <!-- 2. Quick Cache Clean -->
+                <Button x:Name="BtnCacheClean" Style="{StaticResource TrayMenuItemStyle}" Click="BtnCacheClean_Click" PreviewMouseLeftButtonUp="BtnCacheClean_PreviewMouseLeftButtonUp">
+                    <TextBlock Text="Quick Cache Clean" Foreground="#DCDCDC" FontFamily="Segoe UI" FontSize="12" />
+                </Button>
+
+                <!-- 3. Flush Standby RAM -->
+                <Button x:Name="BtnFlushRam" Style="{StaticResource TrayMenuItemStyle}" Click="BtnFlushRam_Click" PreviewMouseLeftButtonUp="BtnFlushRam_PreviewMouseLeftButtonUp">
+                    <TextBlock Text="Flush Standby RAM" Foreground="#DCDCDC" FontFamily="Segoe UI" FontSize="12" />
+                </Button>
+
+                <!-- 4. Safe Close GameLoop -->
+                <Button x:Name="BtnCloseGameLoop" Style="{StaticResource TrayMenuItemStyle}" Click="BtnCloseGameLoop_Click" PreviewMouseLeftButtonUp="BtnCloseGameLoop_PreviewMouseLeftButtonUp">
+                    <TextBlock Text="Safe Close GameLoop" Foreground="#DCDCDC" FontFamily="Segoe UI" FontSize="12" />
+                </Button>
+
+                <!-- Subtle Separator -->
+                <Border Height="1" Background="#2C2C30" Margin="8,4,8,4" />
+
+                <!-- 5. Open LAG KILLER -->
+                <Button x:Name="BtnOpen" Style="{StaticResource TrayMenuItemStyle}" Click="BtnOpen_Click" PreviewMouseLeftButtonUp="BtnOpen_PreviewMouseLeftButtonUp">
+                    <TextBlock Text="Open LAG KILLER" Foreground="#FFFFFF" FontWeight="SemiBold" FontFamily="Segoe UI" FontSize="12" />
+                </Button>
+
+                <!-- 6. Exit (Red) -->
+                <Button x:Name="BtnExit" Style="{StaticResource TrayMenuExitStyle}" Click="BtnExit_Click" PreviewMouseLeftButtonUp="BtnExit_PreviewMouseLeftButtonUp">
+                    <TextBlock Text="Exit" Foreground="#FA5050" FontFamily="Segoe UI" FontSize="12" />
+                </Button>
+            </StackPanel>
+        </Border>
+    </Border>
+</Window>

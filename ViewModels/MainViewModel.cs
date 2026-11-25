@@ -10,6 +10,7 @@ namespace XenomOptimizer.ViewModels;
 public partial class MainViewModel : ObservableObject
 {
     private readonly IAdminService _adminService;
+    private readonly ISettingsService? _settingsService;
 
     [ObservableProperty]
     private ObservableObject? _currentPage;
@@ -64,7 +65,29 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _isInstructionModalActive;
 
-    public bool CanNavigateToOtherTabs => WindowsVm?.IsScanningDrivers != true && WindowsVm?.IsRescanningDrivers != true && WindowsVm?.IsRescanCompleted != true;
+    [ObservableProperty]
+    private bool _isPasscodeModalActive;
+
+    [ObservableProperty]
+    private bool _isGameLoopUnlocked = false;
+
+    private static readonly HashSet<string> LockedTabs = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "GameLoop",
+        "PUBG",
+        "Network",
+        "Cleanup",
+        "Backup",
+        "System"
+    };
+
+    private string? _pendingLockedPage;
+
+    public bool CanNavigateToOtherTabs =>
+        WindowsVm?.IsScanningDrivers != true &&
+        WindowsVm?.IsRescanningDrivers != true &&
+        WindowsVm?.IsRescanCompleted != true &&
+        WindowsVm?.IsCustomPresetEditActive != true;
 
     public MainViewModel(IAdminService adminService, WindowsOptimizationViewModel windowsVm)
     {
@@ -97,7 +120,8 @@ public partial class MainViewModel : ObservableObject
             }
             else if (e.PropertyName == nameof(WindowsOptimizationViewModel.IsScanningDrivers) ||
                      e.PropertyName == nameof(WindowsOptimizationViewModel.IsRescanningDrivers) ||
-                     e.PropertyName == nameof(WindowsOptimizationViewModel.IsRescanCompleted))
+                     e.PropertyName == nameof(WindowsOptimizationViewModel.IsRescanCompleted) ||
+                     e.PropertyName == nameof(WindowsOptimizationViewModel.IsCustomPresetEditActive))
             {
                 OnPropertyChanged(nameof(CanNavigateToOtherTabs));
             }
@@ -105,7 +129,8 @@ public partial class MainViewModel : ObservableObject
 
         _pageCache["Windows"] = WindowsVm;
 
-        // Start with dashboard
+        // Always launch on Dashboard (Home)
+        _settingsService = App.Services.GetService(typeof(ISettingsService)) as ISettingsService;
         NavigateTo("Dashboard");
     }
 
@@ -114,8 +139,23 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void NavigateTo(string page)
     {
+        if (WindowsVm?.IsCustomPresetEditActive == true && page != "Windows")
+        {
+            WindowsVm.TriggerShakeCategory();
+            return;
+        }
+
         if ((WindowsVm?.IsScanningDrivers == true || WindowsVm?.IsRescanningDrivers == true || WindowsVm?.IsRescanCompleted == true) && page != "Windows")
         {
+            return;
+        }
+
+        // Restrict the 6 unfinished tabs with Passcode 10105
+        if (LockedTabs.Contains(page) && !IsGameLoopUnlocked)
+        {
+            _pendingLockedPage = page;
+            IsPasscodeModalActive = true;
+            OnCurrentPageTitleChanged(CurrentPageTitle);
             return;
         }
 
@@ -125,6 +165,8 @@ public partial class MainViewModel : ObservableObject
         }
 
         CurrentPageTitle = page;
+
+
 
         // Step tracking for Onboarding Guide
         if (page == "Windows")
@@ -181,5 +223,29 @@ public partial class MainViewModel : ObservableObject
     private void RequestAdmin()
     {
         _adminService.RequestElevation();
+    }
+
+    [RelayCommand]
+    public void VerifyPasscode(string enteredCode)
+    {
+        if (enteredCode == "10105")
+        {
+            IsGameLoopUnlocked = true;
+            IsPasscodeModalActive = false;
+            if (!string.IsNullOrEmpty(_pendingLockedPage))
+            {
+                string target = _pendingLockedPage;
+                _pendingLockedPage = null;
+                NavigateTo(target);
+            }
+        }
+    }
+
+    [RelayCommand]
+    public void ClosePasscodeModal()
+    {
+        IsPasscodeModalActive = false;
+        _pendingLockedPage = null;
+        OnCurrentPageTitleChanged(CurrentPageTitle);
     }
 }

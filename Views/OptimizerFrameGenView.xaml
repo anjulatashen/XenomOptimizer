@@ -4,298 +4,1835 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:XenomOptimizer.ViewModels"
+             xmlns:conv="clr-namespace:XenomOptimizer.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance vm:OptimizerFrameGenViewModel}"
-             Background="#000000">
+             Background="Transparent">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="32,24,32,32">
-        <StackPanel MaxWidth="1100">
+    <UserControl.Resources>
+        <!-- Custom Slider Style for Framerate.mp4 match -->
+        <Style x:Key="FramerateTrackSliderStyle" TargetType="Slider">
+            <Setter Property="Stylus.IsPressAndHoldEnabled" Value="false"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid VerticalAlignment="Center">
+                            <Track x:Name="PART_Track">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Opacity="0" Focusable="False"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.IncreaseLarge}" Opacity="0" Focusable="False"/>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb x:Name="Thumb" Focusable="False" Width="20" Height="20" Cursor="Hand">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Grid>
+                                                    <Ellipse Width="20" Height="20" Fill="#FFFFFF">
+                                                        <Ellipse.Effect>
+                                                            <DropShadowEffect Color="#000000" BlurRadius="6" ShadowDepth="1" Opacity="0.5"/>
+                                                        </Ellipse.Effect>
+                                                    </Ellipse>
+                                                    <Ellipse Width="8" Height="8" Fill="#0F172A"/>
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
-            <!-- ═══════════════════════════════════════════════════════════ -->
-            <!-- HEADER SECTION (Flat, Minimalist, No Icons)                  -->
-            <!-- ═══════════════════════════════════════════════════════════ -->
-            <Grid Margin="0,0,0,24">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+        <!-- Number Param Slider Style (Brightness & Non-Standard Screen) -->
+        <Style x:Key="ParamSliderStyle" TargetType="Slider">
+            <Setter Property="Stylus.IsPressAndHoldEnabled" Value="false"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid VerticalAlignment="Center">
+                            <Border Height="6" CornerRadius="3" Background="#1E2330"/>
+                            <Track x:Name="PART_Track">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.DecreaseLarge}" Opacity="0" Focusable="False"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.IncreaseLarge}" Opacity="0" Focusable="False"/>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb x:Name="Thumb" Focusable="False" Width="18" Height="18" Cursor="Hand">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Ellipse Width="18" Height="18" Fill="#38BDF8" Stroke="#FFFFFF" StrokeThickness="1.5">
+                                                    <Ellipse.Effect>
+                                                        <DropShadowEffect Color="#38BDF8" BlurRadius="6" ShadowDepth="0" Opacity="0.4"/>
+                                                    </Ellipse.Effect>
+                                                </Ellipse>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
 
-                <StackPanel Grid.Column="0">
-                    <TextBlock Text="Optimizer &amp; Frame Gen" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF"/>
-                    <TextBlock Text="Hardware frame generation, background app suspension &amp; deep GameLoop debloater"
-                               FontSize="12.5" Foreground="#8E95A5" Margin="0,4,0,0"/>
+    <Grid Background="Transparent">
+        <!-- ── 1. SCROLLABLE CONTENT (NATURAL SCROLLING MATCHING ADVANCE TAB) ── -->
+        <ScrollViewer x:Name="MainContentScrollViewer"
+                      VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                      Padding="32,24,32,85"
+                      SnapsToDevicePixels="True" UseLayoutRounding="True">
+            <ScrollViewer.Resources>
+                <!-- Isolated Original ScrollBar matching Driver Hub -->
+                <Style TargetType="ScrollBar">
+                    <Setter Property="conv:ScrollBarAutoHideHelper.AutoHide" Value="True"/>
+                    <Setter Property="SnapsToDevicePixels" Value="True"/>
+                    <Setter Property="OverridesDefaultStyle" Value="True"/>
+                    <Setter Property="Width" Value="12"/>
+                    <Setter Property="Margin" Value="0,0,6,0"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ScrollBar">
+                                <Grid Background="Transparent">
+                                    <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                        <Track.Thumb>
+                                            <Thumb Style="{StaticResource VerticalScrollBarThumbStyle}"/>
+                                        </Track.Thumb>
+                                    </Track>
+                                </Grid>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ScrollViewer.Resources>
+            <ScrollViewer.OpacityMask>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#FFFFFFFF" Offset="0.0"/>
+                    <GradientStop Color="#FFFFFFFF" Offset="0.88"/>
+                    <GradientStop Color="#D5FFFFFF" Offset="0.93"/>
+                    <GradientStop Color="#80FFFFFF" Offset="0.965"/>
+                    <GradientStop Color="#00FFFFFF" Offset="1.0"/>
+                </LinearGradientBrush>
+            </ScrollViewer.OpacityMask>
+
+            <StackPanel MaxWidth="1100">
+
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!-- 1. HEADER SECTION (CLEAN, NO DOTS AT TOP)                   -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <Grid Margin="0,0,0,24">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Optimizer &amp; Frame Gen" FontSize="26" FontWeight="Bold" Foreground="#FFFFFF"
+                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"/>
+                        <TextBlock Text="GameLoop engine settings center, in-game unlocker, latency tweaks &amp; hardware frame gen"
+                                   FontSize="12.5" Foreground="#8E95A5" Margin="0,4,0,0"/>
+                    </StackPanel>
+
+                    <!-- Status Badge -->
+                    <Border Grid.Column="1" Background="#14151D" BorderBrush="#252838" BorderThickness="1"
+                            CornerRadius="16" Padding="14,6" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Ellipse Width="7" Height="7" Fill="#10B981" Margin="0,0,8,0"/>
+                            <TextBlock Text="System: Ready" FontSize="11" FontWeight="SemiBold" Foreground="#E2E8F0"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!-- 2. SLIDE 0: GAMELOOP ENGINE (FIRST PAGE)                    -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <StackPanel Visibility="{Binding IsPage1Active, Converter={StaticResource BoolToVis}}">
+
+                    <!-- Engine Master Header Banner -->
+                    <Border Background="#0C121E" BorderBrush="#1C2D48" BorderThickness="1.5" CornerRadius="16" Padding="24,20" Margin="0,0,0,20">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,20,0">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="⚙️ GameLoop Engine (Settings Center)" FontSize="16.5" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                    <Border Background="#16382F" BorderBrush="#34D399" BorderThickness="1" CornerRadius="8" Padding="8,2" Margin="12,0,0,0">
+                                        <TextBlock Text="HARDWARE ALLOCATOR" FontSize="10" FontWeight="Bold" Foreground="#34D399"/>
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="Directly adjust GameLoop's core engine parameters: graphics backend, RAM allocation, CPU cores, display resolution, DPI, and device model spoofing."
+                                           FontSize="12" Foreground="#94A3B8" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding EngineStatusMessage}" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="#38BDF8" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <!-- Auto-Detect Specs Button -->
+                            <Button Grid.Column="1" Command="{Binding AutoDetectEngineSettingsCommand}" Cursor="Hand" Height="44" VerticalAlignment="Center">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="adBtn" Background="#141E30" BorderBrush="#253A5A" BorderThickness="1" CornerRadius="10" Padding="18,0">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock Text="✨" FontSize="13" Foreground="#38BDF8" Margin="0,0,8,0"/>
+                                                <TextBlock Text="Auto-Detect Best Specs" FontSize="12.5" FontWeight="SemiBold" Foreground="#CBD5E1"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="adBtn" Property="Background" Value="#1C2D4A"/>
+                                                <Setter TargetName="adBtn" Property="BorderBrush" Value="#38BDF8"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <!-- 2-COLUMN GRID: ENGINE CONTROLS -->
+                    <Grid Margin="0,0,0,20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- LEFT COLUMN: GRAPHICS & DISPLAY -->
+                        <Border Grid.Column="0" Background="#0E1017" BorderBrush="#1C212E" BorderThickness="1.2" CornerRadius="16" Padding="22,20">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                    <TextBlock Text="🎮 Graphics &amp; Display Backend" FontSize="14.5" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                </StackPanel>
+
+                                <!-- 1. Rendering Backend Engine -->
+                                <TextBlock Text="Rendering Engine" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" Margin="0,0,0,6"/>
+                                <ComboBox ItemsSource="{Binding EngineOptions}"
+                                          SelectedIndex="{Binding SelectedEngineIndex}"
+                                          Margin="0,0,0,14" Height="36"/>
+
+                                <!-- 2. Resolution Preset -->
+                                <TextBlock Text="Display Resolution" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" Margin="0,0,0,6"/>
+                                <ComboBox ItemsSource="{Binding ResolutionOptions}"
+                                          SelectedIndex="{Binding SelectedResolutionIndex}"
+                                          Margin="0,0,0,14" Height="36"/>
+
+                                <!-- 3. Screen DPI -->
+                                <TextBlock Text="Screen DPI (Pixel Density)" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" Margin="0,0,0,6"/>
+                                <ComboBox ItemsSource="{Binding DpiOptions}"
+                                          SelectedIndex="{Binding SelectedDpiIndex}"
+                                          Margin="0,0,0,16" Height="36"/>
+
+                                <Border Height="1" Background="#1C2230" Margin="0,0,0,14"/>
+
+                                <!-- Engine Graphics Toggles -->
+                                <TextBlock Text="Advanced Rendering Optimizations" FontSize="12.5" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,0,0,10"/>
+
+                                <CheckBox IsChecked="{Binding IsRenderCacheEnabled}" Content="Enable Render Cache (Smooth Texture Streaming)"
+                                          Foreground="#CBD5E1" FontSize="11.5" Margin="0,0,0,8" Cursor="Hand"/>
+
+                                <CheckBox IsChecked="{Binding IsDiscreteGpuEnforced}" Content="Enforce Dedicated GPU (Force High Performance GPU)"
+                                          Foreground="#CBD5E1" FontSize="11.5" Margin="0,0,0,8" Cursor="Hand"/>
+
+                                <CheckBox IsChecked="{Binding IsRenderOptimizationEnabled}" Content="Rendering Optimization (Eliminates Frame Pacing Stutters)"
+                                          Foreground="#CBD5E1" FontSize="11.5" Margin="0,0,0,8" Cursor="Hand"/>
+
+                                <CheckBox IsChecked="{Binding IsVsyncDisabled}" Content="Disable V-Sync in Emulator (Unlock Pure 120 FPS)"
+                                          Foreground="#CBD5E1" FontSize="11.5" Cursor="Hand"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- RIGHT COLUMN: CPU, RAM & DEVICE MODEL -->
+                        <Border Grid.Column="2" Background="#0E1017" BorderBrush="#1C212E" BorderThickness="1.2" CornerRadius="16" Padding="22,20">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                                    <TextBlock Text="⚡ Hardware Resources &amp; Device Spoofing" FontSize="14.5" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                </StackPanel>
+
+                                <!-- 1. Processor / CPU Cores -->
+                                <TextBlock Text="Processor (CPU Cores Allocation)" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" Margin="0,0,0,6"/>
+                                <ComboBox ItemsSource="{Binding CoreOptions}"
+                                          SelectedIndex="{Binding SelectedCoresIndex}"
+                                          Margin="0,0,0,14" Height="36"/>
+
+                                <!-- 2. Memory / RAM Allocation -->
+                                <TextBlock Text="Memory (RAM Allocation)" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" Margin="0,0,0,6"/>
+                                <ComboBox ItemsSource="{Binding RamOptions}"
+                                          SelectedIndex="{Binding SelectedRamIndex}"
+                                          Margin="0,0,0,14" Height="36"/>
+
+                                <!-- 3. Device Model Profile -->
+                                <TextBlock Text="Device Model (120 FPS Whitelist Spoofing)" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" Margin="0,0,0,6"/>
+                                <ComboBox ItemsSource="{Binding DeviceProfileOptions}"
+                                          SelectedIndex="{Binding SelectedDeviceProfileIndex}"
+                                          Margin="0,0,0,18" Height="36"/>
+
+                                <Border Height="1" Background="#1C2230" Margin="0,0,0,14"/>
+
+                                <Border Background="#131722" BorderBrush="#20283C" BorderThickness="1" CornerRadius="10" Padding="14,12">
+                                    <StackPanel>
+                                        <TextBlock Text="💡 Recommended Configuration Tips:" FontSize="11.5" FontWeight="Bold" Foreground="#38BDF8" Margin="0,0,0,4"/>
+                                        <TextBlock Text="• For 8-core CPUs (e.g. i7 / Ryzen 7): Select 4 Cores &amp; 8192 MB RAM." FontSize="11" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                        <TextBlock Text="• Keep SM-X910 selected to unlock PUBG Mobile's 120 FPS Extreme frame rate setting." FontSize="11" Foreground="#94A3B8" Margin="0,0,0,2"/>
+                                        <TextBlock Text="• iPad View (1440x1080) offers stretched pro player field-of-view with maximum FPS." FontSize="11" Foreground="#94A3B8"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- MASTER APPLY ENGINE SETTINGS BUTTON -->
+                    <Border Background="#101520" BorderBrush="#1C273C" BorderThickness="1" CornerRadius="14" Padding="20,18">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
+                                    <TextBlock Text="⚡ Save &amp; Apply Engine Configuration" FontSize="14" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                    <Border Background="#162E25" CornerRadius="4" Padding="6,1" Margin="8,0,0,0">
+                                        <TextBlock Text="SYNC TO REGISTRY &amp; INI" FontSize="9.5" FontWeight="Bold" Foreground="#34D399"/>
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="Writes resolution, memory size, CPU cores, render engine, and spoofed device profile to GameLoop configuration files and Windows Registry."
+                                           FontSize="11.5" Foreground="#94A3B8" TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <Button Grid.Column="1" Command="{Binding SaveFullEngineSettingsCommand}" Cursor="Hand" Height="44" VerticalAlignment="Center">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="applyBox" Background="#147EEE" BorderBrush="#38BDF8" BorderThickness="1" CornerRadius="10" Padding="24,0">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock Text="⚡" FontSize="13" Foreground="#FFFFFF" Margin="0,0,8,0"/>
+                                                <TextBlock Text="Apply Engine Settings" FontSize="13" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="applyBox" Property="Background" Value="#0284C7"/>
+                                                <Setter TargetName="applyBox" Property="BorderBrush" Value="#7DD3FC"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                        </Grid>
+                    </Border>
+
                 </StackPanel>
 
-                <!-- Status Badge -->
-                <Border Grid.Column="1" Background="#171717" BorderBrush="#262626" BorderThickness="1"
-                        CornerRadius="8" Padding="14,6" VerticalAlignment="Center">
-                    <TextBlock Text="System: Optimized" FontSize="11" FontWeight="SemiBold" Foreground="#8E95A5"/>
-                </Border>
-            </Grid>
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!-- 3. SLIDE 1: IN-GAME UNLOCKER (SECOND PAGE)                  -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <StackPanel Visibility="{Binding IsPage2Active, Converter={StaticResource BoolToVis}}">
 
-            <!-- ═══════════════════════════════════════════════════════════ -->
-            <!-- 2-COLUMN FLAT CARD GRID                                     -->
-            <!-- ═══════════════════════════════════════════════════════════ -->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="20"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- ── COLUMN 1 ── -->
-                <StackPanel Grid.Column="0">
-
-                    <!-- CARD 1: Frame Generation Engine -->
-                    <Border Background="#0A0A0A" BorderBrush="#262626" BorderThickness="1" CornerRadius="12"
-                            Padding="20" Margin="0,0,0,20">
+                    <Border Background="#0B0C10" BorderBrush="#1C202C" BorderThickness="1" CornerRadius="14" Padding="22,18" Margin="0,0,0,20">
                         <StackPanel>
-                            <TextBlock Text="Frame Generation Engine" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"/>
-                            <TextBlock Text="Hardware accelerated frame interpolation and background limiter."
-                                       FontSize="11.5" Foreground="#8E95A5" Margin="0,3,0,12"/>
+                            <!-- Header Title matching GameLoop in-game styling -->
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                            <!-- Thin Divider -->
-                            <Border Height="1" Background="#171717" Margin="0,0,0,14"/>
+                                <StackPanel Grid.Column="0">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
+                                        <TextBlock Text="🎮 PUBG Mobile Active.sav &amp; In-Game Graphics" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                        <Border Background="#162E25" BorderBrush="#255A43" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="10,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock Text="ACTIVE.SAV ENGINE" FontSize="9.5" FontWeight="Bold" Foreground="#34D399"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="Configure in-game render quality, 120 FPS unlocker, styles, advanced shadows and patch binary Active.sav."
+                                               FontSize="11.5" Foreground="#64748B"/>
+                                </StackPanel>
 
-                            <!-- Target FPS Row -->
-                            <Grid Margin="0,0,0,10">
-                                <TextBlock Text="Target Framerate" FontSize="12" Foreground="#8E95A5" VerticalAlignment="Center"/>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding TargetFps, StringFormat='{}{0:0}'}" FontSize="16" FontWeight="Bold" Foreground="#147EEE"/>
-                                    <TextBlock Text=" FPS" FontSize="12" FontWeight="SemiBold" Foreground="#8E95A5" VerticalAlignment="Bottom" Margin="2,0,0,1"/>
+                                <!-- In-game Status Pill -->
+                                <Border Grid.Column="1" Background="#141824" BorderBrush="#242B3C" BorderThickness="1" CornerRadius="12" Padding="12,5" VerticalAlignment="Center">
+                                    <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="#38BDF8">
+                                        <Run Text="{Binding ActiveSavFrameRate}"/> FPS • <Run Text="{Binding ActiveSavQuality}"/> • <Run Text="{Binding ActiveSavStyle}"/>
+                                    </TextBlock>
+                                </Border>
+                            </Grid>
+
+                            <!-- ── 1. GRAPHIC QUALITY TABS (MATCHING IMAGE 1) ── -->
+                            <StackPanel Margin="0,0,0,16">
+                                <TextBlock Text="Graphic Quality" FontSize="13" FontWeight="Bold" Foreground="#CBD5E1" Margin="0,0,0,8"/>
+
+                                <Border Background="#11131A" BorderBrush="#1F2432" BorderThickness="1" CornerRadius="8" Padding="2">
+                                    <UniformGrid Columns="6" Height="36">
+
+                                        <!-- Super Smooth -->
+                                        <Button Command="{Binding SelectQualityCommand}" CommandParameter="Super Smooth" Cursor="Hand">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="tabBorder" Background="Transparent" BorderBrush="#242B3C" BorderThickness="0,0,1,0">
+                                                        <Grid>
+                                                            <TextBlock x:Name="tabTxt" Text="Super Smooth" FontSize="11.5" FontWeight="SemiBold"
+                                                                       Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            <Border x:Name="blueLine" Height="3" Background="Transparent" VerticalAlignment="Bottom"/>
+                                                        </Grid>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="tabTxt" Property="Foreground" Value="#FFFFFF"/>
+                                                        </Trigger>
+                                                        <DataTrigger Binding="{Binding IsQualitySuperSmooth}" Value="True">
+                                                            <Setter TargetName="tabBorder" Property="Background" Value="#CBD5E1"/>
+                                                            <Setter TargetName="tabTxt" Property="Foreground" Value="#0F172A"/>
+                                                            <Setter TargetName="tabTxt" Property="FontWeight" Value="Bold"/>
+                                                            <Setter TargetName="blueLine" Property="Background" Value="#147EEE"/>
+                                                        </DataTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+
+                                        <!-- Smooth -->
+                                        <Button Command="{Binding SelectQualityCommand}" CommandParameter="Smooth" Cursor="Hand">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="tabBorder" Background="Transparent" BorderBrush="#242B3C" BorderThickness="0,0,1,0">
+                                                        <Grid>
+                                                            <TextBlock x:Name="tabTxt" Text="Smooth" FontSize="11.5" FontWeight="SemiBold"
+                                                                       Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            <Border x:Name="blueLine" Height="3" Background="Transparent" VerticalAlignment="Bottom"/>
+                                                        </Grid>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="tabTxt" Property="Foreground" Value="#FFFFFF"/>
+                                                        </Trigger>
+                                                        <DataTrigger Binding="{Binding IsQualitySmooth}" Value="True">
+                                                            <Setter TargetName="tabBorder" Property="Background" Value="#CBD5E1"/>
+                                                            <Setter TargetName="tabTxt" Property="Foreground" Value="#0F172A"/>
+                                                            <Setter TargetName="tabTxt" Property="FontWeight" Value="Bold"/>
+                                                            <Setter TargetName="blueLine" Property="Background" Value="#147EEE"/>
+                                                        </DataTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+
+                                        <!-- Balanced -->
+                                        <Button Command="{Binding SelectQualityCommand}" CommandParameter="Balanced" Cursor="Hand">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="tabBorder" Background="Transparent" BorderBrush="#242B3C" BorderThickness="0,0,1,0">
+                                                        <Grid>
+                                                            <TextBlock x:Name="tabTxt" Text="Balanced" FontSize="11.5" FontWeight="SemiBold"
+                                                                       Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            <Border x:Name="blueLine" Height="3" Background="Transparent" VerticalAlignment="Bottom"/>
+                                                        </Grid>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="tabTxt" Property="Foreground" Value="#FFFFFF"/>
+                                                        </Trigger>
+                                                        <DataTrigger Binding="{Binding IsQualityBalanced}" Value="True">
+                                                            <Setter TargetName="tabBorder" Property="Background" Value="#CBD5E1"/>
+                                                            <Setter TargetName="tabTxt" Property="Foreground" Value="#0F172A"/>
+                                                            <Setter TargetName="tabTxt" Property="FontWeight" Value="Bold"/>
+                                                            <Setter TargetName="blueLine" Property="Background" Value="#147EEE"/>
+                                                        </DataTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+
+                                        <!-- HD -->
+                                        <Button Command="{Binding SelectQualityCommand}" CommandParameter="HD" Cursor="Hand">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="tabBorder" Background="Transparent" BorderBrush="#242B3C" BorderThickness="0,0,1,0">
+                                                        <Grid>
+                                                            <TextBlock x:Name="tabTxt" Text="HD" FontSize="11.5" FontWeight="SemiBold"
+                                                                       Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            <Border x:Name="blueLine" Height="3" Background="Transparent" VerticalAlignment="Bottom"/>
+                                                        </Grid>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="tabTxt" Property="Foreground" Value="#FFFFFF"/>
+                                                        </Trigger>
+                                                        <DataTrigger Binding="{Binding IsQualityHd}" Value="True">
+                                                            <Setter TargetName="tabBorder" Property="Background" Value="#CBD5E1"/>
+                                                            <Setter TargetName="tabTxt" Property="Foreground" Value="#0F172A"/>
+                                                            <Setter TargetName="tabTxt" Property="FontWeight" Value="Bold"/>
+                                                            <Setter TargetName="blueLine" Property="Background" Value="#147EEE"/>
+                                                        </DataTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+
+                                        <!-- HDR -->
+                                        <Button Command="{Binding SelectQualityCommand}" CommandParameter="HDR" Cursor="Hand">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="tabBorder" Background="Transparent" BorderBrush="#242B3C" BorderThickness="0,0,1,0">
+                                                        <Grid>
+                                                            <TextBlock x:Name="tabTxt" Text="HDR" FontSize="11.5" FontWeight="SemiBold"
+                                                                       Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            <Border x:Name="blueLine" Height="3" Background="Transparent" VerticalAlignment="Bottom"/>
+                                                        </Grid>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="tabTxt" Property="Foreground" Value="#FFFFFF"/>
+                                                        </Trigger>
+                                                        <DataTrigger Binding="{Binding IsQualityHdr}" Value="True">
+                                                            <Setter TargetName="tabBorder" Property="Background" Value="#CBD5E1"/>
+                                                            <Setter TargetName="tabTxt" Property="Foreground" Value="#0F172A"/>
+                                                            <Setter TargetName="tabTxt" Property="FontWeight" Value="Bold"/>
+                                                            <Setter TargetName="blueLine" Property="Background" Value="#147EEE"/>
+                                                        </DataTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+
+                                        <!-- Ultra HDR -->
+                                        <Button Command="{Binding SelectQualityCommand}" CommandParameter="Ultra HDR" Cursor="Hand">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="tabBorder" Background="Transparent">
+                                                        <Grid>
+                                                            <TextBlock x:Name="tabTxt" Text="Ultra HDR" FontSize="11.5" FontWeight="SemiBold"
+                                                                       Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            <Border x:Name="blueLine" Height="3" Background="Transparent" VerticalAlignment="Bottom"/>
+                                                        </Grid>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="tabTxt" Property="Foreground" Value="#FFFFFF"/>
+                                                        </Trigger>
+                                                        <DataTrigger Binding="{Binding IsQualityUltraHdr}" Value="True">
+                                                            <Setter TargetName="tabBorder" Property="Background" Value="#CBD5E1"/>
+                                                            <Setter TargetName="tabTxt" Property="Foreground" Value="#0F172A"/>
+                                                            <Setter TargetName="tabTxt" Property="FontWeight" Value="Bold"/>
+                                                            <Setter TargetName="blueLine" Property="Background" Value="#147EEE"/>
+                                                        </DataTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+
+                                    </UniformGrid>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- ── 2. FRAME RATE SELECTOR (EXACT MATCH TO Framerate.mp4) ── -->
+                            <Border Background="#12141C" BorderBrush="#222736" BorderThickness="1" CornerRadius="12" Padding="20,18" Margin="0,0,0,18">
+                                <StackPanel>
+                                    <Grid Margin="0,0,0,14">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="Frame Rate " FontSize="14.5" FontWeight="SemiBold" Foreground="#8E95A5"/>
+                                            <TextBlock Text="{Binding ActiveSavFrameRate}" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                        </StackPanel>
+
+                                        <Border HorizontalAlignment="Right" Width="18" Height="18" CornerRadius="9" BorderBrush="#4A5568" BorderThickness="1">
+                                            <TextBlock Text="i" FontSize="10.5" FontWeight="Bold" Foreground="#8E95A5" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0"/>
+                                        </Border>
+                                    </Grid>
+
+                                    <!-- Sleek Stepped Slider Track with discrete tick dots -->
+                                    <Grid Margin="4,8,4,8">
+                                        <Border Height="6" CornerRadius="3" Background="#222838" VerticalAlignment="Center"/>
+
+                                        <Grid VerticalAlignment="Center" Height="12" Margin="9,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Ellipse HorizontalAlignment="Left" Width="6" Height="6" Fill="#4B5563" Margin="-3,0,0,0"/>
+                                            <Ellipse Grid.Column="0" HorizontalAlignment="Right" Width="6" Height="6" Fill="#4B5563" Margin="0,0,-3,0"/>
+                                            <Ellipse Grid.Column="1" HorizontalAlignment="Right" Width="6" Height="6" Fill="#4B5563" Margin="0,0,-3,0"/>
+                                            <Ellipse Grid.Column="2" HorizontalAlignment="Right" Width="6" Height="6" Fill="#4B5563" Margin="0,0,-3,0"/>
+                                        </Grid>
+
+                                        <Slider Minimum="0" Maximum="3" Value="{Binding ActiveSavSliderValue, Mode=TwoWay}"
+                                                IsSnapToTickEnabled="True" TickFrequency="1"
+                                                Height="26" VerticalAlignment="Center" Cursor="Hand"
+                                                Style="{StaticResource FramerateTrackSliderStyle}"/>
+                                    </Grid>
+
+                                    <!-- Sub-labels: "Faster" on left, "Smarter" on right -->
+                                    <Grid Margin="2,4,2,14">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Faster" FontSize="11.5" Foreground="#64748B" FontWeight="SemiBold"/>
+                                        <TextBlock Grid.Column="1" Text="Smarter" FontSize="11.5" Foreground="#64748B" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                                    </Grid>
+
+                                    <!-- Recommended Card -->
+                                    <Border Background="#161A24" BorderBrush="#252D3E" BorderThickness="1" CornerRadius="10" Padding="14,10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0" Width="24" Height="24" CornerRadius="6" Background="#1E283C" Margin="0,0,12,0" VerticalAlignment="Center">
+                                                <TextBlock Text="✦" FontSize="12" Foreground="#38BDF8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="Recommended" FontSize="12" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                                <TextBlock Text="{Binding ActiveSavRecommendationText}" FontSize="11" Foreground="#94A3B8" Margin="0,1,0,0"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- ── 3. STYLE / COLOR PRESETS (MATCHING IMAGE 3) ── -->
+                            <StackPanel Margin="0,0,0,18">
+                                <TextBlock Text="Style" FontSize="13" FontWeight="Bold" Foreground="#CBD5E1" Margin="0,0,0,8"/>
+
+                                <UniformGrid Columns="5">
+                                    <!-- Classic -->
+                                    <Button Command="{Binding SelectStyleCommand}" CommandParameter="Classic" Cursor="Hand" Margin="0,0,5,0">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="cardBorder" Background="#11131A" BorderBrush="#1F2432" BorderThickness="1.5" CornerRadius="8" Padding="1">
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="74"/>
+                                                            <RowDefinition Height="28"/>
+                                                        </Grid.RowDefinitions>
+                                                        <Border Grid.Row="0" CornerRadius="6,6,0,0" ClipToBounds="True">
+                                                            <Image Source="pack://application:,,,/Assets/Styles/classic_thumb.png" Stretch="UniformToFill"/>
+                                                        </Border>
+                                                        <Border Grid.Row="1" Background="#0E1017" CornerRadius="0,0,6,6" Padding="8,0">
+                                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                <Grid Width="12" Height="12" Margin="0,0,6,0">
+                                                                    <Ellipse Stroke="#64748B" StrokeThickness="1"/>
+                                                                    <Ellipse x:Name="radioDot" Width="6" Height="6" Fill="Transparent"/>
+                                                                </Grid>
+                                                                <TextBlock Text="Classic" FontSize="11" FontWeight="Bold" Foreground="#E2E8F0"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="cardBorder" Property="BorderBrush" Value="#64748B"/>
+                                                    </Trigger>
+                                                    <DataTrigger Binding="{Binding IsStyleClassic}" Value="True">
+                                                        <Setter TargetName="cardBorder" Property="BorderBrush" Value="#38BDF8"/>
+                                                        <Setter TargetName="radioDot" Property="Fill" Value="#38BDF8"/>
+                                                    </DataTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                    <!-- Colorful -->
+                                    <Button Command="{Binding SelectStyleCommand}" CommandParameter="Colorful" Cursor="Hand" Margin="2.5,0,2.5,0">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="cardBorder" Background="#11131A" BorderBrush="#1F2432" BorderThickness="1.5" CornerRadius="8" Padding="1">
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="74"/>
+                                                            <RowDefinition Height="28"/>
+                                                        </Grid.RowDefinitions>
+                                                        <Border Grid.Row="0" CornerRadius="6,6,0,0" ClipToBounds="True">
+                                                            <Image Source="pack://application:,,,/Assets/Styles/colorful_thumb.png" Stretch="UniformToFill"/>
+                                                        </Border>
+                                                        <Border Grid.Row="1" Background="#0E1017" CornerRadius="0,0,6,6" Padding="8,0">
+                                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                <Grid Width="12" Height="12" Margin="0,0,6,0">
+                                                                    <Ellipse Stroke="#64748B" StrokeThickness="1"/>
+                                                                    <Ellipse x:Name="radioDot" Width="6" Height="6" Fill="Transparent"/>
+                                                                </Grid>
+                                                                <TextBlock Text="Colorful" FontSize="11" FontWeight="Bold" Foreground="#E2E8F0"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="cardBorder" Property="BorderBrush" Value="#64748B"/>
+                                                    </Trigger>
+                                                    <DataTrigger Binding="{Binding IsStyleColorful}" Value="True">
+                                                        <Setter TargetName="cardBorder" Property="BorderBrush" Value="#38BDF8"/>
+                                                        <Setter TargetName="radioDot" Property="Fill" Value="#38BDF8"/>
+                                                    </DataTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                    <!-- Realistic -->
+                                    <Button Command="{Binding SelectStyleCommand}" CommandParameter="Realistic" Cursor="Hand" Margin="2.5,0,2.5,0">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="cardBorder" Background="#11131A" BorderBrush="#1F2432" BorderThickness="1.5" CornerRadius="8" Padding="1">
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="74"/>
+                                                            <RowDefinition Height="28"/>
+                                                        </Grid.RowDefinitions>
+                                                        <Border Grid.Row="0" CornerRadius="6,6,0,0" ClipToBounds="True">
+                                                            <Image Source="pack://application:,,,/Assets/Styles/realistic_thumb.png" Stretch="UniformToFill"/>
+                                                        </Border>
+                                                        <Border Grid.Row="1" Background="#0E1017" CornerRadius="0,0,6,6" Padding="8,0">
+                                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                <Grid Width="12" Height="12" Margin="0,0,6,0">
+                                                                    <Ellipse Stroke="#64748B" StrokeThickness="1"/>
+                                                                    <Ellipse x:Name="radioDot" Width="6" Height="6" Fill="Transparent"/>
+                                                                </Grid>
+                                                                <TextBlock Text="Realistic" FontSize="11" FontWeight="Bold" Foreground="#E2E8F0"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="cardBorder" Property="BorderBrush" Value="#64748B"/>
+                                                    </Trigger>
+                                                    <DataTrigger Binding="{Binding IsStyleRealistic}" Value="True">
+                                                        <Setter TargetName="cardBorder" Property="BorderBrush" Value="#38BDF8"/>
+                                                        <Setter TargetName="radioDot" Property="Fill" Value="#38BDF8"/>
+                                                    </DataTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                    <!-- Soft -->
+                                    <Button Command="{Binding SelectStyleCommand}" CommandParameter="Soft" Cursor="Hand" Margin="2.5,0,2.5,0">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="cardBorder" Background="#11131A" BorderBrush="#1F2432" BorderThickness="1.5" CornerRadius="8" Padding="1">
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="74"/>
+                                                            <RowDefinition Height="28"/>
+                                                        </Grid.RowDefinitions>
+                                                        <Border Grid.Row="0" CornerRadius="6,6,0,0" ClipToBounds="True">
+                                                            <Image Source="pack://application:,,,/Assets/Styles/soft_thumb.png" Stretch="UniformToFill"/>
+                                                        </Border>
+                                                        <Border Grid.Row="1" Background="#0E1017" CornerRadius="0,0,6,6" Padding="8,0">
+                                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                <Grid Width="12" Height="12" Margin="0,0,6,0">
+                                                                    <Ellipse Stroke="#64748B" StrokeThickness="1"/>
+                                                                    <Ellipse x:Name="radioDot" Width="6" Height="6" Fill="Transparent"/>
+                                                                </Grid>
+                                                                <TextBlock Text="Soft" FontSize="11" FontWeight="Bold" Foreground="#E2E8F0"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="cardBorder" Property="BorderBrush" Value="#64748B"/>
+                                                    </Trigger>
+                                                    <DataTrigger Binding="{Binding IsStyleSoft}" Value="True">
+                                                        <Setter TargetName="cardBorder" Property="BorderBrush" Value="#38BDF8"/>
+                                                        <Setter TargetName="radioDot" Property="Fill" Value="#38BDF8"/>
+                                                    </DataTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                    <!-- Movie -->
+                                    <Button Command="{Binding SelectStyleCommand}" CommandParameter="Movie" Cursor="Hand" Margin="5,0,0,0">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="cardBorder" Background="#11131A" BorderBrush="#1F2432" BorderThickness="1.5" CornerRadius="8" Padding="1">
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="74"/>
+                                                            <RowDefinition Height="28"/>
+                                                        </Grid.RowDefinitions>
+                                                        <Border Grid.Row="0" CornerRadius="6,6,0,0" ClipToBounds="True">
+                                                            <Image Source="pack://application:,,,/Assets/Styles/movie_thumb.png" Stretch="UniformToFill"/>
+                                                        </Border>
+                                                        <Border Grid.Row="1" Background="#0E1017" CornerRadius="0,0,6,6" Padding="8,0">
+                                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                                <Grid Width="12" Height="12" Margin="0,0,6,0">
+                                                                    <Ellipse Stroke="#64748B" StrokeThickness="1"/>
+                                                                    <Ellipse x:Name="radioDot" Width="6" Height="6" Fill="Transparent"/>
+                                                                </Grid>
+                                                                <TextBlock Text="Movie" FontSize="11" FontWeight="Bold" Foreground="#E2E8F0"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="cardBorder" Property="BorderBrush" Value="#64748B"/>
+                                                    </Trigger>
+                                                    <DataTrigger Binding="{Binding IsStyleMovie}" Value="True">
+                                                        <Setter TargetName="cardBorder" Property="BorderBrush" Value="#38BDF8"/>
+                                                        <Setter TargetName="radioDot" Property="Fill" Value="#38BDF8"/>
+                                                    </DataTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                </UniformGrid>
+                            </StackPanel>
+
+                            <!-- ── 4. ADVANCED GRAPHICS SETTINGS (MATCHING IMAGE 4) ── -->
+                            <Border Background="#10121A" BorderBrush="#1C212E" BorderThickness="1" CornerRadius="12" Padding="20,16" Margin="0,0,0,18">
+                                <StackPanel>
+                                    <TextBlock Text="Advanced Graphics Settings" FontSize="13.5" FontWeight="Bold" Foreground="#FFFFFF" Margin="0,0,0,12"/>
+
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="24"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Column 1 -->
+                                        <StackPanel Grid.Column="0">
+
+                                            <!-- Anti-Aliasing (Disable | 2x | 4x) -->
+                                            <Grid Margin="0,0,0,12">
+                                                <TextBlock Text="Anti-Aliasing" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" VerticalAlignment="Center"/>
+                                                <Border HorizontalAlignment="Right" Background="#141824" BorderBrush="#242B3C" BorderThickness="1" CornerRadius="6" Height="30">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Button Command="{Binding SelectAntiAliasingCommand}" CommandParameter="Disable" Cursor="Hand" Padding="12,0">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border x:Name="b" Background="Transparent" CornerRadius="5,0,0,5" Padding="12,0">
+                                                                        <TextBlock x:Name="t" Text="Disable" FontSize="11" FontWeight="Bold" Foreground="#8E95A5" VerticalAlignment="Center"/>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsAaDisable}" Value="True">
+                                                                            <Setter TargetName="b" Property="Background" Value="#147EEE"/>
+                                                                            <Setter TargetName="t" Property="Foreground" Value="#FFFFFF"/>
+                                                                        </DataTrigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                        </Button>
+                                                        <Button Command="{Binding SelectAntiAliasingCommand}" CommandParameter="2x" Cursor="Hand" Padding="12,0">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border x:Name="b" Background="Transparent" Padding="12,0">
+                                                                        <TextBlock x:Name="t" Text="2x" FontSize="11" FontWeight="Bold" Foreground="#8E95A5" VerticalAlignment="Center"/>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsAa2x}" Value="True">
+                                                                            <Setter TargetName="b" Property="Background" Value="#147EEE"/>
+                                                                            <Setter TargetName="t" Property="Foreground" Value="#FFFFFF"/>
+                                                                        </DataTrigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                        </Button>
+                                                        <Button Command="{Binding SelectAntiAliasingCommand}" CommandParameter="4x" Cursor="Hand" Padding="12,0">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border x:Name="b" Background="Transparent" CornerRadius="0,5,5,0" Padding="12,0">
+                                                                        <TextBlock x:Name="t" Text="4x" FontSize="11" FontWeight="Bold" Foreground="#8E95A5" VerticalAlignment="Center"/>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsAa4x}" Value="True">
+                                                                            <Setter TargetName="b" Property="Background" Value="#147EEE"/>
+                                                                            <Setter TargetName="t" Property="Foreground" Value="#FFFFFF"/>
+                                                                        </DataTrigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Border>
+                                            </Grid>
+
+                                            <!-- Shadows (Enable | Disable) -->
+                                            <Grid Margin="0,0,0,12">
+                                                <TextBlock Text="Shadows" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" VerticalAlignment="Center"/>
+                                                <Border HorizontalAlignment="Right" Background="#141824" BorderBrush="#242B3C" BorderThickness="1" CornerRadius="6" Height="30">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Button Command="{Binding ToggleShadowsCommand}" Cursor="Hand">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border x:Name="b" Background="Transparent" CornerRadius="5,0,0,5" Padding="14,0">
+                                                                        <TextBlock x:Name="t" Text="Enable" FontSize="11" FontWeight="Bold" Foreground="#8E95A5" VerticalAlignment="Center"/>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsShadowsEnabled}" Value="True">
+                                                                            <Setter TargetName="b" Property="Background" Value="#147EEE"/>
+                                                                            <Setter TargetName="t" Property="Foreground" Value="#FFFFFF"/>
+                                                                        </DataTrigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                        </Button>
+                                                        <Button Command="{Binding ToggleShadowsCommand}" Cursor="Hand">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border x:Name="b" Background="Transparent" CornerRadius="0,5,5,0" Padding="14,0">
+                                                                        <TextBlock x:Name="t" Text="Disable" FontSize="11" FontWeight="Bold" Foreground="#8E95A5" VerticalAlignment="Center"/>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsShadowsEnabled}" Value="False">
+                                                                            <Setter TargetName="b" Property="Background" Value="#147EEE"/>
+                                                                            <Setter TargetName="t" Property="Foreground" Value="#FFFFFF"/>
+                                                                        </DataTrigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Border>
+                                            </Grid>
+
+                                            <!-- Lobby Graphics Enhancement (Enable | Disable) -->
+                                            <Grid>
+                                                <TextBlock Text="Lobby Graphics Enhancement" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" VerticalAlignment="Center"/>
+                                                <Border HorizontalAlignment="Right" Background="#141824" BorderBrush="#242B3C" BorderThickness="1" CornerRadius="6" Height="30">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Button Command="{Binding ToggleLobbyEnhancementCommand}" Cursor="Hand">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border x:Name="b" Background="Transparent" CornerRadius="5,0,0,5" Padding="14,0">
+                                                                        <TextBlock x:Name="t" Text="Enable" FontSize="11" FontWeight="Bold" Foreground="#8E95A5" VerticalAlignment="Center"/>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsLobbyEnhancementEnabled}" Value="True">
+                                                                            <Setter TargetName="b" Property="Background" Value="#147EEE"/>
+                                                                            <Setter TargetName="t" Property="Foreground" Value="#FFFFFF"/>
+                                                                        </DataTrigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                        </Button>
+                                                        <Button Command="{Binding ToggleLobbyEnhancementCommand}" Cursor="Hand">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border x:Name="b" Background="Transparent" CornerRadius="0,5,5,0" Padding="14,0">
+                                                                        <TextBlock x:Name="t" Text="Disable" FontSize="11" FontWeight="Bold" Foreground="#8E95A5" VerticalAlignment="Center"/>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsLobbyEnhancementEnabled}" Value="False">
+                                                                            <Setter TargetName="b" Property="Background" Value="#147EEE"/>
+                                                                            <Setter TargetName="t" Property="Foreground" Value="#FFFFFF"/>
+                                                                        </DataTrigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Border>
+                                            </Grid>
+
+                                        </StackPanel>
+
+                                        <!-- Column 2 -->
+                                        <StackPanel Grid.Column="2">
+
+                                            <!-- Power Saving Settings (Enable | Disable) -->
+                                            <Grid Margin="0,0,0,12">
+                                                <TextBlock Text="Power Saving Settings" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" VerticalAlignment="Center"/>
+                                                <Border HorizontalAlignment="Right" Background="#141824" BorderBrush="#242B3C" BorderThickness="1" CornerRadius="6" Height="30">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Button Command="{Binding TogglePowerSavingCommand}" Cursor="Hand">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border x:Name="b" Background="Transparent" CornerRadius="5,0,0,5" Padding="14,0">
+                                                                        <TextBlock x:Name="t" Text="Enable" FontSize="11" FontWeight="Bold" Foreground="#8E95A5" VerticalAlignment="Center"/>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsPowerSavingEnabled}" Value="True">
+                                                                            <Setter TargetName="b" Property="Background" Value="#147EEE"/>
+                                                                            <Setter TargetName="t" Property="Foreground" Value="#FFFFFF"/>
+                                                                        </DataTrigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                        </Button>
+                                                        <Button Command="{Binding TogglePowerSavingCommand}" Cursor="Hand">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border x:Name="b" Background="Transparent" CornerRadius="0,5,5,0" Padding="14,0">
+                                                                        <TextBlock x:Name="t" Text="Disable" FontSize="11" FontWeight="Bold" Foreground="#8E95A5" VerticalAlignment="Center"/>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsPowerSavingEnabled}" Value="False">
+                                                                            <Setter TargetName="b" Property="Background" Value="#147EEE"/>
+                                                                            <Setter TargetName="t" Property="Foreground" Value="#FFFFFF"/>
+                                                                        </DataTrigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Border>
+                                            </Grid>
+
+                                            <!-- Adaptive Graphics (Enable | Disable) -->
+                                            <Grid Margin="0,0,0,12">
+                                                <TextBlock Text="Adaptive Graphics" FontSize="12" FontWeight="SemiBold" Foreground="#CBD5E1" VerticalAlignment="Center"/>
+                                                <Border HorizontalAlignment="Right" Background="#141824" BorderBrush="#242B3C" BorderThickness="1" CornerRadius="6" Height="30">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Button Command="{Binding ToggleAdaptiveGraphicsCommand}" Cursor="Hand">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border x:Name="b" Background="Transparent" CornerRadius="5,0,0,5" Padding="14,0">
+                                                                        <TextBlock x:Name="t" Text="Enable" FontSize="11" FontWeight="Bold" Foreground="#8E95A5" VerticalAlignment="Center"/>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsAdaptiveGraphicsEnabled}" Value="True">
+                                                                            <Setter TargetName="b" Property="Background" Value="#147EEE"/>
+                                                                            <Setter TargetName="t" Property="Foreground" Value="#FFFFFF"/>
+                                                                        </DataTrigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                        </Button>
+                                                        <Button Command="{Binding ToggleAdaptiveGraphicsCommand}" Cursor="Hand">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border x:Name="b" Background="Transparent" CornerRadius="0,5,5,0" Padding="14,0">
+                                                                        <TextBlock x:Name="t" Text="Disable" FontSize="11" FontWeight="Bold" Foreground="#8E95A5" VerticalAlignment="Center"/>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsAdaptiveGraphicsEnabled}" Value="False">
+                                                                            <Setter TargetName="b" Property="Background" Value="#147EEE"/>
+                                                                            <Setter TargetName="t" Property="Foreground" Value="#FFFFFF"/>
+                                                                        </DataTrigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Border>
+                                            </Grid>
+
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- ── 5. PARAMETERS & SCREEN TUNING (MATCHING IMAGE 5) ── -->
+                            <Grid Margin="0,0,0,18">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="20"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Brightness -->
+                                <Border Grid.Column="0" Background="#10121A" BorderBrush="#1C212E" BorderThickness="1" CornerRadius="12" Padding="18,14">
+                                    <StackPanel>
+                                        <Grid Margin="0,0,0,8">
+                                            <TextBlock Text="Brightness" FontSize="12.5" FontWeight="Bold" Foreground="#CBD5E1" VerticalAlignment="Center"/>
+                                            <Border HorizontalAlignment="Right" Background="#182338" CornerRadius="5" Padding="8,2">
+                                                <TextBlock FontSize="12" FontWeight="Bold" Foreground="#38BDF8">
+                                                    <Run Text="{Binding ActiveSavBrightness, StringFormat='{}{0:0}'}"/>%
+                                                </TextBlock>
+                                            </Border>
+                                        </Grid>
+
+                                        <!-- Slider with [-] and [+] -->
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="34"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="34"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Button Grid.Column="0" Command="{Binding DecreaseBrightnessCommand}" Cursor="Hand" Height="30">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="#161B26" BorderBrush="#263145" BorderThickness="1" CornerRadius="6">
+                                                            <TextBlock Text="-" FontSize="16" FontWeight="Bold" Foreground="#CBD5E1" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+
+                                            <Slider Grid.Column="1" Minimum="80" Maximum="150" Value="{Binding ActiveSavBrightness, Mode=TwoWay}"
+                                                    Height="26" VerticalAlignment="Center" Margin="10,0" Style="{StaticResource ParamSliderStyle}"/>
+
+                                            <Button Grid.Column="2" Command="{Binding IncreaseBrightnessCommand}" Cursor="Hand" Height="30">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="#161B26" BorderBrush="#263145" BorderThickness="1" CornerRadius="6">
+                                                            <TextBlock Text="+" FontSize="14" FontWeight="Bold" Foreground="#CBD5E1" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- UI for Non-Standard Screens -->
+                                <Border Grid.Column="2" Background="#10121A" BorderBrush="#1C212E" BorderThickness="1" CornerRadius="12" Padding="18,14">
+                                    <StackPanel>
+                                        <Grid Margin="0,0,0,8">
+                                            <TextBlock Text="UI for Non-Standard Screens" FontSize="12.5" FontWeight="Bold" Foreground="#CBD5E1" VerticalAlignment="Center"/>
+                                            <Border HorizontalAlignment="Right" Background="#182338" CornerRadius="5" Padding="8,2">
+                                                <TextBlock FontSize="12" FontWeight="Bold" Foreground="#38BDF8">
+                                                    Current: <Run Text="{Binding ActiveSavNonStandardScreen, StringFormat='{}{0:0.0}'}"/>
+                                                </TextBlock>
+                                            </Border>
+                                        </Grid>
+
+                                        <!-- Slider with [-] and [+] -->
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="34"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="34"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Button Grid.Column="0" Command="{Binding DecreaseScreenScaleCommand}" Cursor="Hand" Height="30">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="#161B26" BorderBrush="#263145" BorderThickness="1" CornerRadius="6">
+                                                            <TextBlock Text="-" FontSize="16" FontWeight="Bold" Foreground="#CBD5E1" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+
+                                            <Slider Grid.Column="1" Minimum="0" Maximum="50" Value="{Binding ActiveSavNonStandardScreen, Mode=TwoWay}"
+                                                    Height="26" VerticalAlignment="Center" Margin="10,0" Style="{StaticResource ParamSliderStyle}"/>
+
+                                            <Button Grid.Column="2" Command="{Binding IncreaseScreenScaleCommand}" Cursor="Hand" Height="30">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="#161B26" BorderBrush="#263145" BorderThickness="1" CornerRadius="6">
+                                                            <TextBlock Text="+" FontSize="14" FontWeight="Bold" Foreground="#CBD5E1" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- ── 6. MASTER 1-CLICK APPLY BUTTON & FEEDBACK ── -->
+                            <Border Background="#101520" BorderBrush="#1C273C" BorderThickness="1" CornerRadius="12" Padding="18,16">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
+                                            <TextBlock Text="⚡ Save &amp; Inject Active.sav Configs" FontSize="13.5" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                            <Border Background="#162E25" CornerRadius="4" Padding="6,1" Margin="8,0,0,0">
+                                                <TextBlock Text="AUTO ADB SYNC" FontSize="9.5" FontWeight="Bold" Foreground="#34D399"/>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding ActiveSavStatusMessage}" FontSize="11.5" Foreground="#38BDF8" TextWrapping="Wrap"/>
+                                    </StackPanel>
+
+                                    <!-- Master Apply Button -->
+                                    <Button Grid.Column="1" Command="{Binding ApplyActiveSavConfigCommand}" Cursor="Hand" Height="42" VerticalAlignment="Center">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="applyBox" Background="#147EEE" BorderBrush="#38BDF8" BorderThickness="1" CornerRadius="10" Padding="22,0">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="⚡" FontSize="13" Foreground="#FFFFFF" Margin="0,0,8,0"/>
+                                                        <TextBlock Text="Apply In-Game Graphics" FontSize="13" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="applyBox" Property="Background" Value="#0284C7"/>
+                                                        <Setter TargetName="applyBox" Property="BorderBrush" Value="#7DD3FC"/>
+                                                    </Trigger>
+                                                    <DataTrigger Binding="{Binding IsApplyingActiveSav}" Value="True">
+                                                        <Setter TargetName="applyBox" Property="Opacity" Value="0.6"/>
+                                                    </DataTrigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
+                            </Border>
+
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <!-- 4. SLIDE 2: GAMELOOP OPTIMIZER (THIRD PAGE)                 -->
+                <!-- ═══════════════════════════════════════════════════════════ -->
+                <StackPanel Visibility="{Binding IsPage3Active, Converter={StaticResource BoolToVis}}">
+
+                    <!-- 1-Click Master Action Banner -->
+                    <Border Background="#0C1018" BorderBrush="#1C2638" BorderThickness="1.5" CornerRadius="16" Padding="24,20" Margin="0,0,0,20">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,20,0">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="⚡ 1-Click Extreme GameLoop Boost" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                    <Border Background="#162E25" BorderBrush="#255A43" BorderThickness="1" CornerRadius="8" Padding="8,2" Margin="12,0,0,0">
+                                        <TextBlock Text="SAFE AUTO-CLOSE" FontSize="10" FontWeight="Bold" Foreground="#34D399"/>
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="Applies all 14 MobileGamePC engine registers, zero-lag IFEO queues (D:\Lag Pix\Gameloop), and High CPU priority. Automatically safe-closes GameLoop before applying."
+                                           FontSize="12" Foreground="#94A3B8" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding TweakStatusMessage}" FontSize="12" FontWeight="SemiBold"
+                                           Foreground="#38BDF8" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+
+                            <!-- Action Buttons: Revert & Apply -->
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <!-- Revert All Button -->
+                                <Button Command="{Binding RevertAllToDefaultsCommand}" Cursor="Hand" Height="44" Margin="0,0,10,0">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="rBtn" Background="#141822" BorderBrush="#252F42" BorderThickness="1" CornerRadius="10" Padding="16,0">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="↺" FontSize="13" Foreground="#94A3B8" Margin="0,0,8,0"/>
+                                                    <TextBlock Text="Revert All to Defaults" FontSize="12.5" FontWeight="SemiBold" Foreground="#CBD5E1"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="rBtn" Property="Background" Value="#1C2436"/>
+                                                    <Setter TargetName="rBtn" Property="BorderBrush" Value="#38BDF8"/>
+                                                </Trigger>
+                                                <DataTrigger Binding="{Binding IsApplyingAllTweaks}" Value="True">
+                                                    <Setter TargetName="rBtn" Property="Opacity" Value="0.6"/>
+                                                </DataTrigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+
+                                <!-- Master Apply Button -->
+                                <Button Command="{Binding ApplyAllEngineTweaksCommand}" Cursor="Hand" Height="44">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="mBtn" Background="#147EEE" BorderBrush="#38BDF8" BorderThickness="1" CornerRadius="10" Padding="20,0">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="⚡" FontSize="13" Foreground="#FFFFFF" Margin="0,0,8,0"/>
+                                                    <TextBlock Text="Apply All Ultra Tweaks" FontSize="13" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="mBtn" Property="Background" Value="#0284C7"/>
+                                                    <Setter TargetName="mBtn" Property="BorderBrush" Value="#7DD3FC"/>
+                                                </Trigger>
+                                                <DataTrigger Binding="{Binding IsApplyingAllTweaks}" Value="True">
+                                                    <Setter TargetName="mBtn" Property="Opacity" Value="0.6"/>
+                                                </DataTrigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- CARD 1: MobileGamePC Engine Registry Tweaks (The 14 Keys Table) -->
+                    <Border Background="#0B0C10" BorderBrush="#1C202C" BorderThickness="1" CornerRadius="14" Padding="22,18" Margin="0,0,0,20">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="GameLoop MobileGamePC Engine Registry Tweaks" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                    <TextBlock Text="Path: HKLM\SOFTWARE\WOW6432Node\Tencent\MobileGamePC" FontSize="11" Foreground="#64748B" FontFamily="Consolas, monospace" Margin="0,2,0,0"/>
+                                </StackPanel>
+
+                                <!-- Card 1 Actions: Apply All + 14 Engine Keys Badge -->
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Command="{Binding RevertAllMobileGamePcCommand}" Cursor="Hand" Height="28" Margin="0,0,8,0"
+                                            ToolTip="Remove all 14 newly created MobileGamePC keys from registry">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="rb" Background="#141822" BorderBrush="#252F42" BorderThickness="1" CornerRadius="8" Padding="12,0">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="↺" FontSize="11" Foreground="#94A3B8" Margin="0,0,5,0"/>
+                                                        <TextBlock Text="Revert All" FontSize="11" FontWeight="SemiBold" Foreground="#CBD5E1"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="rb" Property="Background" Value="#1C2436"/>
+                                                        <Setter TargetName="rb" Property="BorderBrush" Value="#38BDF8"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                    <Button Command="{Binding ApplyAllMobileGamePcCommand}" Cursor="Hand" Height="28" Margin="0,0,10,0"
+                                            ToolTip="Apply all 14 MobileGamePC engine registers">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="ab" Background="#147EEE" BorderBrush="#38BDF8" BorderThickness="1" CornerRadius="8" Padding="14,0">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="⚡" FontSize="11" Foreground="#FFFFFF" Margin="0,0,5,0"/>
+                                                        <TextBlock Text="Apply All" FontSize="11" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="ab" Property="Background" Value="#0284C7"/>
+                                                        <Setter TargetName="ab" Property="BorderBrush" Value="#7DD3FC"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                    <Border Background="#161822" BorderBrush="#252A3C" BorderThickness="1" CornerRadius="8" Padding="10,4">
+                                        <TextBlock Text="14 Engine Keys" FontSize="11" FontWeight="SemiBold" Foreground="#38BDF8"/>
+                                    </Border>
                                 </StackPanel>
                             </Grid>
 
-                            <!-- Slider (60 to 120 FPS) -->
-                            <Slider Minimum="60" Maximum="120" Value="{Binding TargetFps}"
-                                    IsSnapToTickEnabled="True" TickFrequency="5"
-                                    Height="24" Margin="0,0,0,16"/>
+                            <!-- 2-Column Grid of 14 Items -->
+                            <ItemsControl ItemsSource="{Binding MobileGamePcItems}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="2"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#12141C" BorderBrush="#1C212E" BorderThickness="1" CornerRadius="10"
+                                                Padding="14,10" Margin="4,4">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
 
-                            <!-- Flat Toggle Button (Capsule, No Glow, No Icons) -->
-                            <Button Command="{Binding ToggleFrameGenCommand}" Cursor="Hand" Height="38">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="BtnBox" CornerRadius="8" BorderThickness="1"
-                                                Background="{Binding IsFrameGenActive, Converter={StaticResource BoolToVis}}"
-                                                HorizontalAlignment="Stretch">
-                                            <Border.Style>
-                                                <Style TargetType="Border">
-                                                    <Setter Property="Background" Value="#171717"/>
-                                                    <Setter Property="BorderBrush" Value="#262626"/>
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsFrameGenActive}" Value="True">
-                                                            <Setter Property="Background" Value="#147EEE"/>
-                                                            <Setter Property="BorderBrush" Value="#147EEE"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Border.Style>
-                                            <TextBlock Text="{Binding FrameGenToggleText}" FontSize="12" FontWeight="Bold"
-                                                       Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding DisplayName}" FontSize="12.5" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+                                                        <Border Background="#1E2330" CornerRadius="4" Padding="5,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                                            <TextBlock FontSize="10" Foreground="#38BDF8" FontFamily="Consolas, monospace">
+                                                                <Run Text="{Binding KeyName}"/> = <Run Text="{Binding FormattedValue}"/>
+                                                            </TextBlock>
+                                                        </Border>
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Description}" FontSize="10.5" Foreground="#8E95A5" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                                </StackPanel>
+
+                                                <!-- Modern Pill Toggle Switch -->
+                                                <ToggleButton Grid.Column="1"
+                                                              IsChecked="{Binding IsApplied, Mode=TwoWay}"
+                                                              Command="{Binding DataContext.ToggleRegistryItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                              CommandParameter="{Binding}"
+                                                              Cursor="Hand" VerticalAlignment="Center">
+                                                    <ToggleButton.Template>
+                                                        <ControlTemplate TargetType="ToggleButton">
+                                                            <Border x:Name="pillTrack" Width="44" Height="24" CornerRadius="12"
+                                                                    Background="#1E2330" BorderBrush="#2F3648" BorderThickness="1">
+                                                                <Canvas Width="44" Height="24">
+                                                                    <Ellipse x:Name="pillThumb" Width="18" Height="18" Fill="#64748B"
+                                                                             Canvas.Left="3" Canvas.Top="2">
+                                                                        <Ellipse.Effect>
+                                                                            <DropShadowEffect Color="#000000" BlurRadius="4" ShadowDepth="1" Opacity="0.4"/>
+                                                                        </Ellipse.Effect>
+                                                                    </Ellipse>
+                                                                </Canvas>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsChecked" Value="True">
+                                                                    <Setter TargetName="pillTrack" Property="Background" Value="#A3E635"/>
+                                                                    <Setter TargetName="pillTrack" Property="BorderBrush" Value="#BEF264"/>
+                                                                    <Setter TargetName="pillThumb" Property="Fill" Value="#0F172A"/>
+                                                                    <Setter TargetName="pillThumb" Property="Canvas.Left" Value="21"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="pillTrack" Property="BorderBrush" Value="#38BDF8"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </ToggleButton.Template>
+                                                </ToggleButton>
+                                            </Grid>
                                         </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="BtnBox" Property="Background" Value="#262626"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
                     </Border>
 
-                    <!-- CARD 2: GameLoop Debloater & Smart Cleaner -->
-                    <Border Background="#0A0A0A" BorderBrush="#262626" BorderThickness="1" CornerRadius="12"
-                            Padding="20" Margin="0,0,0,20">
+                    <!-- CARD 2: Responsiveness & Latency Tweaks -->
+                    <Border Background="#0B0C10" BorderBrush="#1C202C" BorderThickness="1" CornerRadius="14" Padding="22,18" Margin="0,0,0,20">
                         <StackPanel>
-                            <TextBlock Text="GameLoop Debloater &amp; Cache Purge" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"/>
-                            <TextBlock Text="Forcibly terminate background telemetry and deep-purge shader caches."
-                                       FontSize="11.5" Foreground="#8E95A5" Margin="0,3,0,12"/>
-
-                            <!-- Thin Divider -->
-                            <Border Height="1" Background="#171717" Margin="0,0,0,14"/>
-
-                            <!-- Buttons Row -->
                             <Grid Margin="0,0,0,12">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="10"/>
-                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Kernel &amp; GPU Responsiveness Tweaks" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                    <TextBlock Text="Win32PrioritySeparation 0x26, zero-lag DPC queues, and direct thread scheduling" FontSize="11" Foreground="#64748B" Margin="0,2,0,0"/>
+                                </StackPanel>
 
-                                <!-- Button 1: Kill Telemetry -->
-                                <Button Grid.Column="0" Command="{Binding KillTelemetryCommand}" Cursor="Hand" Height="36">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="Box1" Background="#171717" BorderBrush="#262626" BorderThickness="1" CornerRadius="8">
-                                                <TextBlock Text="Kill Telemetry" FontSize="11.5" FontWeight="Bold"
-                                                           Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="Box1" Property="Background" Value="#262626"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Command="{Binding RevertAllResponsivenessCommand}" Cursor="Hand" Height="28" Margin="0,0,8,0">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="rb2" Background="#141822" BorderBrush="#252F42" BorderThickness="1" CornerRadius="8" Padding="12,0">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="↺" FontSize="11" Foreground="#94A3B8" Margin="0,0,5,0"/>
+                                                        <TextBlock Text="Revert All" FontSize="11" FontWeight="SemiBold" Foreground="#CBD5E1"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="rb2" Property="Background" Value="#1C2436"/>
+                                                        <Setter TargetName="rb2" Property="BorderBrush" Value="#38BDF8"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
 
-                                <!-- Button 2: Deep Cache Purge -->
-                                <Button Grid.Column="2" Command="{Binding PurgeCacheCommand}" Cursor="Hand" Height="36">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="Box2" Background="#171717" BorderBrush="#262626" BorderThickness="1" CornerRadius="8">
-                                                <TextBlock Text="Deep Cache Purge" FontSize="11.5" FontWeight="Bold"
-                                                           Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="Box2" Property="Background" Value="#262626"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
+                                    <Button Command="{Binding ApplyAllResponsivenessCommand}" Cursor="Hand" Height="28" Margin="0,0,10,0">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="ab2" Background="#147EEE" BorderBrush="#38BDF8" BorderThickness="1" CornerRadius="8" Padding="14,0">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="⚡" FontSize="11" Foreground="#FFFFFF" Margin="0,0,5,0"/>
+                                                        <TextBlock Text="Apply All" FontSize="11" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="ab2" Property="Background" Value="#0284C7"/>
+                                                        <Setter TargetName="ab2" Property="BorderBrush" Value="#7DD3FC"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </StackPanel>
                             </Grid>
 
-                            <!-- Status Text -->
-                            <TextBlock Text="{Binding CleanerStatusText}" FontSize="11" Foreground="#52525B"
-                                       TextWrapping="Wrap"/>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
+                            <!-- Items List -->
+                            <ItemsControl ItemsSource="{Binding ResponsivenessItems}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="2"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#12141C" BorderBrush="#1C212E" BorderThickness="1" CornerRadius="10"
+                                                Padding="14,10" Margin="4,4">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
 
-                <!-- ── COLUMN 2 ── -->
-                <StackPanel Grid.Column="2">
+                                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding DisplayName}" FontSize="12.5" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+                                                        <Border Background="#1E2330" CornerRadius="4" Padding="5,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                                            <TextBlock FontSize="10" Foreground="#38BDF8" FontFamily="Consolas, monospace">
+                                                                <Run Text="{Binding KeyName}"/> = <Run Text="{Binding FormattedValue}"/>
+                                                            </TextBlock>
+                                                        </Border>
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Description}" FontSize="10.5" Foreground="#8E95A5" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                                </StackPanel>
 
-                    <!-- CARD 3: GameLoop Config Tweaker -->
-                    <Border Background="#0A0A0A" BorderBrush="#262626" BorderThickness="1" CornerRadius="12"
-                            Padding="20" Margin="0,0,0,20">
-                        <StackPanel>
-                            <TextBlock Text="GameLoop Config Tweaker" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"/>
-                            <TextBlock Text="Modify display resolution presets and rendering graphics pipeline."
-                                       FontSize="11.5" Foreground="#8E95A5" Margin="0,3,0,12"/>
-
-                            <!-- Thin Divider -->
-                            <Border Height="1" Background="#171717" Margin="0,0,0,14"/>
-
-                            <!-- Resolution Preset Dropdown -->
-                            <TextBlock Text="Resolution Preset" FontSize="11.5" Foreground="#8E95A5" Margin="0,0,0,6"/>
-                            <ComboBox ItemsSource="{Binding ResolutionOptions}"
-                                      SelectedIndex="{Binding SelectedResolutionIndex}"
-                                      Height="34" Margin="0,0,0,14" Background="#171717" Foreground="#FFFFFF"
-                                      BorderBrush="#262626"/>
-
-                            <!-- Engine Preset Dropdown -->
-                            <TextBlock Text="Rendering Backend Engine" FontSize="11.5" Foreground="#8E95A5" Margin="0,0,0,6"/>
-                            <ComboBox ItemsSource="{Binding EngineOptions}"
-                                      SelectedIndex="{Binding SelectedEngineIndex}"
-                                      Height="34" Margin="0,0,0,16" Background="#171717" Foreground="#FFFFFF"
-                                      BorderBrush="#262626"/>
-
-                            <!-- Save Settings Button -->
-                            <Button Command="{Binding SaveEngineSettingsCommand}" Cursor="Hand" Height="36">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="SaveBox" Background="#171717" BorderBrush="#262626" BorderThickness="1" CornerRadius="8">
-                                            <TextBlock Text="Save Engine Settings" FontSize="11.5" FontWeight="Bold"
-                                                       Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <ToggleButton Grid.Column="1"
+                                                              IsChecked="{Binding IsApplied, Mode=TwoWay}"
+                                                              Command="{Binding DataContext.ToggleRegistryItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                              CommandParameter="{Binding}"
+                                                              Cursor="Hand" VerticalAlignment="Center">
+                                                    <ToggleButton.Template>
+                                                        <ControlTemplate TargetType="ToggleButton">
+                                                            <Border x:Name="pillTrack" Width="44" Height="24" CornerRadius="12"
+                                                                    Background="#1E2330" BorderBrush="#2F3648" BorderThickness="1">
+                                                                <Canvas Width="44" Height="24">
+                                                                    <Ellipse x:Name="pillThumb" Width="18" Height="18" Fill="#64748B"
+                                                                             Canvas.Left="3" Canvas.Top="2">
+                                                                        <Ellipse.Effect>
+                                                                            <DropShadowEffect Color="#000000" BlurRadius="4" ShadowDepth="1" Opacity="0.4"/>
+                                                                        </Ellipse.Effect>
+                                                                    </Ellipse>
+                                                                </Canvas>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsChecked" Value="True">
+                                                                    <Setter TargetName="pillTrack" Property="Background" Value="#A3E635"/>
+                                                                    <Setter TargetName="pillTrack" Property="BorderBrush" Value="#BEF264"/>
+                                                                    <Setter TargetName="pillThumb" Property="Fill" Value="#0F172A"/>
+                                                                    <Setter TargetName="pillThumb" Property="Canvas.Left" Value="21"/>
+                                                                </Trigger>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="pillTrack" Property="BorderBrush" Value="#38BDF8"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </ToggleButton.Template>
+                                                </ToggleButton>
+                                            </Grid>
                                         </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="SaveBox" Property="Background" Value="#262626"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Button.Template>
-                            </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
                     </Border>
 
-                    <!-- CARD 4: Smart Process Suspender & GPU Router -->
-                    <Border Background="#0A0A0A" BorderBrush="#262626" BorderThickness="1" CornerRadius="12"
-                            Padding="20" Margin="0,0,0,20">
-                        <StackPanel>
-                            <TextBlock Text="Smart Process Suspender &amp; GPU Router" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"/>
-                            <TextBlock Text="Temporarily freezes background apps and routes dedicated GPU."
-                                       FontSize="11.5" Foreground="#8E95A5" Margin="0,3,0,12"/>
+                    <!-- 2-COLUMN GRID FOR DEBLOATER & PROCESS SUSPENDER -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
 
-                            <!-- Thin Divider -->
-                            <Border Height="1" Background="#171717" Margin="0,0,0,14"/>
+                        <!-- COLUMN 1: Debloater & Cache Purge -->
+                        <Border Grid.Column="0" Background="#0A0A0A" BorderBrush="#262626" BorderThickness="1" CornerRadius="12" Padding="20">
+                            <StackPanel>
+                                <TextBlock Text="GameLoop Debloater &amp; Cache Purge" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                <TextBlock Text="Forcibly terminate background telemetry and deep-purge shader caches."
+                                           FontSize="11.5" Foreground="#8E95A5" Margin="0,3,0,12"/>
 
-                            <!-- Buttons Row -->
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="10"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
+                                <Border Height="1" Background="#171717" Margin="0,0,0,14"/>
 
-                                <!-- Button 1: Toggle Suspend -->
-                                <Button Grid.Column="0" Command="{Binding ToggleProcessSuspenderCommand}" Cursor="Hand" Height="36">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="SusBox" BorderThickness="1" CornerRadius="8">
-                                                <Border.Style>
-                                                    <Style TargetType="Border">
-                                                        <Setter Property="Background" Value="#171717"/>
-                                                        <Setter Property="BorderBrush" Value="#262626"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsProcessSuspendActive}" Value="True">
-                                                                <Setter Property="Background" Value="#D1FE29"/>
-                                                                <Setter Property="BorderBrush" Value="#D1FE29"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Border.Style>
-                                                <TextBlock FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <TextBlock.Style>
-                                                        <Style TargetType="TextBlock">
-                                                            <Setter Property="Text" Value="Suspend Apps"/>
-                                                            <Setter Property="Foreground" Value="#FFFFFF"/>
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Button 1: Kill Telemetry -->
+                                    <Button Grid.Column="0" Command="{Binding KillTelemetryCommand}" Cursor="Hand" Height="36">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="KillBox" Background="#171717" BorderBrush="#262626" BorderThickness="1" CornerRadius="8">
+                                                    <TextBlock Text="Kill Telemetry" FontSize="11" FontWeight="Bold"
+                                                               Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="KillBox" Property="Background" Value="#262626"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+
+                                    <!-- Button 2: Deep Cache Purge -->
+                                    <Button Grid.Column="2" Command="{Binding PurgeCacheCommand}" Cursor="Hand" Height="36">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="PurgeBox" Background="#171717" BorderBrush="#262626" BorderThickness="1" CornerRadius="8">
+                                                    <TextBlock Text="Deep Cache Purge" FontSize="11" FontWeight="Bold"
+                                                               Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="PurgeBox" Property="Background" Value="#262626"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
+
+                                <TextBlock Text="{Binding CleanerStatusText}" FontSize="11" Foreground="#52525B"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- COLUMN 2: Process Suspender & GPU Router -->
+                        <Border Grid.Column="2" Background="#0A0A0A" BorderBrush="#262626" BorderThickness="1" CornerRadius="12" Padding="20">
+                            <StackPanel>
+                                <TextBlock Text="Smart Process Suspender &amp; GPU Router" FontSize="15" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                <TextBlock Text="Temporarily freezes background apps and routes dedicated GPU."
+                                           FontSize="11.5" Foreground="#8E95A5" Margin="0,3,0,12"/>
+
+                                <Border Height="1" Background="#171717" Margin="0,0,0,14"/>
+
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Button 1: Suspend Background Apps -->
+                                    <Button Grid.Column="0" Command="{Binding ToggleProcessSuspenderCommand}" Cursor="Hand" Height="36">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="SusBox" CornerRadius="8">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#171717"/>
+                                                            <Setter Property="BorderBrush" Value="#262626"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
                                                             <Style.Triggers>
                                                                 <DataTrigger Binding="{Binding IsProcessSuspendActive}" Value="True">
-                                                                    <Setter Property="Text" Value="Resume Apps"/>
-                                                                    <Setter Property="Foreground" Value="#000000"/>
+                                                                    <Setter Property="Background" Value="#10B981"/>
+                                                                    <Setter Property="BorderBrush" Value="#10B981"/>
                                                                 </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
-                                                    </TextBlock.Style>
-                                                </TextBlock>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="SusBox" Property="Opacity" Value="0.85"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
+                                                    </Border.Style>
+                                                    <TextBlock FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Text" Value="Suspend Apps"/>
+                                                                <Setter Property="Foreground" Value="#FFFFFF"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsProcessSuspendActive}" Value="True">
+                                                                        <Setter Property="Text" Value="Resume Apps"/>
+                                                                        <Setter Property="Foreground" Value="#000000"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="SusBox" Property="Opacity" Value="0.85"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
 
-                                <!-- Button 2: Force Dedicated GPU -->
-                                <Button Grid.Column="2" Command="{Binding ForceDedicatedGpuCommand}" Cursor="Hand" Height="36">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="GpuBox" Background="#171717" BorderBrush="#262626" BorderThickness="1" CornerRadius="8">
-                                                <TextBlock Text="Force GPU Route" FontSize="11" FontWeight="Bold"
-                                                           Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="GpuBox" Property="Background" Value="#262626"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
-                            </Grid>
+                                    <!-- Button 2: Force Dedicated GPU -->
+                                    <Button Grid.Column="2" Command="{Binding ForceDedicatedGpuCommand}" Cursor="Hand" Height="36">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="GpuBox" Background="#171717" BorderBrush="#262626" BorderThickness="1" CornerRadius="8">
+                                                    <TextBlock Text="Force GPU Route" FontSize="11" FontWeight="Bold"
+                                                               Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="GpuBox" Property="Background" Value="#262626"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
 
-                            <!-- Status text -->
-                            <TextBlock Text="{Binding SuspendedStatusText}" FontSize="11" Foreground="#52525B"/>
-                        </StackPanel>
-                    </Border>
+                                <TextBlock Text="{Binding SuspendedStatusText}" FontSize="11" Foreground="#52525B"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
                 </StackPanel>
-            </Grid>
-        </StackPanel>
-    </ScrollViewer>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ── 2. PINNED BOTTOM GRADIENT FADE OVERLAY (CONTENT SCROLLS BEHIND THIS) ── -->
+        <Border VerticalAlignment="Bottom" Height="85" IsHitTestVisible="False" Panel.ZIndex="90">
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#000B0C0E" Offset="0.0"/>
+                    <GradientStop Color="#200B0C0E" Offset="0.25"/>
+                    <GradientStop Color="#650B0C0E" Offset="0.5"/>
+                    <GradientStop Color="#B50B0C0E" Offset="0.75"/>
+                    <GradientStop Color="#FF0B0C0E" Offset="1.0"/>
+                </LinearGradientBrush>
+            </Border.Background>
+        </Border>
+
+        <!-- ── 3. PINNED BOTTOM CAROUSEL DOTS (MOUSE WHEEL SWITCHING MATCHING ADVANCE TAB) ── -->
+        <Border x:Name="BottomPaginationDotsBorder" Panel.ZIndex="100" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                Width="320" Height="46" Margin="0,0,90,0" Background="Transparent" BorderThickness="0"
+                PreviewMouseWheel="PaginationBar_PreviewMouseWheel"
+                FocusVisualStyle="{x:Null}" ClipToBounds="False">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <!-- Dot 0: GameLoop Engine (Slide 0) -->
+                <Button Command="{Binding SelectSlideCommand}" CommandParameter="0"
+                        Cursor="Hand" Background="Transparent" BorderThickness="0"
+                        FocusVisualStyle="{x:Null}" IsTabStop="False" Padding="4,8" Margin="0,0,6,0">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="ToolTip" Value="GameLoop Engine (Click or scroll to switch)"/>
+                        </Style>
+                    </Button.Style>
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Grid Background="Transparent" Cursor="Hand" FocusVisualStyle="{x:Null}">
+                                <Border x:Name="DotPill" Height="10" Width="10" CornerRadius="5"
+                                        Background="#4A5568" SnapsToDevicePixels="True" UseLayoutRounding="True"/>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsPage1Active}" Value="True">
+                                    <Setter TargetName="DotPill" Property="Background" Value="#CBD5E1"/>
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="DotPill"
+                                                                 Storyboard.TargetProperty="Width"
+                                                                 To="42" Duration="0:0:0.32">
+                                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                    <DataTrigger.ExitActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="DotPill"
+                                                                 Storyboard.TargetProperty="Width"
+                                                                 To="10" Duration="0:0:0.32">
+                                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.ExitActions>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsPage1Active}" Value="False"/>
+                                        <Condition Binding="{Binding Path=IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter TargetName="DotPill" Property="Background" Value="#94A3B8"/>
+                                </MultiDataTrigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <!-- Dot 1: In-Game Unlocker (Slide 1) -->
+                <Button Command="{Binding SelectSlideCommand}" CommandParameter="1"
+                        Cursor="Hand" Background="Transparent" BorderThickness="0"
+                        FocusVisualStyle="{x:Null}" IsTabStop="False" Padding="4,8" Margin="0,0,6,0">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="ToolTip" Value="In-Game Unlocker (Click or scroll to switch)"/>
+                        </Style>
+                    </Button.Style>
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Grid Background="Transparent" Cursor="Hand" FocusVisualStyle="{x:Null}">
+                                <Border x:Name="DotPill" Height="10" Width="10" CornerRadius="5"
+                                        Background="#4A5568" SnapsToDevicePixels="True" UseLayoutRounding="True"/>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsPage2Active}" Value="True">
+                                    <Setter TargetName="DotPill" Property="Background" Value="#CBD5E1"/>
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="DotPill"
+                                                                 Storyboard.TargetProperty="Width"
+                                                                 To="42" Duration="0:0:0.32">
+                                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                    <DataTrigger.ExitActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="DotPill"
+                                                                 Storyboard.TargetProperty="Width"
+                                                                 To="10" Duration="0:0:0.32">
+                                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.ExitActions>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsPage2Active}" Value="False"/>
+                                        <Condition Binding="{Binding Path=IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter TargetName="DotPill" Property="Background" Value="#94A3B8"/>
+                                </MultiDataTrigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <!-- Dot 2: GameLoop Optimizer (Slide 2) -->
+                <Button Command="{Binding SelectSlideCommand}" CommandParameter="2"
+                        Cursor="Hand" Background="Transparent" BorderThickness="0"
+                        FocusVisualStyle="{x:Null}" IsTabStop="False" Padding="4,8" Margin="0,0,0,0">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="ToolTip" Value="GameLoop Optimizer (Click or scroll to switch)"/>
+                        </Style>
+                    </Button.Style>
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Grid Background="Transparent" Cursor="Hand" FocusVisualStyle="{x:Null}">
+                                <Border x:Name="DotPill" Height="10" Width="10" CornerRadius="5"
+                                        Background="#4A5568" SnapsToDevicePixels="True" UseLayoutRounding="True"/>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsPage3Active}" Value="True">
+                                    <Setter TargetName="DotPill" Property="Background" Value="#CBD5E1"/>
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="DotPill"
+                                                                 Storyboard.TargetProperty="Width"
+                                                                 To="42" Duration="0:0:0.32">
+                                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                    <DataTrigger.ExitActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="DotPill"
+                                                                 Storyboard.TargetProperty="Width"
+                                                                 To="10" Duration="0:0:0.32">
+                                                    <DoubleAnimation.EasingFunction><CubicEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
+                                                </DoubleAnimation>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.ExitActions>
+                                </DataTrigger>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsPage3Active}" Value="False"/>
+                                        <Condition Binding="{Binding Path=IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter TargetName="DotPill" Property="Background" Value="#94A3B8"/>
+                                </MultiDataTrigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </StackPanel>
+        </Border>
+    </Grid>
 </UserControl>

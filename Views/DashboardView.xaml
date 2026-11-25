@@ -13,6 +13,76 @@
         <converters:PercentageToStrokeDashArrayConverter x:Key="PctToDash"/>
         <converters:ArcGaugeStrokeDashConverter x:Key="ArcGaugeDash"/>
         <converters:ArchPathDashConverter x:Key="ArchPathDash"/>
+
+        <!-- ── Mini Slim ScrollBar for Storage Card (Podima podi scroll) ── -->
+        <Style x:Key="MiniSlimScrollBarThumb" TargetType="Thumb">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Border x:Name="thumb" Width="3" CornerRadius="1.5" Background="#4A5568" HorizontalAlignment="Right" Margin="0,1,1,1">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#38BDF8"/>
+                                            <Setter Property="Width" Value="4.5"/>
+                                            <Setter Property="CornerRadius" Value="2"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="MiniSlimScrollBar" TargetType="ScrollBar">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Width" Value="6"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid Background="Transparent">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource MiniSlimScrollBarThumb}"/>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="MiniSlimScrollViewer" TargetType="ScrollViewer">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollViewer">
+                        <Grid Background="Transparent">
+                            <ScrollContentPresenter x:Name="PART_ScrollContentPresenter"
+                                                    Margin="{TemplateBinding Padding}"
+                                                    CanContentScroll="{TemplateBinding CanContentScroll}"
+                                                    Content="{TemplateBinding Content}"
+                                                    ContentTemplate="{TemplateBinding ContentTemplate}"/>
+                            <ScrollBar x:Name="PART_VerticalScrollBar"
+                                       Style="{StaticResource MiniSlimScrollBar}"
+                                       Orientation="Vertical"
+                                       HorizontalAlignment="Right"
+                                       Value="{TemplateBinding VerticalOffset}"
+                                       Maximum="{TemplateBinding ScrollableHeight}"
+                                       ViewportSize="{TemplateBinding ViewportHeight}"
+                                       Visibility="{TemplateBinding ComputedVerticalScrollBarVisibility}"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <!-- ═══════════════════════════════════════════════════════════════ -->
@@ -519,9 +589,8 @@
 
                 <!-- Status indicator + Re-Scan button -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <!-- Re-Scan Button (Visible when HasRunInitialScan is true) -->
+                    <!-- Re-Scan Button -->
                     <Button Command="{Binding ReScanSystemCommand}" Cursor="Hand" ToolTip="Re-Scan PC Hardware &amp; SMART Health"
-                            Visibility="{Binding HasRunInitialScan, Converter={StaticResource BoolToVis}}"
                             Background="#14151C" BorderBrush="#262832" BorderThickness="1"
                             MinWidth="98" Padding="10,4">
                         <Button.Template>
@@ -697,93 +766,9 @@
             </Grid>
 
             <!-- ═══════════════════════════════════════════════════════════ -->
-            <!-- 2.5 INITIAL HARDWARE SCAN CARD (VISIBLE BEFORE INITIAL SCAN) -->
-            <!-- ═══════════════════════════════════════════════════════════ -->
-            <Border Visibility="{Binding HasRunInitialScan, Converter={StaticResource InverseBoolToVis}}"
-                    CornerRadius="22" Background="#14151D" BorderBrush="#20232E" BorderThickness="1.5"
-                    Padding="32,24" Margin="0,0,0,20">
-                <Border.Effect>
-                    <DropShadowEffect BlurRadius="20" ShadowDepth="3" Direction="270" Color="#000000" Opacity="0.5"/>
-                </Border.Effect>
-
-                <Grid>
-                    <!-- State A: Ready to Scan -->
-                    <Grid Visibility="{Binding IsScanningSystem, Converter={StaticResource InverseBoolToVis}}">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- High-Tech Hardware Scan Icon -->
-                        <Border Grid.Column="0" Width="54" Height="54" CornerRadius="27" Background="#1A2030"
-                                BorderBrush="#00D4FF" BorderThickness="1.5" Margin="0,0,20,0" VerticalAlignment="Center">
-                            <TextBlock Text="&#xE946;" FontFamily="{StaticResource IconFont}" FontSize="24"
-                                       Foreground="#00D4FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-
-                        <!-- Heading and Information -->
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <TextBlock Text="SYSTEM HARDWARE &amp; HEALTH SCAN" FontFamily="{StaticResource PrimaryFont}"
-                                           FontSize="15" FontWeight="Black" Foreground="#FFFFFF"/>
-                                <Border CornerRadius="6" Background="#2000D4FF" BorderBrush="#4000D4FF" BorderThickness="1"
-                                        Padding="6,1" Margin="10,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock Text="FIRST TIME SETUP" FontSize="9.5" FontWeight="Bold" Foreground="#00D4FF"/>
-                                </Border>
-                            </StackPanel>
-                            <TextBlock Text="Run an initial diagnostics scan to detect your CPU, GPU, RAM, NVMe/HDD health status, and live gaming telemetry."
-                                       FontFamily="{StaticResource PrimaryFont}" FontSize="12.5" Foreground="#94A3B8" TextWrapping="Wrap"/>
-                        </StackPanel>
-
-                        <!-- Scan PC Button -->
-                        <Button Grid.Column="2" Command="{Binding ScanSystemCommand}" Cursor="Hand"
-                                Background="#00D4FF" BorderThickness="0" Margin="16,0,0,0" VerticalAlignment="Center">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="ScanBtnBorder" Background="{TemplateBinding Background}" CornerRadius="8" Padding="20,11">
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="14" ShadowDepth="0" Color="#00D4FF" Opacity="0.55"/>
-                                        </Border.Effect>
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <TextBlock Text="⚡" FontSize="13" Foreground="#0A0B0E" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                            <TextBlock Text="SCAN PC HARDWARE" FontFamily="{StaticResource PrimaryFont}"
-                                                       FontSize="12.5" FontWeight="Black" Foreground="#0A0B0E" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="ScanBtnBorder" Property="Background" Value="#60E8FF"/>
-                                            <Setter TargetName="ScanBtnBorder" Property="Effect">
-                                                <Setter.Value>
-                                                    <DropShadowEffect BlurRadius="20" ShadowDepth="0" Color="#00D4FF" Opacity="0.85"/>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-                    </Grid>
-
-                    <!-- State B: Scanning in Progress -->
-                    <StackPanel Visibility="{Binding IsScanningSystem, Converter={StaticResource BoolToVis}}" VerticalAlignment="Center">
-                        <Grid Margin="0,0,0,10">
-                            <TextBlock Text="{Binding ScanProgressText}" FontFamily="{StaticResource PrimaryFont}"
-                                       FontSize="13" FontWeight="Bold" Foreground="#00D4FF"/>
-                            <TextBlock Text="{Binding ScanProgressValue, StringFormat='{}{0:F0}%'}" HorizontalAlignment="Right"
-                                       FontFamily="{StaticResource PrimaryFont}" FontSize="13" FontWeight="Bold" Foreground="#FFFFFF"/>
-                        </Grid>
-                        <ProgressBar Value="{Binding ScanProgressValue}" Maximum="100" Height="6"
-                                     Foreground="{StaticResource AccentElectricBlueBrush}" Background="#1E2330" BorderThickness="0"/>
-                    </StackPanel>
-                </Grid>
-            </Border>
-
-            <!-- ═══════════════════════════════════════════════════════════ -->
             <!-- 3. THE 4 CARDS: CPU, MEMORY, GPU, STORAGE (CRYPTO STYLE)   -->
             <!-- ═══════════════════════════════════════════════════════════ -->
-            <Grid Margin="0,0,0,20" Visibility="{Binding HasRunInitialScan, Converter={StaticResource BoolToVis}}">
+            <Grid Margin="0,0,0,20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="*"/>
@@ -963,61 +948,69 @@
                             </StackPanel>
 
                             <Border CornerRadius="6" Background="#171717" BorderBrush="#262626" BorderThickness="1" HorizontalAlignment="Right" Padding="7,2.5" VerticalAlignment="Center">
-                                <TextBlock Text="3 Drives" FontSize="10" FontWeight="SemiBold" Foreground="#D4D4D4"/>
+                                <TextBlock Text="{Binding StorageDrivesCountText}" FontSize="10" FontWeight="SemiBold" Foreground="#D4D4D4"/>
                             </Border>
                         </Grid>
 
-                        <!-- 3 Disks Stack -->
-                        <ItemsControl Grid.Row="1" ItemsSource="{Binding StorageDrives}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Margin="0,0,0,7" Padding="8,5" Background="#171717" CornerRadius="8"
-                                            BorderBrush="#262626" BorderThickness="1">
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
+                        <!-- Disks Stack (Scrolls with subtle 3px mini scrollbar only when > 3 drives) -->
+                        <ScrollViewer Grid.Row="1"
+                                      Style="{StaticResource MiniSlimScrollViewer}"
+                                      MaxHeight="172"
+                                      Padding="0,0,2,0"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      PreviewMouseWheel="StorageScrollViewer_PreviewMouseWheel">
+                            <ItemsControl ItemsSource="{Binding StorageDrives}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="0,0,0,7" Padding="8,5" Background="#171717" CornerRadius="8"
+                                                BorderBrush="#262626" BorderThickness="1">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
 
-                                            <!-- Row 1: Drive Letter & Model + Media Type Badge -->
-                                            <Grid Grid.Row="0">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="{Binding DriveLetter}" FontWeight="Bold" FontSize="11"
-                                                               Foreground="#FAFAFA" Margin="0,0,4,0"/>
-                                                    <TextBlock Text="{Binding ModelName}" FontSize="10"
-                                                               Foreground="#8A8A8A" MaxWidth="100" TextTrimming="CharacterEllipsis"/>
-                                                </StackPanel>
+                                                <!-- Row 1: Drive Letter & Model + Media Type Badge -->
+                                                <Grid Grid.Row="0">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding DriveLetter}" FontWeight="Bold" FontSize="11"
+                                                                   Foreground="#FAFAFA" Margin="0,0,4,0"/>
+                                                        <TextBlock Text="{Binding ModelName}" FontSize="10"
+                                                                   Foreground="#8A8A8A" MaxWidth="100" TextTrimming="CharacterEllipsis"/>
+                                                    </StackPanel>
 
-                                                <!-- NVMe / SSD / HDD Pill Badge -->
-                                                <Border CornerRadius="6" Background="#1E2330" HorizontalAlignment="Right" Padding="6,1">
-                                                    <TextBlock Text="{Binding MediaType}" FontSize="9" FontWeight="Bold"
-                                                               Foreground="{Binding MediaType, Converter={StaticResource MediaTypeToBrush}}"/>
-                                                </Border>
+                                                    <!-- NVMe / SSD / HDD Pill Badge -->
+                                                    <Border CornerRadius="6" Background="#1E2330" HorizontalAlignment="Right" Padding="6,1">
+                                                        <TextBlock Text="{Binding MediaType}" FontSize="9" FontWeight="Bold"
+                                                                   Foreground="{Binding MediaType, Converter={StaticResource MediaTypeToBrush}}"/>
+                                                    </Border>
+                                                </Grid>
+
+                                                <!-- Row 2: Space used % and Drive Health Status -->
+                                                <Grid Grid.Row="1" Margin="0,3,0,3">
+                                                    <TextBlock Text="{Binding UsedSizeFormatted, StringFormat='{}Used: {0}'}"
+                                                               ToolTip="{Binding UsagePercentFormatted, StringFormat='{}Usage: {0}'}"
+                                                               FontSize="9.5" FontWeight="SemiBold" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                        <Ellipse Width="5" Height="5" Fill="{Binding HealthColorHex, Converter={StaticResource StringToBrush}}"
+                                                                 Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding HealthText}" FontSize="9.5" FontWeight="Bold"
+                                                                   Foreground="{Binding HealthColorHex, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Grid>
+
+                                                <!-- Row 3: Mini Progress Bar -->
+                                                <ProgressBar Grid.Row="2" Value="{Binding UsagePercent, Mode=OneWay}" Maximum="100" Height="3"
+                                                             Foreground="{Binding UsagePercent, Converter={StaticResource UsageToBrush}}"
+                                                             Background="#1F232F" BorderThickness="0"/>
                                             </Grid>
-
-                                            <!-- Row 2: Space used % and Drive Health Status -->
-                                            <Grid Grid.Row="1" Margin="0,3,0,3">
-                                                <TextBlock Text="{Binding UsedSizeFormatted, StringFormat='{}Used: {0}'}"
-                                                           ToolTip="{Binding UsagePercentFormatted, StringFormat='{}Usage: {0}'}"
-                                                           FontSize="9.5" FontWeight="SemiBold" Foreground="#94A3B8" VerticalAlignment="Center"/>
-                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                                                    <Ellipse Width="5" Height="5" Fill="{Binding HealthColorHex, Converter={StaticResource StringToBrush}}"
-                                                             Margin="0,0,4,0" VerticalAlignment="Center"/>
-                                                    <TextBlock Text="{Binding HealthText}" FontSize="9.5" FontWeight="Bold"
-                                                               Foreground="{Binding HealthColorHex, Converter={StaticResource StringToBrush}}" VerticalAlignment="Center"/>
-                                                </StackPanel>
-                                            </Grid>
-
-                                            <!-- Row 3: Mini Progress Bar -->
-                                            <ProgressBar Grid.Row="2" Value="{Binding UsagePercent, Mode=OneWay}" Maximum="100" Height="3"
-                                                         Foreground="{Binding UsagePercent, Converter={StaticResource UsageToBrush}}"
-                                                         Background="#1F232F" BorderThickness="0"/>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
                     </Grid>
                 </Border>
             </Grid>
@@ -1025,7 +1018,7 @@
             <!-- ═══════════════════════════════════════════════════════════ -->
             <!-- 4. SYSTEM SPECIFICATIONS & READINESS OVERVIEW               -->
             <!-- ═══════════════════════════════════════════════════════════ -->
-            <Grid Margin="0,18,0,0" Visibility="{Binding HasRunInitialScan, Converter={StaticResource BoolToVis}}">
+            <Grid Margin="0,18,0,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="360"/>
                     <ColumnDefinition Width="*"/>

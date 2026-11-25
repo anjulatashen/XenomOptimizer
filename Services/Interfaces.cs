@@ -156,4 +156,6 @@ public interface IGameLoopOptimizerService
     Task<OptimizationResult> SetAppMarketAutoCloseAsync(bool enable);
     Task<OptimizationResult> SafeCloseGameLoopAsync();
     Task<OptimizationResult> CleanShaderAndTempCacheAsync();
+    Task<OptimizationResult> LaunchOfficialUninstallAsync();
+    Task<OptimizationResult> FullNuclearCleanGameLoopAsync();
 }

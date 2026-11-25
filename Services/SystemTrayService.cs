@@ -1,221 +1,421 @@
 using System;
+using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Interop;
+using Microsoft.Win32;
+using XenomOptimizer.Models;
 using XenomOptimizer.ViewModels;
+using XenomOptimizer.Views;
+using Forms = System.Windows.Forms;
 
 namespace XenomOptimizer.Services;
 
 public class SystemTrayService : IDisposable
 {
-    private const int NIM_ADD = 0x00000000;
-    private const int NIM_MODIFY = 0x00000001;
-    private const int NIM_DELETE = 0x00000002;
-
-    private const int NIF_MESSAGE = 0x00000001;
-    private const int NIF_ICON = 0x00000002;
-    private const int NIF_TIP = 0x00000004;
-
-    private const int WM_USER = 0x0400;
-    public const int WM_TRAYICON = WM_USER + 101;
-    private const int WM_LBUTTONDBLCLK = 0x0203;
-    private const int WM_RBUTTONUP = 0x0205;
-
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-    private struct NOTIFYICONDATA
-    {
-        public int cbSize;
-        public IntPtr hWnd;
-        public int uID;
-        public int uFlags;
-        public int uCallbackMessage;
-        public IntPtr hIcon;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
-        public string szTip;
-        public int dwState;
-        public int dwStateMask;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
-        public string szInfo;
-        public int uTimeoutOrVersion;
-        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
-        public string szInfoTitle;
-        public int dwInfoFlags;
-        public Guid guidItem;
-        public IntPtr hBalloonIcon;
-    }
-
-    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
-    private static extern bool Shell_NotifyIcon(int dwMessage, ref NOTIFYICONDATA lpData);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern bool DestroyIcon(IntPtr hIcon);
-
     [DllImport("user32.dll")]
     private static extern bool SetForegroundWindow(IntPtr hWnd);
 
-    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-    private static extern IntPtr LoadImage(IntPtr hinst, string lpszName, uint uType, int cxDesired, int cyDesired, uint fuLoad);
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
-    private const uint IMAGE_ICON = 1;
-    private const uint LR_LOADFROMFILE = 0x00000010;
+    [DllImport("psapi.dll")]
+    private static extern int EmptyWorkingSet(IntPtr hwProc);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private class MEMORYSTATUSEX
+    {
+        public uint dwLength = (uint)Marshal.SizeOf(typeof(MEMORYSTATUSEX));
+        public uint dwMemoryLoad;
+        public ulong ullTotalPhys;
+        public ulong ullAvailPhys;
+        public ulong ullTotalPageFile;
+        public ulong ullAvailPageFile;
+        public ulong ullTotalVirtual;
+        public ulong ullAvailVirtual;
+        public ulong ullAvailExtendedVirtual;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GlobalMemoryStatusEx([In, Out] MEMORYSTATUSEX lpBuffer);
+
+    private const int SW_RESTORE = 9;
 
     private readonly Window _window;
     private readonly OptimizerFrameGenViewModel? _optimizerVm;
-    private IntPtr _hwnd;
-    private IntPtr _hIcon = IntPtr.Zero;
-    private bool _isIconCreated;
-    private ContextMenu? _trayContextMenu;
+    private Forms.NotifyIcon? _notifyIcon;
+    private TrayMenuWindow? _trayMenuWindow;
+    private bool _isFpsOn;
+    private bool _isDisposed;
 
     public SystemTrayService(Window window, OptimizerFrameGenViewModel? optimizerVm)
     {
         _window = window;
         _optimizerVm = optimizerVm;
 
-        _window.SourceInitialized += OnSourceInitialized;
+        _isFpsOn = GetGameLoopFpsState() || (_optimizerVm?.IsFrameGenActive == true);
+        InitializeTrayIcon();
     }
 
-    private void OnSourceInitialized(object? sender, EventArgs e)
-    {
-        var helper = new WindowInteropHelper(_window);
-        _hwnd = helper.Handle;
-
-        var source = HwndSource.FromHwnd(_hwnd);
-        source?.AddHook(WndProc);
-
-        CreateTrayIcon();
-        SetupContextMenu();
-    }
-
-    private void CreateTrayIcon()
+    private void InitializeTrayIcon()
     {
         try
         {
-            var icoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "xenom.ico");
-            if (File.Exists(icoPath))
+            _notifyIcon = new Forms.NotifyIcon
             {
-                _hIcon = LoadImage(IntPtr.Zero, icoPath, IMAGE_ICON, 16, 16, LR_LOADFROMFILE);
+                Text = "LAG Killer by XENOM",
+                Visible = true
+            };
+
+            // Load best matching icon
+            Icon? icon = null;
+            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            var candidates = new[]
+            {
+                Path.Combine(baseDir, "Assets", "xenom.ico"),
+                Path.Combine(baseDir, "xenom.ico"),
+                @"d:\Shop\Xenom Lag Fix\Assets\xenom.ico"
+            };
+
+            foreach (var path in candidates)
+            {
+                if (File.Exists(path))
+                {
+                    try
+                    {
+                        icon = new Icon(path);
+                        break;
+                    }
+                    catch
+                    {
+                    }
+                }
             }
-        }
-        catch
-        {
-        }
 
-        var nid = new NOTIFYICONDATA
-        {
-            cbSize = Marshal.SizeOf(typeof(NOTIFYICONDATA)),
-            hWnd = _hwnd,
-            uID = 1001,
-            uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP,
-            uCallbackMessage = WM_TRAYICON,
-            hIcon = _hIcon,
-            szTip = "Xenom Optimizer - Active"
-        };
+            if (icon == null)
+            {
+                try
+                {
+                    var exePath = Environment.ProcessPath;
+                    if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
+                    {
+                        icon = Icon.ExtractAssociatedIcon(exePath);
+                    }
+                }
+                catch
+                {
+                }
+            }
 
-        _isIconCreated = Shell_NotifyIcon(NIM_ADD, ref nid);
+            _notifyIcon.Icon = icon ?? SystemIcons.Application;
+
+            // Setup NZXT CAM-styled WPF Context Window
+            _window.Dispatcher.Invoke(() =>
+            {
+                _trayMenuWindow = new TrayMenuWindow
+                {
+                    OnToggleFps = () => _window.Dispatcher.Invoke(ToggleFps),
+                    OnCacheClean = () => _window.Dispatcher.Invoke(QuickCacheClean),
+                    OnFlushRam = () => _window.Dispatcher.Invoke(FlushStandbyRam),
+                    OnCloseGameLoop = () => _window.Dispatcher.Invoke(SafeCloseGameLoop),
+                    OnOpenApp = () => _window.Dispatcher.Invoke(RestoreWindow),
+                    OnExitApp = () => _window.Dispatcher.Invoke(ExitApplication)
+                };
+            });
+
+            // Handle tray mouse events
+            _notifyIcon.MouseUp += (s, e) =>
+            {
+                if (e.Button == Forms.MouseButtons.Right)
+                {
+                    _window.Dispatcher.Invoke(() =>
+                    {
+                        _isFpsOn = GetGameLoopFpsState() || (_optimizerVm?.IsFrameGenActive == true);
+                        var pos = Forms.Cursor.Position;
+                        _trayMenuWindow?.ShowMenu(_isFpsOn, pos.X, pos.Y);
+                    });
+                }
+                else if (e.Button == Forms.MouseButtons.Left)
+                {
+                    _window.Dispatcher.Invoke(RestoreWindow);
+                }
+            };
+
+            _notifyIcon.DoubleClick += (s, e) => _window.Dispatcher.Invoke(RestoreWindow);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Failed to initialize tray icon: {ex}");
+        }
     }
 
-    private void SetupContextMenu()
+    private void ToggleFps()
     {
-        _trayContextMenu = new ContextMenu
+        try
         {
-            Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(23, 23, 23)),
-            Foreground = System.Windows.Media.Brushes.White,
-            BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(38, 38, 38)),
-            BorderThickness = new Thickness(1),
-            Padding = new Thickness(4)
-        };
+            _isFpsOn = !_isFpsOn;
+            SetGameLoopFpsState(_isFpsOn);
+            _optimizerVm?.ToggleFrameGenCommand.Execute(null);
 
-        var mToggleFg = new MenuItem { Header = "Toggle Frame Gen", Foreground = System.Windows.Media.Brushes.White };
-        mToggleFg.Click += (s, e) => _optimizerVm?.ToggleFrameGenCommand.Execute(null);
-
-        var mCleanCache = new MenuItem { Header = "Quick Cache Clean", Foreground = System.Windows.Media.Brushes.White };
-        mCleanCache.Click += (s, e) => _optimizerVm?.PurgeCacheCommand.Execute(null);
-
-        var mCloseGameLoop = new MenuItem { Header = "Safe Close GameLoop", Foreground = System.Windows.Media.Brushes.White };
-        mCloseGameLoop.Click += (s, e) => _optimizerVm?.KillTelemetryCommand.Execute(null);
-
-        var mRestore = new MenuItem { Header = "Restore Xenom", FontWeight = FontWeights.Bold, Foreground = System.Windows.Media.Brushes.White };
-        mRestore.Click += (s, e) => RestoreWindow();
-
-        var mExit = new MenuItem { Header = "Exit Xenom", Foreground = System.Windows.Media.Brushes.LightCoral };
-        mExit.Click += (s, e) => ExitApplication();
-
-        _trayContextMenu.Items.Add(mToggleFg);
-        _trayContextMenu.Items.Add(mCleanCache);
-        _trayContextMenu.Items.Add(mCloseGameLoop);
-        _trayContextMenu.Items.Add(new Separator { Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(38, 38, 38)) });
-        _trayContextMenu.Items.Add(mRestore);
-        _trayContextMenu.Items.Add(mExit);
+            string status = _isFpsOn ? "GameLoop FPS Counter: Enabled" : "GameLoop FPS Counter: Disabled";
+            _notifyIcon?.ShowBalloonTip(2000, "LAG Killer by XENOM", status, Forms.ToolTipIcon.Info);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"ToggleFps error: {ex}");
+        }
     }
 
-    private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+    private void QuickCacheClean()
     {
-        if (msg == WM_TRAYICON)
+        Task.Run(() =>
         {
-            int eventId = lParam.ToInt32();
-            if (eventId == WM_LBUTTONDBLCLK)
+            try
             {
-                RestoreWindow();
-                handled = true;
+                var cleaner = new GameLoopCleanerService();
+                int purged = cleaner.DeepCachePurge();
+
+                _window.Dispatcher.Invoke(() =>
+                {
+                    if (_optimizerVm != null)
+                    {
+                        _optimizerVm.CleanerStatusText = $"Purged {purged} cache and shader objects successfully.";
+                    }
+                    _notifyIcon?.ShowBalloonTip(2500, "LAG Killer by XENOM", $"Quick Cache Clean Complete!\nPurged {purged} temporary cache & shader objects.", Forms.ToolTipIcon.Info);
+                });
             }
-            else if (eventId == WM_RBUTTONUP)
+            catch (Exception ex)
             {
-                ShowContextMenu();
-                handled = true;
+                _window.Dispatcher.Invoke(() =>
+                {
+                    _notifyIcon?.ShowBalloonTip(2500, "LAG Killer by XENOM", $"Cache clean error: {ex.Message}", Forms.ToolTipIcon.Warning);
+                });
+            }
+        });
+    }
+
+    private void FlushStandbyRam()
+    {
+        Task.Run(() =>
+        {
+            try
+            {
+                var before = new MEMORYSTATUSEX();
+                GlobalMemoryStatusEx(before);
+                ulong beforeAvail = before.ullAvailPhys;
+
+                // Purge working sets across running processes
+                var processes = System.Diagnostics.Process.GetProcesses();
+                foreach (var proc in processes)
+                {
+                    try
+                    {
+                        EmptyWorkingSet(proc.Handle);
+                    }
+                    catch { }
+                    finally
+                    {
+                        proc.Dispose();
+                    }
+                }
+
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+
+                var after = new MEMORYSTATUSEX();
+                GlobalMemoryStatusEx(after);
+                ulong afterAvail = after.ullAvailPhys;
+
+                long freedBytes = (long)afterAvail - (long)beforeAvail;
+                string msg;
+                if (freedBytes > 0)
+                {
+                    double freedMb = (double)freedBytes / 1048576.0;
+                    if (freedMb >= 1024.0)
+                        msg = $"Standby RAM purged! Freed {freedMb / 1024.0:0.1} GB physical memory.";
+                    else
+                        msg = $"Standby RAM purged! Freed {Math.Round(freedMb)} MB physical memory.";
+                }
+                else
+                {
+                    msg = "Standby RAM & working sets purged successfully!";
+                }
+
+                _window.Dispatcher.Invoke(() =>
+                {
+                    _notifyIcon?.ShowBalloonTip(2500, "LAG Killer by XENOM", msg, Forms.ToolTipIcon.Info);
+                });
+            }
+            catch (Exception ex)
+            {
+                _window.Dispatcher.Invoke(() =>
+                {
+                    _notifyIcon?.ShowBalloonTip(2500, "LAG Killer by XENOM", $"RAM purge error: {ex.Message}", Forms.ToolTipIcon.Warning);
+                });
+            }
+        });
+    }
+
+    private void SafeCloseGameLoop()
+    {
+        Task.Run(async () =>
+        {
+            try
+            {
+                var optimizer = App.Services?.GetService(typeof(IGameLoopOptimizerService)) as IGameLoopOptimizerService;
+                OptimizationResult? res = null;
+                if (optimizer != null)
+                {
+                    res = await optimizer.SafeCloseGameLoopAsync();
+                }
+                else
+                {
+                    int terminatedCount = 0;
+                    var targets = new[] { "AndroidProcess", "aow_exe", "AppMarket", "QMEmulatorService", "TBSGameLive", "AndroidEmulator", "AndroidEmulatorEn", "TSettingCenter", "GameLoader" };
+                    foreach (var name in targets)
+                    {
+                        var procs = System.Diagnostics.Process.GetProcessesByName(name);
+                        foreach (var proc in procs)
+                        {
+                            try
+                            {
+                                proc.CloseMainWindow();
+                                if (!proc.WaitForExit(1000)) proc.Kill();
+                                terminatedCount++;
+                            }
+                            catch { }
+                            finally { proc.Dispose(); }
+                        }
+                    }
+                    res = OptimizationResult.Succeeded($"GameLoop safely terminated ({terminatedCount} processes closed).");
+                }
+
+                _window.Dispatcher.Invoke(() =>
+                {
+                    string msg = res?.Message ?? "GameLoop safely terminated.";
+                    _notifyIcon?.ShowBalloonTip(2500, "LAG Killer by XENOM", msg, Forms.ToolTipIcon.Info);
+                });
+            }
+            catch (Exception ex)
+            {
+                _window.Dispatcher.Invoke(() =>
+                {
+                    _notifyIcon?.ShowBalloonTip(2500, "LAG Killer by XENOM", $"Error closing GameLoop: {ex.Message}", Forms.ToolTipIcon.Warning);
+                });
+            }
+        });
+    }
+
+    private static bool GetGameLoopFpsState()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(@"Software\Tencent\MobileGamePC");
+            if (key != null)
+            {
+                var val = key.GetValue("ShowFPS") ?? key.GetValue("ShowFps") ?? key.GetValue("FpsShow");
+                if (val is int intVal && intVal == 1) return true;
+                if (val is string strVal && (strVal == "1" || strVal.Equals("true", StringComparison.OrdinalIgnoreCase))) return true;
             }
         }
-        return IntPtr.Zero;
+        catch { }
+        return false;
+    }
+
+    private static void SetGameLoopFpsState(bool enable)
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.CreateSubKey(@"Software\Tencent\MobileGamePC");
+            if (key != null)
+            {
+                uint v = enable ? 1u : 0u;
+                key.SetValue("ShowFPS", v, RegistryValueKind.DWord);
+                key.SetValue("ShowFps", v, RegistryValueKind.DWord);
+                key.SetValue("FpsShow", v, RegistryValueKind.DWord);
+            }
+        }
+        catch { }
     }
 
     public void MinimizeToTray()
     {
+        WindowPlacementService.Save(_window);
+        if (_notifyIcon != null)
+        {
+            _notifyIcon.Visible = true;
+        }
+
+        _window.WindowState = WindowState.Minimized;
+        _window.ShowInTaskbar = false;
         _window.Hide();
     }
 
     public void RestoreWindow()
     {
-        _window.Show();
-        _window.WindowState = WindowState.Normal;
-        _window.Activate();
-    }
-
-    private void ShowContextMenu()
-    {
-        if (_trayContextMenu != null)
+        try
         {
-            SetForegroundWindow(_hwnd);
-            _trayContextMenu.IsOpen = true;
+            WindowPlacementService.EnsureWindowIsOnVisibleScreen(_window);
+            _window.Show();
+            _window.ShowInTaskbar = true;
+            if (_window.WindowState == WindowState.Minimized)
+            {
+                _window.WindowState = WindowState.Normal;
+            }
+            _window.Activate();
+            _window.Focus();
+
+            var hwnd = new WindowInteropHelper(_window).Handle;
+            if (hwnd != IntPtr.Zero)
+            {
+                ShowWindow(hwnd, SW_RESTORE);
+                SetForegroundWindow(hwnd);
+            }
         }
+        catch { }
     }
 
     public void ExitApplication()
     {
-        // Safe exit sequence: Resumes all suspended processes and stops frame gen
-        _optimizerVm?.CleanExit();
-        Dispose();
-        Application.Current.Shutdown();
+        try
+        {
+            WindowPlacementService.Save(_window);
+            _optimizerVm?.CleanExit();
+            Dispose();
+        }
+        catch { }
+        finally
+        {
+            Environment.Exit(0);
+        }
     }
 
     public void Dispose()
     {
-        if (_isIconCreated && _hwnd != IntPtr.Zero)
+        if (_isDisposed)
+            return;
+
+        _isDisposed = true;
+
+        if (_notifyIcon != null)
         {
-            var nid = new NOTIFYICONDATA
-            {
-                cbSize = Marshal.SizeOf(typeof(NOTIFYICONDATA)),
-                hWnd = _hwnd,
-                uID = 1001
-            };
-            Shell_NotifyIcon(NIM_DELETE, ref nid);
-            _isIconCreated = false;
+            _notifyIcon.Visible = false;
+            _notifyIcon.Dispose();
+            _notifyIcon = null;
         }
 
-        if (_hIcon != IntPtr.Zero)
+        _window.Dispatcher.Invoke(() =>
         {
-            DestroyIcon(_hIcon);
-            _hIcon = IntPtr.Zero;
-        }
+            try
+            {
+                _trayMenuWindow?.HideMenu();
+                _trayMenuWindow?.Close();
+            }
+            catch { }
+            _trayMenuWindow = null;
+        });
     }
 }

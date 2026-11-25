@@ -58,6 +58,8 @@ public partial class GameLoopOptimizationViewModel : ObservableObject
     [ObservableProperty] private bool _isAppMarketAutoCloseActive;
     [ObservableProperty] private string _doctorStatusMessage = "";
     [ObservableProperty] private string _storageStatusMessage = "";
+    [ObservableProperty] private string _cleanerStatusMessage = "";
+    [ObservableProperty] private bool _isCleaning;
 
     public ObservableCollection<OptimizationCardViewModel> Optimizations { get; } = new();
     public ObservableCollection<GameLoopConfigItem> ConfigItems { get; } = new();
@@ -238,7 +240,7 @@ public partial class GameLoopOptimizationViewModel : ObservableObject
         if (Is120FpsUnlocked)
         {
             Fps120StatusText = "120 FPS Ultra (Active ✓)";
-            Fps120DetailText = "Samsung SM-X910 (Galaxy Tab S9 120Hz) device profile active. In PUBG Mobile: Settings > Audio & Graphics, select 'Ultra Extreme (120 FPS)'.";
+            Fps120DetailText = "Samsung SM-X920 (Galaxy Tab S10+ 120Hz) device profile active. In PUBG Mobile: Settings > Audio & Graphics, select 'Ultra Extreme (120 FPS)' or 'HDR 90 FPS'.";
         }
         else
         {
@@ -387,10 +389,10 @@ public partial class GameLoopOptimizationViewModel : ObservableObject
         var (model, manufacturer, phoneName, fps) = index switch
         {
             0 => ("ASUS_AI2401_A", "asus", "ASUS ROG Phone 8 Pro", 120),
-            1 => ("SM-X910", "samsung", "Samsung Galaxy Tab S9 Ultra", 120),
+            1 => ("SM-X920", "samsung", "Samsung Galaxy Tab S10+ (SM-X920)", 120),
             2 => ("ASUS_I005D", "asus", "ASUS ROG Phone 5", 90),
             3 => ("2210132C", "xiaomi", "Xiaomi 13 Pro", 120),
-            _ => ("ASUS_AI2401_A", "asus", "ASUS ROG Phone 8 Pro", 120)
+            _ => ("SM-X920", "samsung", "Samsung Galaxy Tab S10+ (SM-X920)", 120)
         };
 
         DeviceSpoofStatus = $"Applying {phoneName}...";
@@ -447,6 +449,28 @@ public partial class GameLoopOptimizationViewModel : ObservableObject
         StorageStatusMessage = "Purging shader cache and temp logs...";
         var res = await _optimizer.CleanShaderAndTempCacheAsync();
         StorageStatusMessage = res.Message;
+    }
+
+    [RelayCommand]
+    private async Task UninstallGameLoopAsync()
+    {
+        CleanerStatusMessage = "Detecting and launching GameLoop uninstaller...";
+        var res = await _optimizer.LaunchOfficialUninstallAsync();
+        CleanerStatusMessage = res.Message;
+        StorageStatusMessage = res.Message;
+        StatusMessage = res.Message;
+    }
+
+    [RelayCommand]
+    private async Task NuclearCleanGameLoopAsync()
+    {
+        IsCleaning = true;
+        CleanerStatusMessage = "Executing 7-step nuclear wipe across all drives (terminating processes, stopping services, wiping registry & cache)...";
+        var res = await _optimizer.FullNuclearCleanGameLoopAsync();
+        CleanerStatusMessage = res.Message;
+        StorageStatusMessage = res.Message;
+        StatusMessage = res.Message;
+        IsCleaning = false;
     }
 }
 

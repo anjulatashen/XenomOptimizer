@@ -25,6 +25,27 @@ public static class ScrollBarAutoHideHelper
     public static bool GetAutoHide(DependencyObject obj) => (bool)obj.GetValue(AutoHideProperty);
     public static void SetAutoHide(DependencyObject obj, bool value) => obj.SetValue(AutoHideProperty, value);
 
+    public static readonly DependencyProperty AnimatedVerticalOffsetProperty =
+        DependencyProperty.RegisterAttached(
+            "AnimatedVerticalOffset",
+            typeof(double),
+            typeof(ScrollBarAutoHideHelper),
+            new PropertyMetadata(0.0, OnAnimatedVerticalOffsetChanged));
+
+    public static double GetAnimatedVerticalOffset(DependencyObject obj) => (double)obj.GetValue(AnimatedVerticalOffsetProperty);
+    public static void SetAnimatedVerticalOffset(DependencyObject obj, double value) => obj.SetValue(AnimatedVerticalOffsetProperty, value);
+
+    private static void OnAnimatedVerticalOffsetChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is ScrollViewer sv)
+        {
+            sv.ScrollToVerticalOffset((double)e.NewValue);
+        }
+    }
+
+    private static readonly DependencyProperty TargetOffsetProperty =
+        DependencyProperty.RegisterAttached("TargetOffset", typeof(double?), typeof(ScrollBarAutoHideHelper));
+
     private static readonly DependencyProperty TimerProperty =
         DependencyProperty.RegisterAttached("Timer", typeof(DispatcherTimer), typeof(ScrollBarAutoHideHelper));
 
@@ -216,6 +237,40 @@ public static class ScrollBarAutoHideHelper
         {
             var sb = FindChild<ScrollBar>(sv, "PART_VerticalScrollBar");
             if (sb != null) ShowAndScheduleHide(sb);
+
+            // Silky smooth animated scrolling (slow and smooth deceleration)
+            if (sv.ScrollableHeight > 0)
+            {
+                e.Handled = true;
+
+                double currentTarget = sv.GetValue(TargetOffsetProperty) as double? ?? sv.VerticalOffset;
+
+                // Sync if user dragged the thumb or scrolled by other means
+                if (Math.Abs(currentTarget - sv.VerticalOffset) > 60)
+                {
+                    currentTarget = sv.VerticalOffset;
+                }
+
+                // Step size per mouse wheel tick (calibrated for gentle, slow silky-smooth inertia scrolling)
+                double scrollStep = (e.Delta / 120.0) * 44.0;
+                double newTarget = Math.Clamp(currentTarget - scrollStep, 0, sv.ScrollableHeight);
+                sv.SetValue(TargetOffsetProperty, newTarget);
+
+                var animation = new DoubleAnimation
+                {
+                    From = sv.VerticalOffset,
+                    To = newTarget,
+                    Duration = TimeSpan.FromMilliseconds(480),
+                    EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                };
+
+                animation.Completed += (s, ev) =>
+                {
+                    sv.SetValue(TargetOffsetProperty, null);
+                };
+
+                sv.BeginAnimation(AnimatedVerticalOffsetProperty, animation, HandoffBehavior.SnapshotAndReplace);
+            }
         }
     }
 

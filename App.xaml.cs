@@ -1,35 +1,146 @@
+using System;
 using System.Configuration;
-
 using System.Data;
-
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows;
-
+using System.Windows.Controls;
 using Microsoft.Extensions.DependencyInjection;
-
 using XenomOptimizer.Services;
-
 using XenomOptimizer.ViewModels;
-
-
 
 namespace XenomOptimizer;
 
-
-
 public partial class App : Application
-
 {
-
     public static IServiceProvider Services { get; private set; } = null!;
 
+    private static Mutex? _singleInstanceMutex;
+    private static EventWaitHandle? _bringToFrontEvent;
+    private const string SingleInstanceMutexName = "Local\\XenomOptimizer_SingleInstance_Mutex_9A8B7C6D";
+    private const string BringToFrontEventName = "Local\\XenomOptimizer_BringToFront_Event_9A8B7C6D";
 
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    public static void ActivateRunningInstance()
+    {
+        Current?.Dispatcher?.Invoke(() =>
+        {
+            if (Current.MainWindow is MainWindow mw)
+            {
+                XenomOptimizer.Services.WindowPlacementService.EnsureWindowIsOnVisibleScreen(mw);
+                if (!mw.IsVisible)
+                {
+                    mw.Show();
+                }
+                mw.ShowInTaskbar = true;
+                if (mw.WindowState == WindowState.Minimized)
+                {
+                    mw.WindowState = WindowState.Normal;
+                }
+                mw.Activate();
+                mw.Topmost = true;
+                mw.Topmost = false;
+                mw.Focus();
+            }
+        });
+    }
+
+    private static void BringExistingProcessToFrontFallback()
+    {
+        try
+        {
+            var current = System.Diagnostics.Process.GetCurrentProcess();
+            var process = System.Diagnostics.Process.GetProcessesByName(current.ProcessName)
+                .FirstOrDefault(p => p.Id != current.Id);
+
+            if (process != null && process.MainWindowHandle != IntPtr.Zero)
+            {
+                ShowWindow(process.MainWindowHandle, 9); // SW_RESTORE = 9
+                SetForegroundWindow(process.MainWindowHandle);
+            }
+        }
+        catch { }
+    }
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
-        // Administrator auto-elevation disabled during development/testing per user request (will re-enable for final build)
-        /*
+        bool isTestOrScreenshot = e.Args.Contains("--screenshot") ||
+                                  e.Args.Contains("--screenshot-splash") ||
+                                  e.Args.Contains("--screenshot-scanned");
+
+        if (!isTestOrScreenshot)
+        {
+            bool isNewInstance;
+            try
+            {
+                _singleInstanceMutex = new Mutex(true, SingleInstanceMutexName, out isNewInstance);
+            }
+            catch
+            {
+                isNewInstance = false;
+            }
+
+            if (!isNewInstance)
+            {
+                // App is already running! Signal the first instance to wake up & focus
+                try
+                {
+                    if (EventWaitHandle.TryOpenExisting(BringToFrontEventName, out var existingEvent))
+                    {
+                        existingEvent.Set();
+                        existingEvent.Dispose();
+                    }
+                }
+                catch { }
+
+                // Fallback to Win32 API to restore window if handle exists
+                BringExistingProcessToFrontFallback();
+
+                // Terminate this duplicate instance immediately
+                Shutdown();
+                return;
+            }
+
+            // Start background watcher thread in the primary running instance
+            try
+            {
+                _bringToFrontEvent = new EventWaitHandle(false, EventResetMode.AutoReset, BringToFrontEventName);
+                var watcherThread = new Thread(() =>
+                {
+                    while (true)
+                    {
+                        try
+                        {
+                            if (_bringToFrontEvent.WaitOne())
+                            {
+                                ActivateRunningInstance();
+                            }
+                        }
+                        catch
+                        {
+                            break;
+                        }
+                    }
+                })
+                {
+                    IsBackground = true,
+                    Name = "XenomSingleInstanceWatcher"
+                };
+                watcherThread.Start();
+            }
+            catch { }
+        }
+
+        // Automatic Administrator elevation for normal app launch (bypassed for automated screenshot CLI)
         if (!e.Args.Contains("--screenshot") && !e.Args.Contains("--screenshot-splash") && !e.Args.Contains("--screenshot-scanned"))
         {
             try
@@ -52,19 +163,16 @@ public partial class App : Application
                             startInfo.ArgumentList.Add(arg);
                         }
                         System.Diagnostics.Process.Start(startInfo);
+                        Shutdown();
+                        return;
                     }
-                    Shutdown();
-                    return;
                 }
             }
             catch
             {
-                // User declined UAC or error occurred
-                Shutdown();
-                return;
+                // User declined UAC or error occurred - continue in standard mode
             }
         }
-        */
 
         var services = new ServiceCollection();
 
@@ -129,7 +237,7 @@ public partial class App : Application
 
             };
 
-            timer.Tick += (s, ev) =>
+            timer.Tick += async (s, ev) =>
 
             {
 
@@ -258,6 +366,12 @@ public partial class App : Application
 
                         }
 
+                        var subtabArgIndex = Array.IndexOf(e.Args, "--subtab");
+                        if (subtabArgIndex >= 0 && subtabArgIndex + 1 < e.Args.Length && int.TryParse(e.Args[subtabArgIndex + 1], out var stIdx))
+                        {
+                            wvm.SelectedAdvanceSubTabIndex = stIdx;
+                        }
+
 
 
                         if (e.Args.Contains("--no-guide"))
@@ -266,6 +380,64 @@ public partial class App : Application
 
                             wvm.IsInstructionModalVisible = false;
 
+                        }
+
+                        var catArgIndex = Array.IndexOf(e.Args, "--category");
+                        if (catArgIndex >= 0 && catArgIndex + 1 < e.Args.Length)
+                        {
+                            wvm.SelectCategory(e.Args[catArgIndex + 1]);
+                        }
+
+                        if (e.Args.Contains("--custom-modal"))
+                        {
+                            wvm.OpenCustomCategoryModal();
+                        }
+
+                        if (e.Args.Contains("--manage-slots"))
+                        {
+                            wvm.ToggleManageSlots();
+                        }
+
+                        if (e.Args.Contains("--delete-slot4"))
+                        {
+                            wvm.DeleteSlot("4");
+                        }
+
+                        if (e.Args.Contains("--edit-slot4"))
+                        {
+                            wvm.StartCustomPresetCreation(4);
+                        }
+
+                        if (e.Args.Contains("--select-custom-some"))
+                        {
+                            wvm.StartCustomPresetCreation(4);
+                            if (wvm.ServicesOptimizations.Count > 0) wvm.ServicesOptimizations[0].IsCustomSelected = true;
+                            if (wvm.ServicesOptimizations.Count > 1) wvm.ServicesOptimizations[1].IsCustomSelected = true;
+                            if (wvm.ServicesOptimizations.Count > 2) wvm.ServicesOptimizations[2].IsCustomSelected = true;
+                        }
+
+                        if (e.Args.Contains("--ultimate-perf-popup"))
+                        {
+                            var ultimateCard = wvm.LowEndOptimizations.FirstOrDefault(x => x.Id == "win_ultimate_performance");
+                            if (ultimateCard != null)
+                            {
+                                ultimateCard.IsToggled = true;
+                            }
+                        }
+
+                        if (e.Args.Contains("--xenom-recommended"))
+                        {
+                            wvm.IsAppRecommendedActive = true;
+                        }
+
+                        if (e.Args.Contains("--milestone-completed"))
+                        {
+                            foreach (var c in wvm.ServicesOptimizations)
+                            {
+                                c.IsOptimal = true;
+                            }
+                            wvm.AnimatedMilestoneCount = 15;
+                            wvm.IsMilestoneCompleted = true;
                         }
 
                         if (e.Args.Contains("--warning-modal"))
@@ -728,7 +900,7 @@ public partial class App : Application
 
             };
 
-            timer.Tick += (s, ev) =>
+            timer.Tick += async (s, ev) =>
 
             {
 
@@ -798,6 +970,61 @@ public partial class App : Application
                             mainVm.WindowsVm.IsDriverBoosterInstalled = true;
                             mainVm.WindowsVm.UpdateDriverActionStates();
                         }
+                        if (e.Args.Contains("--ultimate-perf-popup"))
+                        {
+                            var ultimateCard = mainVm.WindowsVm.LowEndOptimizations.FirstOrDefault(x => x.Id == "win_ultimate_performance");
+                            if (ultimateCard != null)
+                            {
+                                ultimateCard.IsToggled = true;
+                            }
+                        }
+
+                        if (e.Args.Contains("--xenom-recommended"))
+                        {
+                            mainVm.WindowsVm.IsLoading = false;
+                            foreach (var card in mainVm.WindowsVm.ServicesOptimizations)
+                            {
+                                string id = (card.Id ?? "").ToLowerInvariant();
+                                string name = (card.Name ?? "").ToLowerInvariant();
+                                bool isExcluded = id.Contains("wersvc") || id.Contains("error") || id.Contains("game_mode") || name.Contains("error reporting") || name.Contains("game mode");
+                                card.IsOptimal = !isExcluded;
+                            }
+                            mainVm.WindowsVm.SetActivePresetIndex(1);
+                            mainVm.WindowsVm.AnimatedMilestoneCount = mainVm.WindowsVm.ServicesOptimizations.Count(c => mainVm.WindowsVm.IsCardInMode(c, mainVm.WindowsVm.SelectedCategoryMode) && c.IsOptimal);
+                            await Task.Delay(400);
+                        }
+
+                        if (e.Args.Contains("--milestone-completed"))
+                        {
+                            foreach (var c in mainVm.WindowsVm.ServicesOptimizations)
+                            {
+                                c.IsOptimal = true;
+                            }
+                            mainVm.WindowsVm.AnimatedMilestoneCount = 15;
+                            mainVm.WindowsVm.IsMilestoneCompleted = true;
+                        }
+
+                        // --manage-slots handled in OnStartup
+                        if (e.Args.Contains("--delete-slot4"))
+                        {
+                            mainVm.WindowsVm.DeleteSlot("4");
+                        }
+                        if (e.Args.Contains("--edit-slot4"))
+                        {
+                            mainVm.WindowsVm.StartCustomPresetCreation(4);
+                        }
+                        if (e.Args.Contains("--select-custom-some"))
+                        {
+                            mainVm.WindowsVm.StartCustomPresetCreation(4);
+                            if (mainVm.WindowsVm.ServicesOptimizations.Count > 0)
+                                mainVm.WindowsVm.ServicesOptimizations[0].IsCustomSelected = true;
+                            if (mainVm.WindowsVm.ServicesOptimizations.Count > 1)
+                                mainVm.WindowsVm.ServicesOptimizations[1].IsCustomSelected = true;
+                            if (mainVm.WindowsVm.ServicesOptimizations.Count > 2)
+                                mainVm.WindowsVm.ServicesOptimizations[2].IsCustomSelected = true;
+                            mainVm.WindowsVm.SelectedCustomServicesCount = mainVm.WindowsVm.ServicesOptimizations.Count(x => x.IsCustomSelected);
+                            mainVm.WindowsVm.UpdateFilteredServices();
+                        }
 
                         if (e.Args.Contains("--scroll-downloads"))
                         {
@@ -822,6 +1049,21 @@ public partial class App : Application
                                     sb.Visibility = Visibility.Visible;
                                 }
                             }
+                            try
+                            {
+                                var servicesSv = FindVisualChild<ScrollViewer>(mainWindow, "ServicesItemsScrollViewer");
+                                if (servicesSv != null)
+                                {
+                                    servicesSv.ApplyTemplate();
+                                    if (servicesSv.Template.FindName("PART_VerticalScrollBar", servicesSv) is System.Windows.Controls.Primitives.ScrollBar ssb)
+                                    {
+                                        ssb.BeginAnimation(UIElement.OpacityProperty, null);
+                                        ssb.Opacity = 1.0;
+                                        ssb.Visibility = Visibility.Visible;
+                                    }
+                                }
+                            }
+                            catch { }
                         }
 
                         if (e.Args.Contains("--scroll-downloads"))
@@ -847,6 +1089,33 @@ public partial class App : Application
                                     sb.Visibility = Visibility.Visible;
                                 }
                             }
+                            try
+                            {
+                                var servicesSv = FindVisualChild<ScrollViewer>(mainWindow, "ServicesItemsScrollViewer");
+                                if (servicesSv != null)
+                                {
+                                    servicesSv.ApplyTemplate();
+                                    if (servicesSv.Template.FindName("PART_VerticalScrollBar", servicesSv) is System.Windows.Controls.Primitives.ScrollBar ssb)
+                                    {
+                                        ssb.BeginAnimation(UIElement.OpacityProperty, null);
+                                        ssb.Opacity = 1.0;
+                                        ssb.Visibility = Visibility.Visible;
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+                        if (e.Args.Contains("--scroll-services"))
+                        {
+                            try
+                            {
+                                var servicesSv = FindVisualChild<ScrollViewer>(mainWindow, "ServicesItemsScrollViewer");
+                                if (servicesSv != null)
+                                {
+                                    servicesSv.ScrollToVerticalOffset(250);
+                                }
+                            }
+                            catch { }
                         }
                     }
 
@@ -967,5 +1236,36 @@ public partial class App : Application
 
     }
 
-}
 
+    protected override void OnExit(ExitEventArgs e)
+    {
+        try
+        {
+            _bringToFrontEvent?.Dispose();
+            if (_singleInstanceMutex != null)
+            {
+                _singleInstanceMutex.ReleaseMutex();
+                _singleInstanceMutex.Dispose();
+                _singleInstanceMutex = null;
+            }
+        }
+        catch { }
+
+        base.OnExit(e);
+    }
+
+    private static T? FindVisualChild<T>(DependencyObject parent, string? name = null) where T : FrameworkElement
+    {
+        for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+            if (child is T typedChild && (string.IsNullOrEmpty(name) || typedChild.Name == name))
+            {
+                return typedChild;
+            }
+            var nested = FindVisualChild<T>(child, name);
+            if (nested != null) return nested;
+        }
+        return null;
+    }
+}
