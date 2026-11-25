@@ -71,8 +71,8 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
 
     public ObservableCollection<string> EngineOptions { get; } = new()
     {
-        "DirectX+ (Recommended for NVIDIA/AMD Dedicated GPUs)",
-        "OpenGL+ (Compatible with Intel iGPUs & Old Drivers)",
+        "OpenGL+ (Zero Black Screen Bug • Maximum Stability)",
+        "DirectX+ (High CPU Rendering Pipeline)",
         "Vulkan (Low Driver Overhead & Next-Gen Pipeline)",
         "Auto (Smart Adaptive Engine Switching)"
     };
@@ -327,10 +327,10 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
             // 2. Engine
             int engineCode = SelectedEngineIndex switch
             {
-                0 => 0, // DirectX+
-                1 => 1, // OpenGL+
+                0 => 2, // OpenGL+
+                1 => 1, // DirectX+
                 2 => 4, // Vulkan
-                _ => 5  // Auto
+                _ => 2  // Auto/Default OpenGL+
             };
 
             // 3. RAM
@@ -391,6 +391,12 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
                     key.SetValue("ClientWidth", width, RegistryValueKind.DWord);
                     key.SetValue("ClientHeight", height, RegistryValueKind.DWord);
                     key.SetValue("RenderEngine", engineCode, RegistryValueKind.DWord);
+                    key.SetValue("RendererType", engineCode, RegistryValueKind.DWord);
+                    key.SetValue("ForceDirectX", engineCode == 1 ? 1 : 0, RegistryValueKind.DWord);
+                    key.SetValue("RenderMode", engineCode == 1 ? 2 : (engineCode == 2 ? 1 : 4), RegistryValueKind.DWord);
+                    key.SetValue("EnableGLESv3", 1, RegistryValueKind.DWord);
+                    key.SetValue("VMResWidth", width, RegistryValueKind.DWord);
+                    key.SetValue("VMResHeight", height, RegistryValueKind.DWord);
                     key.SetValue("DPI", dpi, RegistryValueKind.DWord);
 
                     if (cores > 0) key.SetValue("CpuCount", cores, RegistryValueKind.DWord);
@@ -421,7 +427,7 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
                     hklmKey.SetValue("FPSLock", 0, RegistryValueKind.DWord);
                     hklmKey.SetValue("fps_max", 120, RegistryValueKind.DWord);
                     hklmKey.SetValue("UseVulkan", SelectedEngineIndex == 2 ? 1 : 0, RegistryValueKind.DWord);
-                    hklmKey.SetValue("ForceDirectX", SelectedEngineIndex == 0 ? 1 : 0, RegistryValueKind.DWord);
+                    hklmKey.SetValue("ForceDirectX", SelectedEngineIndex == 1 ? 1 : 0, RegistryValueKind.DWord);
                 }
             }
 
@@ -450,7 +456,7 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
         else SelectedCoresIndex = 1; // 2 Cores
 
         SelectedRamIndex = 3; // 8192 MB
-        SelectedEngineIndex = 0; // DirectX+
+        SelectedEngineIndex = 0; // OpenGL+ (Zero Black Screen Bug)
         SelectedResolutionIndex = 3; // 1440x1080 (4:3 iPad View)
         SelectedDpiIndex = 1; // 240 DPI
         SelectedDeviceProfileIndex = 0; // Samsung SM-X920
@@ -1432,8 +1438,8 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
 
         int engineCode = SelectedEngineIndex switch
         {
-            0 => 0, // DirectX+
-            1 => 1, // OpenGL+
+            0 => 2, // OpenGL+
+            1 => 1, // DirectX+
             _ => 4  // Vulkan
         };
 

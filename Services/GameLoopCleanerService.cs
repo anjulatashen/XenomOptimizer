@@ -192,7 +192,15 @@ public class GameLoopCleanerService
                     {
                         key.SetValue("Width", width, RegistryValueKind.DWord);
                         key.SetValue("Height", height, RegistryValueKind.DWord);
+                        key.SetValue("ResolutionWidth", width, RegistryValueKind.DWord);
+                        key.SetValue("ResolutionHeight", height, RegistryValueKind.DWord);
+                        key.SetValue("VMResWidth", width, RegistryValueKind.DWord);
+                        key.SetValue("VMResHeight", height, RegistryValueKind.DWord);
                         key.SetValue("RenderEngine", engineCode, RegistryValueKind.DWord);
+                        key.SetValue("RendererType", engineCode, RegistryValueKind.DWord);
+                        key.SetValue("ForceDirectX", engineCode == 1 ? 1 : 0, RegistryValueKind.DWord);
+                        key.SetValue("RenderMode", engineCode == 1 ? 2 : (engineCode == 2 ? 1 : 4), RegistryValueKind.DWord);
+                        key.SetValue("EnableGLESv3", 1, RegistryValueKind.DWord);
                     }
                 }
                 catch

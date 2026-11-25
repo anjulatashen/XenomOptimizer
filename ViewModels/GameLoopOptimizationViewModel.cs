@@ -127,7 +127,14 @@ public partial class GameLoopOptimizationViewModel : ObservableObject
             else if (res.Width == 2300 && res.Height == 1920) SelectedResolutionIndex = 4;
             else if (res.Width == 1280 && res.Height == 720) SelectedResolutionIndex = 5;
 
-            SelectedEngineIndex = Math.Clamp(await _optimizer.GetCurrentRenderEngineAsync(), 0, 3);
+            int currentEngine = await _optimizer.GetCurrentRenderEngineAsync();
+            SelectedEngineIndex = currentEngine switch
+            {
+                2 => 1, // OpenGL+
+                1 => 0, // DirectX+
+                4 => 2, // Vulkan
+                _ => 1  // Default to OpenGL+
+            };
 
             var hw = await _optimizer.GetCurrentHardwareAllocationAsync();
             SelectedCoresIndex = hw.Cores switch { 2 => 1, 4 => 2, 6 => 3, 8 => 4, _ => 0 };
@@ -345,13 +352,20 @@ public partial class GameLoopOptimizationViewModel : ObservableObject
     [RelayCommand]
     private async Task ApplyEngineSettingsAsync()
     {
+        int engineCode = SelectedEngineIndex switch
+        {
+            1 => 2, // OpenGL+
+            0 => 1, // DirectX+
+            2 => 4, // Vulkan
+            _ => 2  // Default OpenGL+
+        };
+
         string engineName = SelectedEngineIndex switch
         {
-            0 => "DirectX+ (Recommended)",
-            1 => "OpenGL+",
+            1 => "OpenGL+ (Recommended • Zero Black Screen)",
+            0 => "DirectX+",
             2 => "Vulkan",
-            3 => "DirectX Lite",
-            _ => "DirectX+"
+            _ => "OpenGL+"
         };
 
         int cores = SelectedCoresIndex switch
@@ -373,7 +387,7 @@ public partial class GameLoopOptimizationViewModel : ObservableObject
         };
 
         EngineHardwareStatus = "Applying engine & hardware parameters...";
-        var engineRes = await _optimizer.ApplyRenderEngineAsync(SelectedEngineIndex, engineName);
+        var engineRes = await _optimizer.ApplyRenderEngineAsync(engineCode, engineName);
         var hwRes = await _optimizer.ApplyHardwareAllocationAsync(cores, ram);
         EngineHardwareStatus = $"{engineRes.Message} | {hwRes.Message}";
     }

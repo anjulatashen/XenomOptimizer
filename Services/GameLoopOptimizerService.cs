@@ -961,9 +961,12 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
             {
                 _registry.SetValue(tencentKey, "ForceDirectX", 0u, RegistryValueKind.DWord);
                 _registry.SetValue(tencentKey, "RenderMode", 1u, RegistryValueKind.DWord);
+                _registry.SetValue(tencentKey, "EnableGLESv3", 1u, RegistryValueKind.DWord);
                 _registry.SetValue(tencentKey, "UseVulkan", 0u, RegistryValueKind.DWord);
                 try { _registry.SetValue(@"HKEY_CURRENT_USER\Software\Tencent\MobileGamePC\RunFalgs\_100", "RendererEngine", 2u, RegistryValueKind.DWord); } catch { }
                 try { _registry.SetValue(@"HKEY_CURRENT_USER\Software\Tencent\MobileGamePC\RunFalgs\aow_100", "RendererEngine", 2u, RegistryValueKind.DWord); } catch { }
+                try { _registry.SetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Tencent\MobileGamePC", "ForceDirectX", 0u, RegistryValueKind.DWord); } catch { }
+                try { _registry.SetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Tencent\MobileGamePC", "UseVulkan", 0u, RegistryValueKind.DWord); } catch { }
             }
             else if (engineMode == 4) // Vulkan
             {
@@ -1024,16 +1027,16 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
                 if (rObj != null && int.TryParse(rObj.ToString(), out int mode) && mode > 0)
                     return mode;
 
-                var fDx = _registry.GetValue(tencentKey, "ForceDirectX");
-                if (fDx != null && Convert.ToInt32(fDx) == 1)
-                    return 1; // DirectX+
-
                 var rEngine = _registry.GetValue(@"HKEY_CURRENT_USER\Software\Tencent\MobileGamePC\RunFalgs\_100", "RendererEngine");
                 if (rEngine != null && int.TryParse(rEngine.ToString(), out int reMode) && reMode > 0)
                     return reMode;
+
+                var fDx = _registry.GetValue(tencentKey, "ForceDirectX");
+                if (fDx != null && Convert.ToInt32(fDx) == 1)
+                    return 1; // DirectX+
             }
             catch { }
-            return 1; // Default to DirectX+ (1)
+            return 2; // Default to OpenGL+ (2)
         });
     }
 
