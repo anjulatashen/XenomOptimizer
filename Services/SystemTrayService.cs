@@ -296,14 +296,17 @@ public class SystemTrayService : IDisposable
 
     private void ShowNotification(string title, string message)
     {
-        try
+        _window.Dispatcher.Invoke(() =>
         {
-            WindowsToastService.ShowToast(title, message);
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine($"ShowNotification error: {ex}");
-        }
+            try
+            {
+                Views.ToastNotificationWindow.Show(title, message, RestoreWindow);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ShowNotification error: {ex}");
+            }
+        });
     }
 
     private static bool GetGameLoopFpsState()
