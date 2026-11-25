@@ -9,9 +9,9 @@
     <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>XenomOptimizer</RootNamespace>
     <AssemblyName>XenomOptimizer</AssemblyName>
-    <Version>1.0.2-beta</Version>
-    <AssemblyVersion>1.0.2.0</AssemblyVersion>
-    <FileVersion>1.0.2.0</FileVersion>
+    <Version>1.0.3-beta</Version>
+    <AssemblyVersion>1.0.3.0</AssemblyVersion>
+    <FileVersion>1.0.3.0</FileVersion>
     <Company>Xenom</Company>
     <Product>LAG Killer by XENOM (Beta)</Product>
     <Description>LAG Killer by XENOM - GameLoop &amp; PUBG Mobile Optimizer</Description>

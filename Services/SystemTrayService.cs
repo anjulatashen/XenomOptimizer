@@ -161,7 +161,7 @@ public class SystemTrayService : IDisposable
             _optimizerVm?.ToggleFrameGenCommand.Execute(null);
 
             string status = _isFpsOn ? "GameLoop FPS Counter: Enabled" : "GameLoop FPS Counter: Disabled";
-            _notifyIcon?.ShowBalloonTip(2000, "LAG Killer by XENOM", status, Forms.ToolTipIcon.Info);
+            ShowNotification("LAG Killer by XENOM", status);
         }
         catch (Exception ex)
         {
@@ -184,15 +184,12 @@ public class SystemTrayService : IDisposable
                     {
                         _optimizerVm.CleanerStatusText = $"Purged {purged} cache and shader objects successfully.";
                     }
-                    _notifyIcon?.ShowBalloonTip(2500, "LAG Killer by XENOM", $"Quick Cache Clean Complete!\nPurged {purged} temporary cache & shader objects.", Forms.ToolTipIcon.Info);
+                    ShowNotification("LAG Killer by XENOM", $"Quick Cache Clean Complete!\nPurged {purged} temporary cache & shader objects.");
                 });
             }
             catch (Exception ex)
             {
-                _window.Dispatcher.Invoke(() =>
-                {
-                    _notifyIcon?.ShowBalloonTip(2500, "LAG Killer by XENOM", $"Cache clean error: {ex.Message}", Forms.ToolTipIcon.Warning);
-                });
+                ShowNotification("LAG Killer by XENOM", $"Cache clean error: {ex.Message}");
             }
         });
     }
@@ -244,17 +241,11 @@ public class SystemTrayService : IDisposable
                     msg = "Standby RAM & working sets purged successfully!";
                 }
 
-                _window.Dispatcher.Invoke(() =>
-                {
-                    _notifyIcon?.ShowBalloonTip(2500, "LAG Killer by XENOM", msg, Forms.ToolTipIcon.Info);
-                });
+                ShowNotification("LAG Killer by XENOM", msg);
             }
             catch (Exception ex)
             {
-                _window.Dispatcher.Invoke(() =>
-                {
-                    _notifyIcon?.ShowBalloonTip(2500, "LAG Killer by XENOM", $"RAM purge error: {ex.Message}", Forms.ToolTipIcon.Warning);
-                });
+                ShowNotification("LAG Killer by XENOM", $"RAM purge error: {ex.Message}");
             }
         });
     }
@@ -293,18 +284,27 @@ public class SystemTrayService : IDisposable
                     res = OptimizationResult.Succeeded($"GameLoop safely terminated ({terminatedCount} processes closed).");
                 }
 
-                _window.Dispatcher.Invoke(() =>
-                {
-                    string msg = res?.Message ?? "GameLoop safely terminated.";
-                    _notifyIcon?.ShowBalloonTip(2500, "LAG Killer by XENOM", msg, Forms.ToolTipIcon.Info);
-                });
+                string msg = res?.Message ?? "GameLoop safely terminated.";
+                ShowNotification("LAG Killer by XENOM", msg);
             }
             catch (Exception ex)
             {
-                _window.Dispatcher.Invoke(() =>
-                {
-                    _notifyIcon?.ShowBalloonTip(2500, "LAG Killer by XENOM", $"Error closing GameLoop: {ex.Message}", Forms.ToolTipIcon.Warning);
-                });
+                ShowNotification("LAG Killer by XENOM", $"Error closing GameLoop: {ex.Message}");
+            }
+        });
+    }
+
+    private void ShowNotification(string title, string message)
+    {
+        _window.Dispatcher.Invoke(() =>
+        {
+            try
+            {
+                Views.ToastNotificationWindow.Show(title, message, RestoreWindow);
+            }
+            catch
+            {
+                _notifyIcon?.ShowBalloonTip(2500, title, message, Forms.ToolTipIcon.None);
             }
         });
     }
