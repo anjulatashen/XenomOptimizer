@@ -1,6 +1,6 @@
 {
-  "version": "1.0.1 Beta",
+  "version": "1.0.2 Beta",
   "downloadUrl": "https://github.com/anjulatashen/XenomOptimizer/raw/main/XenomOptimizer-Update.zip",
-  "releaseNotes": "— In-Game 120 FPS & Ultra Extreme Graphics\n— Custom Resolutions & 4:3 iPad View Mode\n— ROG Phone 8 & Flagship Device Profiles\n— DirectX+, OpenGL+ & Vulkan Rendering Backend\n— Host CPU Cores & System Memory Allocator\n— One-Click PC Doctor & HVCI Bypass\n— Safe Emulator Close & Shader Cache Cleaner",
+  "releaseNotes": "— Hotfix: Full Self-Contained Bundle (.NET Runtime included)\n— GameLoop Deep Uninstaller & Installing Hub UI polish\n— Fixed header scrolling & dynamic page titles\n— Step 2 Nuclear Clean auto-unlock flow\n— Official Uninstaller support added",
   "mandatory": false
 }

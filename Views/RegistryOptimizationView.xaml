@@ -10,8 +10,82 @@
              Background="#0B0C10">
 
     <Grid Background="Transparent">
-        <!-- ── 1. SCROLLABLE CONTENT (NATURAL SCROLLING MATCHING ADVANCE TAB) ── -->
-        <ScrollViewer x:Name="MainContentScrollViewer"
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Row 0: FIXED TOP HEADER (NEVER SCROLLS) -->
+            <RowDefinition Height="*"/>    <!-- Row 1: SCROLLABLE CONTENT BODY -->
+        </Grid.RowDefinitions>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- 1. TOP HEADER SECTION (FIXED AT TOP, NEVER SCROLLS)          -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="0" Margin="28,24,28,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left: Dynamic Title & Subtitle based on active page -->
+            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding PageHeaderTitle}" FontSize="26" FontWeight="Bold" Foreground="#FFFFFF"
+                           FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif" Margin="0,0,0,4"/>
+                <TextBlock Text="{Binding PageHeaderSubtitle}"
+                           FontSize="12.5" Foreground="#9E9EA4"
+                           FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"/>
+            </StackPanel>
+
+            <!-- Right: Status Pill & Actions -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Status Badge -->
+                <Border Background="#121216" BorderBrush="#202128" BorderThickness="1" CornerRadius="16" Padding="14,7" Margin="0,0,10,0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse Width="8" Height="8" Margin="0,0,8,0">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="#10B981"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsGameLoopInstalled}" Value="False">
+                                            <Setter Property="Fill" Value="#EF4444"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <TextBlock Text="GameLoop: Ready" FontSize="11.5" FontWeight="SemiBold" Foreground="#F8FAFC">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsGameLoopInstalled}" Value="False">
+                                            <Setter Property="Text" Value="GameLoop: Not Found"/>
+                                            <Setter Property="Foreground" Value="#94A3B8"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                </Border>
+
+                <!-- Close Emulator Pill Button -->
+                <Button Command="{Binding SafeCloseGameLoopCommand}" Cursor="Hand">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="b" Background="#181A22" BorderBrush="#262A38" BorderThickness="1" CornerRadius="16" Padding="14,7">
+                                <TextBlock Text="✕ Close GameLoop" FontSize="11.5" FontWeight="SemiBold" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="b" Property="Background" Value="#252A38"/>
+                                    <Setter TargetName="b" Property="BorderBrush" Value="#EF4444"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <!-- ── 2. SCROLLABLE CONTENT (ROW 1: CARDS SCROLL UNDER FIXED HEADER) ── -->
+        <ScrollViewer Grid.Row="1" x:Name="MainContentScrollViewer"
                       VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
                       Padding="28,0,28,85"
                       SnapsToDevicePixels="True" UseLayoutRounding="True">
@@ -51,84 +125,6 @@
             <StackPanel MaxWidth="1100">
 
                 <!-- ═══════════════════════════════════════════════════════════ -->
-                <!-- 1. TOP HEADER SECTION (Title, Status Badge, Quick Actions)   -->
-                <!-- ═══════════════════════════════════════════════════════════ -->
-                <Grid Height="64" Margin="0,26,0,22">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Left: Title & Subtitle -->
-                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock Text="GameLoop Installer &amp; Uninstaller" FontSize="26" FontWeight="Bold" Foreground="#FFFFFF"
-                                   FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif" Margin="0,0,0,4"/>
-                        <TextBlock Text="Official multi-version GameLoop installer hub &amp; 7-step nuclear uninstaller with residual cache purge"
-                                   FontSize="12.5" Foreground="#9E9EA4"
-                                   FontFamily="Segoe UI Variable Text, Segoe UI, sans-serif"/>
-                    </StackPanel>
-
-                    <!-- Right: Status Pill & Actions -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                        <!-- Status Badge -->
-                        <Border Background="#121216" BorderBrush="#202128" BorderThickness="1" CornerRadius="16" Padding="14,7" Margin="0,0,10,0">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Ellipse Width="8" Height="8" Margin="0,0,8,0">
-                                    <Ellipse.Style>
-                                        <Style TargetType="Ellipse">
-                                            <Setter Property="Fill" Value="#10B981"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsGameLoopInstalled}" Value="False">
-                                                    <Setter Property="Fill" Value="#EF4444"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Ellipse.Style>
-                                </Ellipse>
-                                <TextBlock Text="GameLoop: Ready" FontSize="11.5" FontWeight="SemiBold" Foreground="#F8FAFC">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsGameLoopInstalled}" Value="False">
-                                                    <Setter Property="Text" Value="GameLoop: Not Found"/>
-                                                    <Setter Property="Foreground" Value="#94A3B8"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Close Emulator Pill Button -->
-                        <Button Command="{Binding SafeCloseGameLoopCommand}" Cursor="Hand">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="b" Background="#181A22" BorderBrush="#262A38" BorderThickness="1" CornerRadius="16" Padding="14,7">
-                                        <TextBlock Text="✕ Close GameLoop" FontSize="11.5" FontWeight="SemiBold" Foreground="#94A3B8" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="b" Property="Background" Value="#252A38"/>
-                                            <Setter TargetName="b" Property="BorderBrush" Value="#EF4444"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-                    </StackPanel>
-                </Grid>
-
-                <!-- Status Banner (if any) -->
-                <Border Background="#141824" BorderBrush="#252E45" BorderThickness="1" CornerRadius="12" Padding="14,10" Margin="0,0,0,18"
-                        Visibility="{Binding StatusMessage, Converter={StaticResource StringToVis}}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="ℹ" FontSize="13" Foreground="#38BDF8" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="{Binding StatusMessage}" FontSize="12" Foreground="#E2E8F0" VerticalAlignment="Center" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- ═══════════════════════════════════════════════════════════ -->
                 <!-- SLIDE: GAMELOOP UNINSTALLER (STEP 1 & STEP 2)               -->
                 <!-- ═══════════════════════════════════════════════════════════ -->
                 <StackPanel Visibility="{Binding IsUninstallerVisible, Converter={StaticResource BoolToVis}}">
@@ -156,196 +152,324 @@
                         </Grid>
                     </Border>
 
-                    <!-- CARD 1: OFFICIAL GAMELOOP UNINSTALLER (STEP 1) -->
-                    <Border Background="#121216" BorderBrush="#261A1E" BorderThickness="1.2" CornerRadius="18" Padding="24,20" Margin="0,0,0,18">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
+                    <!-- DYNAMIC STEP 1 & STEP 2 GRID (ORDER & LOCK SWITCHES BASED ON UNINSTALL STATUS) -->
+                    <Grid Margin="0,0,0,18">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
-                            <!-- Top Row: Icon, Titles, Step Badge -->
-                            <Grid Grid.Row="0" Margin="0,0,0,14">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
+                        <!-- CARD 1: OFFICIAL GAMELOOP UNINSTALLER (STEP 1) -->
+                        <Border x:Name="Step1Card" Background="#121216" BorderBrush="#261A1E" BorderThickness="1.2" CornerRadius="18" Padding="24,20">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <!-- When GameLoop is installed: Step 1 is in Row 0 (TOP) with full brightness -->
+                                    <Setter Property="Grid.Row" Value="0"/>
+                                    <Setter Property="Margin" Value="0,0,0,18"/>
+                                    <Setter Property="Opacity" Value="1.0"/>
+                                    <Style.Triggers>
+                                        <!-- When GameLoop is uninstalled: Step 1 moves to Row 1 (BOTTOM) and is dimmed/faded -->
+                                        <DataTrigger Binding="{Binding IsStep2Unlocked}" Value="True">
+                                            <Setter Property="Grid.Row" Value="1"/>
+                                            <Setter Property="Margin" Value="0,18,0,0"/>
+                                            <Setter Property="Opacity" Value="0.45"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
 
-                                <Border Grid.Column="0" Width="46" Height="46" CornerRadius="12" Background="#261215" BorderBrush="#EF4444" BorderThickness="1" Margin="0,0,16,0" VerticalAlignment="Center">
-                                    <TextBlock Text="🗑️" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
+                                <!-- Top Row: Icon, Titles, Step Badge -->
+                                <Grid Grid.Row="0" Margin="0,0,0,14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
 
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
-                                        <TextBlock Text="Step 1 — Official GameLoop Uninstaller" FontSize="17" FontWeight="Bold" Foreground="#FFFFFF"/>
-                                        <Border Background="#2B1418" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
-                                            <TextBlock Text="UNINSTALL WIZARD" FontSize="10" FontWeight="Bold" Foreground="#EF4444"/>
-                                        </Border>
-                                    </StackPanel>
-                                    <TextBlock Text="Launch the official Tencent uninstaller (TUninstall.exe) to cleanly remove emulator components and games."
-                                               FontSize="12" Foreground="#8E95A5"/>
-                                </StackPanel>
-                            </Grid>
+                                    <Border Grid.Column="0" Width="46" Height="46" CornerRadius="12" Background="#261215" BorderBrush="#EF4444" BorderThickness="1" Margin="0,0,16,0" VerticalAlignment="Center">
+                                        <TextBlock Text="🗑️" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
 
-                            <!-- Divider -->
-                            <Border Grid.Row="1" Height="1" Background="#1E1C22" Margin="0,0,0,14"/>
-
-                            <!-- Details / Explanations -->
-                            <Grid Grid.Row="2" Margin="0,0,0,16">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="16"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-
-                                <Border Grid.Column="0" Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="10" Padding="14,10">
-                                    <StackPanel>
-                                        <TextBlock Text="🔍 Smart Auto-Detection" FontSize="11.5" FontWeight="Bold" Foreground="#F8FAFC" Margin="0,0,0,3"/>
-                                        <TextBlock Text="Scans Windows Registry and all fixed drives (C:, D:, E:) to locate the official uninstaller executable and launches it with full administrative permissions." FontSize="11" Foreground="#94A3B8" TextWrapping="Wrap"/>
-                                    </StackPanel>
-                                </Border>
-
-                                <Border Grid.Column="2" Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="10" Padding="14,10">
-                                    <StackPanel>
-                                        <TextBlock Text="🛡️ Safe Package Deregistration" FontSize="11.5" FontWeight="Bold" Foreground="#F8FAFC" Margin="0,0,0,3"/>
-                                        <TextBlock Text="Allows Tencent's official uninstaller to unregister all emulator drivers and components properly before executing the deep nuclear wipe in Step 2." FontSize="11" Foreground="#94A3B8" TextWrapping="Wrap"/>
-                                    </StackPanel>
-                                </Border>
-                            </Grid>
-
-                            <!-- Action Button & Status -->
-                            <Grid Grid.Row="3">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
-                                    <TextBlock Text="{Binding UninstallStatusText}" FontSize="11.5" Foreground="#EF4444" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                                </StackPanel>
-
-                                <Button Grid.Column="1" Command="{Binding UninstallGameLoopCommand}" Cursor="Hand" Height="40">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="BtnU" Background="#261215" BorderBrush="#EF4444" BorderThickness="1.2" CornerRadius="8" Padding="22,0">
-                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <TextBlock Text="🗑️" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                                    <TextBlock Text="Uninstall GameLoop" FontSize="12.5" FontWeight="Bold" Foreground="#EF4444" VerticalAlignment="Center"/>
-                                                </StackPanel>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
+                                            <TextBlock FontSize="17" FontWeight="Bold" Foreground="#FFFFFF">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="Step 1 — Official GameLoop Uninstaller"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsStep2Unlocked}" Value="True">
+                                                                <Setter Property="Text" Value="Step 1 — Official GameLoop Uninstaller (Completed)"/>
+                                                                <Setter Property="Foreground" Value="#94A3B8"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <Border CornerRadius="6" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#2B1418"/>
+                                                        <Setter Property="BorderBrush" Value="#EF4444"/>
+                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsStep2Unlocked}" Value="True">
+                                                                <Setter Property="Background" Value="#162E25"/>
+                                                                <Setter Property="BorderBrush" Value="#34D399"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock FontSize="10" FontWeight="Bold">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="UNINSTALL WIZARD"/>
+                                                            <Setter Property="Foreground" Value="#EF4444"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsStep2Unlocked}" Value="True">
+                                                                    <Setter Property="Text" Value="COMPLETED ✓"/>
+                                                                    <Setter Property="Foreground" Value="#34D399"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
                                             </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="BtnU" Property="Background" Value="#38151A"/>
-                                                    <Setter TargetName="BtnU" Property="BorderBrush" Value="#F87171"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
-                            </Grid>
-                        </Grid>
-                    </Border>
-
-                    <!-- CARD 2: 7-STEP NUCLEAR CACHE, REGISTRY & TEMP WIPER (STEP 2) -->
-                    <Border Background="#121216" BorderBrush="#251A36" BorderThickness="1.2" CornerRadius="18" Padding="24,20" Margin="0,0,0,18">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-
-                            <!-- Top Row: Icon, Titles, Step Badge -->
-                            <Grid Grid.Row="0" Margin="0,0,0,14">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <Border Grid.Column="0" Width="46" Height="46" CornerRadius="12" Background="#201533" BorderBrush="#8B5CF6" BorderThickness="1" Margin="0,0,16,0" VerticalAlignment="Center">
-                                    <TextBlock Text="🧹" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
-                                        <TextBlock Text="Step 2 — Nuclear Clean (Registry, Cache &amp; Temp Wiper)" FontSize="17" FontWeight="Bold" Foreground="#FFFFFF"/>
-                                        <Border Background="#251640" BorderBrush="#8B5CF6" BorderThickness="1" CornerRadius="6" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
-                                            <TextBlock Text="DEEP SYSTEM WIPE" FontSize="10" FontWeight="Bold" Foreground="#A78BFA"/>
-                                        </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="Launch the official Tencent uninstaller (TUninstall.exe) to cleanly remove emulator components and games."
+                                                   FontSize="12" Foreground="#8E95A5"/>
                                     </StackPanel>
-                                    <TextBlock Text="Completely purges all residual Tencent cache files, locked registry hives, drivers, and temp data across all drives."
-                                               FontSize="12" Foreground="#8E95A5"/>
-                                </StackPanel>
+                                </Grid>
+
+                                <!-- Divider -->
+                                <Border Grid.Row="1" Height="1" Background="#1E1C22" Margin="0,0,0,14"/>
+
+                                <!-- Details / Explanations -->
+                                <Grid Grid.Row="2" Margin="0,0,0,16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="16"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Border Grid.Column="0" Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="10" Padding="14,10">
+                                        <StackPanel>
+                                            <TextBlock Text="🔍 Smart Auto-Detection" FontSize="11.5" FontWeight="Bold" Foreground="#F8FAFC" Margin="0,0,0,3"/>
+                                            <TextBlock Text="Scans Windows Registry and all fixed drives (C:, D:, E:) to locate the official uninstaller executable and launches it with full administrative permissions." FontSize="11" Foreground="#94A3B8" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Grid.Column="2" Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="10" Padding="14,10">
+                                        <StackPanel>
+                                            <TextBlock Text="🛡️ Safe Package Deregistration" FontSize="11.5" FontWeight="Bold" Foreground="#F8FAFC" Margin="0,0,0,3"/>
+                                            <TextBlock Text="Allows Tencent's official uninstaller to unregister all emulator drivers and components properly before executing the deep nuclear wipe in Step 2." FontSize="11" Foreground="#94A3B8" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Action Button & Status -->
+                                <Grid Grid.Row="3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                                        <TextBlock Text="{Binding UninstallStatusText}" FontSize="11.5" Foreground="#EF4444" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                    </StackPanel>
+
+                                    <Button Grid.Column="1" Command="{Binding UninstallGameLoopCommand}"
+                                            IsEnabled="{Binding IsStep1Active}" Cursor="Hand" Height="40">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="BtnU" Background="#261215" BorderBrush="#EF4444" BorderThickness="1.2" CornerRadius="8" Padding="22,0">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock x:Name="BtnUIcon" Text="🗑️" FontSize="13" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="BtnUTxt" Text="Uninstall GameLoop" FontSize="12.5" FontWeight="Bold" Foreground="#EF4444" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter TargetName="BtnU" Property="Background" Value="#16171E"/>
+                                                        <Setter TargetName="BtnU" Property="BorderBrush" Value="#262838"/>
+                                                        <Setter TargetName="BtnUTxt" Property="Text" Value="✓ Uninstalled / Completed"/>
+                                                        <Setter TargetName="BtnUTxt" Property="Foreground" Value="#64748B"/>
+                                                        <Setter TargetName="BtnUIcon" Property="Text" Value="✓"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="BtnU" Property="Background" Value="#38151A"/>
+                                                        <Setter TargetName="BtnU" Property="BorderBrush" Value="#F87171"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
                             </Grid>
+                        </Border>
 
-                            <!-- Divider -->
-                            <Border Grid.Row="1" Height="1" Background="#1E1C22" Margin="0,0,0,14"/>
+                        <!-- CARD 2: 7-STEP NUCLEAR CACHE, REGISTRY & TEMP WIPER (STEP 2) -->
+                        <Border x:Name="Step2Card" Background="#121216" BorderThickness="1.2" CornerRadius="18" Padding="24,20">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <!-- When GameLoop is installed: Step 2 is in Row 1 (BOTTOM) and LOCKED/DIMMED -->
+                                    <Setter Property="Grid.Row" Value="1"/>
+                                    <Setter Property="Margin" Value="0,0,0,0"/>
+                                    <Setter Property="BorderBrush" Value="#251A36"/>
+                                    <Setter Property="Opacity" Value="0.55"/>
+                                    <Style.Triggers>
+                                        <!-- When GameLoop is uninstalled: Step 2 moves to Row 0 (TOP) and is fully UNLOCKED -->
+                                        <DataTrigger Binding="{Binding IsStep2Unlocked}" Value="True">
+                                            <Setter Property="Grid.Row" Value="0"/>
+                                            <Setter Property="Margin" Value="0,0,0,18"/>
+                                            <Setter Property="BorderBrush" Value="#8B5CF6"/>
+                                            <Setter Property="Opacity" Value="1.0"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
 
-                            <!-- 7-Step Sequence Grid -->
-                            <UniformGrid Grid.Row="2" Columns="2" Rows="4" Margin="0,0,0,16">
-                                <Border Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="8" Padding="12,7" Margin="0,0,6,6">
-                                    <TextBlock Text="1️⃣ Terminate all Tencent &amp; ADB processes" FontSize="11" Foreground="#E2E8F0"/>
-                                </Border>
-                                <Border Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="8" Padding="12,7" Margin="6,0,0,6">
-                                    <TextBlock Text="2️⃣ Delete QMEmulatorService &amp; aow_drv drivers" FontSize="11" Foreground="#E2E8F0"/>
-                                </Border>
-                                <Border Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="8" Padding="12,7" Margin="0,0,6,6">
-                                    <TextBlock Text="3️⃣ Unload locked QMConfig registry hives" FontSize="11" Foreground="#E2E8F0"/>
-                                </Border>
-                                <Border Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="8" Padding="12,7" Margin="6,0,0,6">
-                                    <TextBlock Text="4️⃣ Delete HKCU &amp; HKLM Tencent registry trees" FontSize="11" Foreground="#E2E8F0"/>
-                                </Border>
-                                <Border Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="8" Padding="12,7" Margin="0,0,6,6">
-                                    <TextBlock Text="5️⃣ Delete TxGameAssistant on all drives (C:, D:, E:)" FontSize="11" Foreground="#E2E8F0"/>
-                                </Border>
-                                <Border Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="8" Padding="12,7" Margin="6,0,0,6">
-                                    <TextBlock Text="6️⃣ Clear AppData, LocalAppData &amp; ProgramData" FontSize="11" Foreground="#E2E8F0"/>
-                                </Border>
-                                <Border Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="8" Padding="12,7" Margin="0,0,6,0">
-                                    <TextBlock Text="7️⃣ Flush TxGameDownload &amp; DirectX Shader caches" FontSize="11" Foreground="#E2E8F0"/>
-                                </Border>
-                                <Border Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="8" Padding="12,7" Margin="6,0,0,0">
-                                    <TextBlock Text="✨ Remove all Desktop &amp; Start Menu shortcuts" FontSize="11" Foreground="#E2E8F0"/>
-                                </Border>
-                            </UniformGrid>
+                                <!-- Top Row: Icon, Titles, Step Badge -->
+                                <Grid Grid.Row="0" Margin="0,0,0,14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
 
-                            <!-- Action Button & Status -->
-                            <Grid Grid.Row="3">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" Width="46" Height="46" CornerRadius="12" Background="#201533" BorderBrush="#8B5CF6" BorderThickness="1" Margin="0,0,16,0" VerticalAlignment="Center">
+                                        <TextBlock Text="🧹" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
 
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
-                                    <TextBlock Text="{Binding CleanerStatusText}" FontSize="11.5" Foreground="#38BDF8" FontWeight="SemiBold" TextWrapping="Wrap"/>
-                                </StackPanel>
-
-                                <Button Grid.Column="1" Command="{Binding NuclearCleanCommand}" Cursor="Hand" Height="42">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="BtnN" Background="#201533" BorderBrush="#8B5CF6" BorderThickness="1.2" CornerRadius="8" Padding="24,0">
-                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <TextBlock Text="🧹" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                                    <TextBlock Text="Nuclear Clean (Registry, Cache &amp; Temp)" FontSize="12.5" FontWeight="Bold" Foreground="#A78BFA" VerticalAlignment="Center"/>
-                                                </StackPanel>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
+                                            <TextBlock Text="Step 2 — Nuclear Clean (Registry, Cache &amp; Temp Wiper)" FontSize="17" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                            <Border CornerRadius="6" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#1E1E28"/>
+                                                        <Setter Property="BorderBrush" Value="#475569"/>
+                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsStep2Unlocked}" Value="True">
+                                                                <Setter Property="Background" Value="#251640"/>
+                                                                <Setter Property="BorderBrush" Value="#8B5CF6"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <TextBlock FontSize="10" FontWeight="Bold">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="🔒 LOCKED — COMPLETE STEP 1 FIRST"/>
+                                                            <Setter Property="Foreground" Value="#94A3B8"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsStep2Unlocked}" Value="True">
+                                                                    <Setter Property="Text" Value="DEEP SYSTEM WIPE"/>
+                                                                    <Setter Property="Foreground" Value="#A78BFA"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
                                             </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="BtnN" Property="Background" Value="#301B52"/>
-                                                    <Setter TargetName="BtnN" Property="BorderBrush" Value="#A78BFA"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Button.Template>
-                                </Button>
+                                        </StackPanel>
+                                        <TextBlock Text="Completely purges all residual Tencent cache files, locked registry hives, drivers, and temp data across all drives."
+                                                   FontSize="12" Foreground="#8E95A5"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Divider -->
+                                <Border Grid.Row="1" Height="1" Background="#1E1C22" Margin="0,0,0,14"/>
+
+                                <!-- 7-Step Sequence Grid -->
+                                <UniformGrid Grid.Row="2" Columns="2" Rows="4" Margin="0,0,0,16">
+                                    <Border Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="8" Padding="12,7" Margin="0,0,6,6">
+                                        <TextBlock Text="1️⃣ Terminate all Tencent &amp; ADB processes" FontSize="11" Foreground="#E2E8F0"/>
+                                    </Border>
+                                    <Border Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="8" Padding="12,7" Margin="6,0,0,6">
+                                        <TextBlock Text="2️⃣ Delete QMEmulatorService &amp; aow_drv drivers" FontSize="11" Foreground="#E2E8F0"/>
+                                    </Border>
+                                    <Border Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="8" Padding="12,7" Margin="0,0,6,6">
+                                        <TextBlock Text="3️⃣ Unload locked QMConfig registry hives" FontSize="11" Foreground="#E2E8F0"/>
+                                    </Border>
+                                    <Border Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="8" Padding="12,7" Margin="6,0,0,6">
+                                        <TextBlock Text="4️⃣ Delete HKCU &amp; HKLM Tencent registry trees" FontSize="11" Foreground="#E2E8F0"/>
+                                    </Border>
+                                    <Border Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="8" Padding="12,7" Margin="0,0,6,6">
+                                        <TextBlock Text="5️⃣ Delete TxGameAssistant on all drives (C:, D:, E:)" FontSize="11" Foreground="#E2E8F0"/>
+                                    </Border>
+                                    <Border Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="8" Padding="12,7" Margin="6,0,0,6">
+                                        <TextBlock Text="6️⃣ Clear AppData, LocalAppData &amp; ProgramData" FontSize="11" Foreground="#E2E8F0"/>
+                                    </Border>
+                                    <Border Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="8" Padding="12,7" Margin="0,0,6,0">
+                                        <TextBlock Text="7️⃣ Flush TxGameDownload &amp; DirectX Shader caches" FontSize="11" Foreground="#E2E8F0"/>
+                                    </Border>
+                                    <Border Background="#16171E" BorderBrush="#222430" BorderThickness="1" CornerRadius="8" Padding="12,7" Margin="6,0,0,0">
+                                        <TextBlock Text="✨ Remove all Desktop &amp; Start Menu shortcuts" FontSize="11" Foreground="#E2E8F0"/>
+                                    </Border>
+                                </UniformGrid>
+
+                                <!-- Action Button & Status -->
+                                <Grid Grid.Row="3">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
+                                        <TextBlock Text="{Binding CleanerStatusText}" FontSize="11.5" Foreground="#38BDF8" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                        <!-- Optional Manual Override if already uninstalled via Windows -->
+                                        <Button Command="{Binding UnlockStep2Command}"
+                                                Visibility="{Binding IsStep1Active, Converter={StaticResource BoolToVis}}"
+                                                Background="Transparent" BorderThickness="0" Cursor="Hand" Margin="0,4,0,0" HorizontalAlignment="Left">
+                                            <TextBlock Text="Already uninstalled manually? Click here to unlock" FontSize="10.5" Foreground="#A78BFA" TextDecorations="Underline"/>
+                                        </Button>
+                                    </StackPanel>
+
+                                    <Button Grid.Column="1" Command="{Binding NuclearCleanCommand}"
+                                            IsEnabled="{Binding IsStep2Unlocked}" Cursor="Hand" Height="42">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="BtnN" Background="#201533" BorderBrush="#8B5CF6" BorderThickness="1.2" CornerRadius="8" Padding="24,0">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock x:Name="BtnNIcon" Text="🧹" FontSize="14" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="BtnNTxt" Text="Nuclear Clean (Registry, Cache &amp; Temp)" FontSize="12.5" FontWeight="Bold" Foreground="#A78BFA" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter TargetName="BtnN" Property="Background" Value="#15161C"/>
+                                                        <Setter TargetName="BtnN" Property="BorderBrush" Value="#252733"/>
+                                                        <Setter TargetName="BtnNTxt" Property="Text" Value="🔒 Locked (Complete Step 1 First)"/>
+                                                        <Setter TargetName="BtnNTxt" Property="Foreground" Value="#64748B"/>
+                                                        <Setter TargetName="BtnNIcon" Property="Text" Value="🔒"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="BtnN" Property="Background" Value="#301B52"/>
+                                                        <Setter TargetName="BtnN" Property="BorderBrush" Value="#A78BFA"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
+                                </Grid>
                             </Grid>
-                        </Grid>
-                    </Border>
+                        </Border>
+                    </Grid>
 
                     <!-- CARD 3: QUICK MAINTENANCE -->
                     <Border Background="#121216" BorderBrush="#202128" BorderThickness="1" CornerRadius="16" Padding="20,16">
@@ -717,7 +841,7 @@
         </ScrollViewer>
 
         <!-- ── 2. PINNED BOTTOM GRADIENT FADE OVERLAY ── -->
-        <Border VerticalAlignment="Bottom" Height="85" IsHitTestVisible="False" Panel.ZIndex="90">
+        <Border Grid.Row="1" VerticalAlignment="Bottom" Height="85" IsHitTestVisible="False" Panel.ZIndex="90">
             <Border.Background>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                     <GradientStop Color="#000B0C0E" Offset="0.0"/>
@@ -730,7 +854,7 @@
         </Border>
 
         <!-- ── 3. PINNED BOTTOM CAROUSEL DOTS (CENTERED ACROSS FULL APP WINDOW, MOUSE WHEEL ENABLED) ── -->
-        <Border x:Name="BottomPaginationDotsBorder" Panel.ZIndex="100" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+        <Border Grid.Row="1" x:Name="BottomPaginationDotsBorder" Panel.ZIndex="100" HorizontalAlignment="Center" VerticalAlignment="Bottom"
                 Width="320" Height="46" Margin="0,0,90,0" Background="Transparent" BorderThickness="0"
                 PreviewMouseWheel="PaginationBar_PreviewMouseWheel"
                 FocusVisualStyle="{x:Null}" ClipToBounds="False">

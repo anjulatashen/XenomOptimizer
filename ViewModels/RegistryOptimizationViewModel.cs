@@ -44,6 +44,18 @@ public partial class RegistryOptimizationViewModel : ObservableObject
     [ObservableProperty] private string _cleanerStatusText = "Ready to purge cache, registry, drivers and temp files.";
     [ObservableProperty] private bool _isCleaning;
     [ObservableProperty] private string _uninstallStatusText = "Ready to launch official uninstaller.";
+    [ObservableProperty] private bool _isStep1Completed;
+
+    public bool IsStep2Unlocked => !IsGameLoopInstalled || IsStep1Completed;
+    public bool IsStep1Active => !IsStep2Unlocked;
+
+    public string PageHeaderTitle => IsUninstallerVisible
+        ? "GameLoop Deep Uninstaller"
+        : "GameLoop Installing Hub";
+
+    public string PageHeaderSubtitle => IsUninstallerVisible
+        ? "Official Tencent uninstaller wizard & 7-step nuclear wiper with residual cache purge"
+        : "Official multi-version GameLoop installer hub with direct fast CDN downloads";
 
     // ── 2-Page Carousel Navigation (Smart Order: Uninstaller / Installer) ──
     [ObservableProperty] private int _selectedSlideIndex = 0;
@@ -81,12 +93,47 @@ public partial class RegistryOptimizationViewModel : ObservableObject
             SelectedSlideIndex--;
     }
 
+    [RelayCommand]
+    public void UnlockStep2()
+    {
+        IsStep1Completed = true;
+    }
+
+    partial void OnIsGameLoopInstalledChanged(bool value)
+    {
+        OnPropertyChanged(nameof(IsStep2Unlocked));
+        OnPropertyChanged(nameof(IsStep1Active));
+        UpdateCleanerStatus();
+    }
+
+    partial void OnIsStep1CompletedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(IsStep2Unlocked));
+        OnPropertyChanged(nameof(IsStep1Active));
+        UpdateCleanerStatus();
+    }
+
+    private void UpdateCleanerStatus()
+    {
+        if (!IsStep2Unlocked)
+        {
+            CleanerStatusText = "Please complete Step 1 (Official Uninstaller) first to unlock Nuclear Clean.";
+        }
+        else if (CleanerStatusText.StartsWith("Please complete Step 1") ||
+                 CleanerStatusText == "Ready to purge cache, registry, drivers and temp files.")
+        {
+            CleanerStatusText = "Ready to purge residual cache, registry trees, drivers and temp files.";
+        }
+    }
+
     partial void OnSelectedSlideIndexChanged(int value)
     {
         OnPropertyChanged(nameof(IsPage1Active));
         OnPropertyChanged(nameof(IsPage2Active));
         OnPropertyChanged(nameof(IsUninstallerVisible));
         OnPropertyChanged(nameof(IsInstallerVisible));
+        OnPropertyChanged(nameof(PageHeaderTitle));
+        OnPropertyChanged(nameof(PageHeaderSubtitle));
     }
 
     partial void OnIsUninstallerFirstChanged(bool value)
@@ -95,6 +142,8 @@ public partial class RegistryOptimizationViewModel : ObservableObject
         OnPropertyChanged(nameof(IsInstallerVisible));
         OnPropertyChanged(nameof(Slide0Tooltip));
         OnPropertyChanged(nameof(Slide1Tooltip));
+        OnPropertyChanged(nameof(PageHeaderTitle));
+        OnPropertyChanged(nameof(PageHeaderSubtitle));
     }
 
     // ── Official GameLoop Downloads ──
@@ -194,7 +243,8 @@ public partial class RegistryOptimizationViewModel : ObservableObject
             else if (w == 2560 && h == 1440) SelectedResolutionPreset = "2K";
             else SelectedResolutionPreset = "1080p";
 
-            StatusMessage = IsGameLoopInstalled ? "GameLoop detected & ready." : "GameLoop not detected in default directories.";
+            UpdateCleanerStatus();
+            StatusMessage = "";
         }
         catch (Exception ex)
         {
@@ -457,11 +507,48 @@ public partial class RegistryOptimizationViewModel : ObservableObject
             var res = await _gameLoopOptimizer.LaunchOfficialUninstallAsync();
             UninstallStatusText = res.Message;
             StatusMessage = res.Message;
+
+            if (res.Success)
+            {
+                // Uninstaller launched! Monitor in background until it exits
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(2500);
+                    var startTime = DateTime.UtcNow;
+                    while ((DateTime.UtcNow - startTime).TotalMinutes < 10)
+                    {
+                        var uninstProcesses = Process.GetProcessesByName("TUninstall")
+                            .Concat(Process.GetProcessesByName("Uninstall"))
+                            .ToArray();
+                        if (uninstProcesses.Length == 0)
+                        {
+                            break;
+                        }
+                        await Task.Delay(2000);
+                    }
+
+                    var stillInstalled = await _gameLoopDetection.IsInstalledAsync();
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        IsGameLoopInstalled = stillInstalled;
+                        IsStep1Completed = true;
+                        UninstallStatusText = stillInstalled
+                            ? "Uninstaller completed. Step 2 Nuclear Clean is now unlocked."
+                            : "Official uninstaller finished. Step 2 Nuclear Clean is now ready!";
+                    });
+                });
+            }
+            else
+            {
+                // Official uninstaller missing (already removed or broken). Unlock Step 2 directly.
+                IsStep1Completed = true;
+            }
         }
         catch (Exception ex)
         {
             UninstallStatusText = $"Uninstaller error: {ex.Message}";
             StatusMessage = UninstallStatusText;
+            IsStep1Completed = true;
         }
         finally
         {
@@ -481,6 +568,8 @@ public partial class RegistryOptimizationViewModel : ObservableObject
             CleanerStatusText = res.Message;
             StatusMessage = res.Message;
             IsGameLoopRunning = false;
+            IsGameLoopInstalled = false;
+            IsStep1Completed = true;
         }
         catch (Exception ex)
         {

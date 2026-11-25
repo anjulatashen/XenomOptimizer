@@ -236,6 +236,57 @@ public partial class MainWindow : Window
                     CreateShortcut(Path.Combine(startMenuDir, "LAG Killer by XENOM.lnk"), _installedExePath, targetDir);
                 }
 
+                // Register Uninstaller and Windows "Installed Apps" Registry Entry
+                try
+                {
+                    var uninstallBatPath = Path.Combine(targetDir, "Uninstall.bat");
+                    var uninstallScript = @"@echo off
+title LAG Killer by XENOM - Uninstaller
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    powershell -Command ""Start-Process cmd -ArgumentList '/c \""""%~f0\""""' -Verb RunAs""
+    exit /b
+)
+echo Terminating LAG Killer processes...
+taskkill /F /IM XenomOptimizer.exe /T >nul 2>&1
+taskkill /F /IM Magpie.exe /T >nul 2>&1
+timeout /t 1 /nobreak >nul
+echo Removing shortcuts...
+if exist ""%USERPROFILE%\Desktop\LAG Killer by XENOM.lnk"" del /f /q ""%USERPROFILE%\Desktop\LAG Killer by XENOM.lnk"" >nul 2>&1
+if exist ""%PUBLIC%\Desktop\LAG Killer by XENOM.lnk"" del /f /q ""%PUBLIC%\Desktop\LAG Killer by XENOM.lnk"" >nul 2>&1
+if exist ""%APPDATA%\Microsoft\Windows\Start Menu\Programs\LAG Killer by XENOM"" rd /s /q ""%APPDATA%\Microsoft\Windows\Start Menu\Programs\LAG Killer by XENOM"" >nul 2>&1
+if exist ""%ALLUSERSPROFILE%\Microsoft\Windows\Start Menu\Programs\LAG Killer by XENOM"" rd /s /q ""%ALLUSERSPROFILE%\Microsoft\Windows\Start Menu\Programs\LAG Killer by XENOM"" >nul 2>&1
+echo Cleaning registry...
+reg delete ""HKCU\Software\XenomOptimizer"" /f >nul 2>&1
+reg delete ""HKCU\Software\Microsoft\Windows\CurrentVersion\Run"" /v ""XenomOptimizer"" /f >nul 2>&1
+reg delete ""HKCU\Software\Microsoft\Windows\CurrentVersion\Uninstall\LAG Killer by XENOM"" /f >nul 2>&1
+reg delete ""HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall\LAG Killer by XENOM"" /f >nul 2>&1
+if exist ""%LOCALAPPDATA%\XenomOptimizer"" rd /s /q ""%LOCALAPPDATA%\XenomOptimizer"" >nul 2>&1
+if exist ""%APPDATA%\XenomOptimizer"" rd /s /q ""%APPDATA%\XenomOptimizer"" >nul 2>&1
+cd /d ""%LOCALAPPDATA%""
+if exist """ + targetDir + @""" rd /s /q """ + targetDir + @""" >nul 2>&1
+echo.
+echo LAG Killer by XENOM has been successfully uninstalled from your PC!
+echo.
+pause
+exit /b";
+                    File.WriteAllText(uninstallBatPath, uninstallScript);
+
+                    using var uninstKey = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\LAG Killer by XENOM");
+                    if (uninstKey != null)
+                    {
+                        uninstKey.SetValue("DisplayName", "LAG Killer by XENOM");
+                        uninstKey.SetValue("DisplayVersion", "1.0.1");
+                        uninstKey.SetValue("Publisher", "Xenom");
+                        uninstKey.SetValue("InstallLocation", targetDir);
+                        uninstKey.SetValue("DisplayIcon", _installedExePath);
+                        uninstKey.SetValue("UninstallString", $"\"{uninstallBatPath}\"");
+                        uninstKey.SetValue("QuietUninstallString", $"\"{uninstallBatPath}\"");
+                        uninstKey.SetValue("EstimatedSize", 260000, Microsoft.Win32.RegistryValueKind.DWord);
+                    }
+                }
+                catch { }
+
                 Dispatcher.Invoke(() => UpdateCapsuleProgress(100, "Installation complete!"));
             }
             catch (Exception ex)
