@@ -234,7 +234,8 @@ public partial class RegistryOptimizationViewModel : ObservableObject
             {
                 1 => "DirectX+",
                 2 => "OpenGL+",
-                _ => "Auto Smart"
+                4 => "Vulkan",
+                _ => "DirectX+"
             };
 
             // Resolution
@@ -351,13 +352,20 @@ public partial class RegistryOptimizationViewModel : ObservableObject
         IsLoading = true;
         try
         {
-            int next = (SelectedRenderEngine + 1) % 3;
+            int next = SelectedRenderEngine switch
+            {
+                1 => 2, // DirectX+ -> OpenGL+
+                2 => 4, // OpenGL+ -> Vulkan
+                4 => 1, // Vulkan -> DirectX+
+                _ => 1  // Default to DirectX+
+            };
             SelectedRenderEngine = next;
             RenderEngineName = next switch
             {
                 1 => "DirectX+",
                 2 => "OpenGL+",
-                _ => "Auto Smart"
+                4 => "Vulkan",
+                _ => "DirectX+"
             };
 
             var res = await _gameLoopOptimizer.ApplyRenderEngineAsync(next, RenderEngineName);

@@ -115,7 +115,7 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
 
     public ObservableCollection<string> DeviceProfileOptions { get; } = new()
     {
-        "Samsung SM-X910 (Galaxy Tab S9 Ultra - 120Hz Whitelist Active)",
+        "Samsung SM-X920 (Galaxy Tab S10+ - 120Hz Flagship Active)",
         "ASUS ROG Phone 5 (120Hz Ultra Gaming Profile)",
         "Xiaomi Black Shark 4 (Hyper-Response Touch Profile)",
         "Generic High-Performance 120Hz Flagship"
@@ -369,7 +369,7 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
                 1 => ("ASUS", "ASUS_I005D", "ASUS ROG Phone 5"),
                 2 => ("Xiaomi", "SHARK PRS-A0", "Xiaomi Black Shark 4"),
                 3 => ("SAMSUNG", "SM-G998B", "Samsung Galaxy S21 Ultra"),
-                _ => ("SAMSUNG", "SM-X910", "Samsung Galaxy Tab S9 Ultra")
+                _ => ("SAMSUNG", "SM-X920", "Samsung Galaxy Tab S10+")
             };
 
             // Registry keys
@@ -453,7 +453,7 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
         SelectedEngineIndex = 0; // DirectX+
         SelectedResolutionIndex = 3; // 1440x1080 (4:3 iPad View)
         SelectedDpiIndex = 1; // 240 DPI
-        SelectedDeviceProfileIndex = 0; // Samsung SM-X910
+        SelectedDeviceProfileIndex = 0; // Samsung SM-X920
         IsRenderCacheEnabled = true;
         IsDiscreteGpuEnforced = true;
         IsRenderOptimizationEnabled = true;
@@ -1197,7 +1197,7 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
 
         ActiveSavRecommendationText = ActiveSavFrameRate switch
         {
-            120 => "Recommended: 120 FPS Ultra Extreme (SM-X910 Whitelist Active)",
+            120 => "Recommended: 120 FPS Ultra Extreme (SM-X920 Whitelist Active)",
             90 => "Recommended: 90 FPS Extreme (SM-X920 HDR Active)",
             60 => "Standard: 60 FPS Extreme Profile",
             _ => "Battery Saver: 30 FPS Low Heat Profile"

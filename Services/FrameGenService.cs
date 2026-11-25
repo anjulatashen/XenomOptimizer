@@ -47,27 +47,25 @@ public class FrameGenService
                     key.SetValue("com.pubg.krmobile_RenderQuality", renderQuality, RegistryValueKind.DWord);
                     key.SetValue("com.pubg.imobile_RenderQuality", renderQuality, RegistryValueKind.DWord);
 
-                    // Content scale: Smooth=1 (maximum speed), Balanced/HD=2, HDR/Ultra=3
-                    int contentScale = qualityIndex switch
+                    // Content scale: 2 = 1080p FHD, 3 = 2K. Never force 1 (720p) unless user specifically chose 720p.
+                    int contentScale = 2;
+                    var curWObj = key.GetValue("VMResWidth") ?? key.GetValue("ResolutionWidth");
+                    if (curWObj != null && int.TryParse(curWObj.ToString(), out int curW))
                     {
-                        0 => 1,
-                        1 => 2,
-                        2 => 2,
-                        3 => 3,
-                        _ => 3
-                    };
+                        contentScale = curW >= 2560 ? 3 : (curW <= 1280 ? 1 : 2);
+                    }
                     key.SetValue("com.tencent.ig_ContentScale", contentScale, RegistryValueKind.DWord);
 
+                    // Ensure 1080p resolution keys are maintained
+                    if (key.GetValue("VMResWidth") == null) key.SetValue("VMResWidth", 1920, RegistryValueKind.DWord);
+                    if (key.GetValue("VMResHeight") == null) key.SetValue("VMResHeight", 1080, RegistryValueKind.DWord);
+                    if (key.GetValue("ResolutionWidth") == null) key.SetValue("ResolutionWidth", 1920, RegistryValueKind.DWord);
+                    if (key.GetValue("ResolutionHeight") == null) key.SetValue("ResolutionHeight", 1080, RegistryValueKind.DWord);
+
                     // Device Profile Spoofing:
-                    // SM-X910 (Samsung Galaxy Tab S9 Ultra) is the official 120Hz whitelisted model for 120 FPS
-                    // SM-X920 (Samsung Galaxy Tab S10+) is certified for HDR 90 FPS
-                    if (targetFps >= 120)
-                    {
-                        key.SetValue("VMDeviceManufacturer", "SAMSUNG", RegistryValueKind.String);
-                        key.SetValue("VMDeviceModel", "SM-X910", RegistryValueKind.String);
-                        key.SetValue("VMPhoneDevice", "Samsung SM-X910", RegistryValueKind.String);
-                    }
-                    else if (targetFps >= 90)
+                    // Preserve the user's active device model (e.g. SM-X920). Only set default if no model exists.
+                    var existingModel = key.GetValue("VMDeviceModel")?.ToString();
+                    if (string.IsNullOrWhiteSpace(existingModel) || existingModel.Equals("Unknown", StringComparison.OrdinalIgnoreCase))
                     {
                         key.SetValue("VMDeviceManufacturer", "SAMSUNG", RegistryValueKind.String);
                         key.SetValue("VMDeviceModel", "SM-X920", RegistryValueKind.String);
@@ -76,8 +74,6 @@ public class FrameGenService
 
                     key.SetValue("AdbDisable", 0, RegistryValueKind.DWord);
                     key.SetValue("FPSLock", 0, RegistryValueKind.DWord);
-                    key.SetValue("ForceDirectX", 1, RegistryValueKind.DWord);
-                    key.SetValue("RenderMode", 4, RegistryValueKind.DWord);
                     key.SetValue("VSyncEnabled", 0, RegistryValueKind.DWord);
 
                     using (var gameSavesKey = Registry.CurrentUser.CreateSubKey(@"Software\Tencent\MobileGamePC\GameSaves"))
@@ -354,13 +350,9 @@ public class FrameGenService
                     key.SetValue("com.pubg.krmobile_RenderQuality", qVal, RegistryValueKind.DWord);
                     key.SetValue("com.pubg.imobile_RenderQuality", qVal, RegistryValueKind.DWord);
 
-                    if (targetFps >= 120)
-                    {
-                        key.SetValue("VMDeviceManufacturer", "SAMSUNG", RegistryValueKind.String);
-                        key.SetValue("VMDeviceModel", "SM-X910", RegistryValueKind.String);
-                        key.SetValue("VMPhoneDevice", "Samsung SM-X910", RegistryValueKind.String);
-                    }
-                    else if (targetFps >= 90)
+                    // Preserve user's active device model; only set default if none exists
+                    var existingModel = key.GetValue("VMDeviceModel")?.ToString();
+                    if (string.IsNullOrWhiteSpace(existingModel) || existingModel.Equals("Unknown", StringComparison.OrdinalIgnoreCase))
                     {
                         key.SetValue("VMDeviceManufacturer", "SAMSUNG", RegistryValueKind.String);
                         key.SetValue("VMDeviceModel", "SM-X920", RegistryValueKind.String);
@@ -369,8 +361,6 @@ public class FrameGenService
 
                     key.SetValue("AdbDisable", 0, RegistryValueKind.DWord);
                     key.SetValue("FPSLock", 0, RegistryValueKind.DWord);
-                    key.SetValue("ForceDirectX", 1, RegistryValueKind.DWord);
-                    key.SetValue("RenderMode", 4, RegistryValueKind.DWord);
                     key.SetValue("VSyncEnabled", 0, RegistryValueKind.DWord);
                 }
             }

@@ -609,22 +609,24 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
                 _registry.SetValue(tencentKey, "FPSLock", 0u, RegistryValueKind.DWord);
                 _registry.SetValue(tencentKey, "RenderOptimizeEnabled", 1u, RegistryValueKind.DWord);
                 _registry.SetValue(tencentKey, "LocalShaderCacheEnabled", 1u, RegistryValueKind.DWord);
-                _registry.SetValue(tencentKey, "RenderMode", 4u, RegistryValueKind.DWord);
-                _registry.SetValue(tencentKey, "ForceDirectX", 1u, RegistryValueKind.DWord);
+                // Preserve user's configured render engine; do not overwrite RenderMode or ForceDirectX
                 _registry.SetValue(@"HKEY_CURRENT_USER\Software\Tencent\MobileGamePC\GameSaves", "FpsLevel", 5u, RegistryValueKind.DWord);
 
-                // 2. Set Device Model to Official 120Hz Supported Device (Samsung Galaxy Tab S9 Ultra - SM-X910)
-                _registry.SetValue(tencentKey, "VMDeviceModel", "SM-X910", RegistryValueKind.String);
-                _registry.SetValue(tencentKey, "VMDeviceManufacturer", "SAMSUNG", RegistryValueKind.String);
-                _registry.SetValue(tencentKey, "VMPhoneDevice", "Samsung SM-X910", RegistryValueKind.String);
+                // 2. Preserve active device model (e.g. SM-X920). Only set default if no model is set.
+                var existingModel = _registry.GetValue(tencentKey, "VMDeviceModel")?.ToString();
+                if (string.IsNullOrWhiteSpace(existingModel) || existingModel.Equals("Unknown", StringComparison.OrdinalIgnoreCase))
+                {
+                    _registry.SetValue(tencentKey, "VMDeviceModel", "SM-X920", RegistryValueKind.String);
+                    _registry.SetValue(tencentKey, "VMDeviceManufacturer", "SAMSUNG", RegistryValueKind.String);
+                    _registry.SetValue(tencentKey, "VMPhoneDevice", "Samsung SM-X920", RegistryValueKind.String);
+                }
                 _registry.SetValue(tencentKey, "AdbDisable", 0u, RegistryValueKind.DWord);
             }
             else
             {
                 _registry.SetValue(tencentKey, "com.tencent.ig_FPSLevel", 90u, RegistryValueKind.DWord);
                 _registry.SetValue(tencentKey, "fps_max", 90u, RegistryValueKind.DWord);
-                _registry.SetValue(tencentKey, "VMDeviceModel", "ASUS_I005D", RegistryValueKind.String);
-                _registry.SetValue(tencentKey, "VMPhoneDevice", "Asus ROG 5", RegistryValueKind.String);
+                // Do not clobber user's device model when reverting
             }
 
             // 3. Update GameLoop Config.ini if found
@@ -857,7 +859,19 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
             _registry.SetValue(tencentKey, "ClientHeight", (uint)height, RegistryValueKind.DWord);
             _registry.SetValue(tencentKey, "ContentWidth", (uint)width, RegistryValueKind.DWord);
             _registry.SetValue(tencentKey, "ContentHeight", (uint)height, RegistryValueKind.DWord);
+            _registry.SetValue(tencentKey, "Width", (uint)width, RegistryValueKind.DWord);
+            _registry.SetValue(tencentKey, "Height", (uint)height, RegistryValueKind.DWord);
+            _registry.SetValue(tencentKey, "VMResWidth", (uint)width, RegistryValueKind.DWord);
+            _registry.SetValue(tencentKey, "VMResHeight", (uint)height, RegistryValueKind.DWord);
             _registry.SetValue(tencentKey, "DPI", (uint)dpi, RegistryValueKind.DWord);
+            _registry.SetValue(tencentKey, "VMDPI", (uint)dpi, RegistryValueKind.DWord);
+
+            // Lock in-game content scale (2 = 1080p, 3 = 2K) to prevent GameLoop from auto-dropping to 720p!
+            uint contentScale = width >= 2560 ? 3u : (width >= 1920 ? 2u : 1u);
+            _registry.SetValue(tencentKey, "com.tencent.ig_ContentScale", contentScale, RegistryValueKind.DWord);
+            _registry.SetValue(tencentKey, "com.vng.pubgmobile_ContentScale", contentScale, RegistryValueKind.DWord);
+            _registry.SetValue(tencentKey, "com.pubg.krmobile_ContentScale", contentScale, RegistryValueKind.DWord);
+            _registry.SetValue(tencentKey, "com.pubg.imobile_ContentScale", contentScale, RegistryValueKind.DWord);
 
             var installPath = await _gameLoopDetection.GetInstallPathAsync();
             if (installPath != null)
@@ -874,6 +888,9 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
                     if (File.Exists(iniPath))
                     {
                         await _backup.BackupFileAsync(iniPath);
+                        UpdateIniKey(iniPath, "Engine", "VMWidth", width.ToString());
+                        UpdateIniKey(iniPath, "Engine", "VMHeight", height.ToString());
+                        UpdateIniKey(iniPath, "Engine", "VMDPI", dpi.ToString());
                         UpdateIniKey(iniPath, "Engine", "width", width.ToString());
                         UpdateIniKey(iniPath, "Engine", "height", height.ToString());
                         UpdateIniKey(iniPath, "Engine", "dpi", dpi.ToString());
@@ -903,9 +920,9 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
             try
             {
                 const string tencentKey = @"HKEY_CURRENT_USER\Software\Tencent\MobileGamePC";
-                var wObj = _registry.GetValue(tencentKey, "ResolutionWidth") ?? _registry.GetValue(tencentKey, "ClientWidth");
-                var hObj = _registry.GetValue(tencentKey, "ResolutionHeight") ?? _registry.GetValue(tencentKey, "ClientHeight");
-                var dpiObj = _registry.GetValue(tencentKey, "DPI");
+                var wObj = _registry.GetValue(tencentKey, "VMResWidth") ?? _registry.GetValue(tencentKey, "ResolutionWidth") ?? _registry.GetValue(tencentKey, "ClientWidth") ?? _registry.GetValue(tencentKey, "Width");
+                var hObj = _registry.GetValue(tencentKey, "VMResHeight") ?? _registry.GetValue(tencentKey, "ResolutionHeight") ?? _registry.GetValue(tencentKey, "ClientHeight") ?? _registry.GetValue(tencentKey, "Height");
+                var dpiObj = _registry.GetValue(tencentKey, "VMDPI") ?? _registry.GetValue(tencentKey, "DPI");
 
                 int w = wObj != null && int.TryParse(wObj.ToString(), out int parsedW) && parsedW > 0 ? parsedW : 1920;
                 int h = hObj != null && int.TryParse(hObj.ToString(), out int parsedH) && parsedH > 0 ? parsedH : 1080;
@@ -931,6 +948,38 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
             _registry.SetValue(tencentKey, "RendererType", (uint)engineMode, RegistryValueKind.DWord);
             _registry.SetValue(tencentKey, "RenderEngine", (uint)engineMode, RegistryValueKind.DWord);
 
+            // Configure DirectX+, OpenGL+, or Vulkan specific flags
+            if (engineMode == 1) // DirectX+
+            {
+                _registry.SetValue(tencentKey, "ForceDirectX", 1u, RegistryValueKind.DWord);
+                _registry.SetValue(tencentKey, "RenderMode", 2u, RegistryValueKind.DWord);
+                _registry.SetValue(tencentKey, "UseVulkan", 0u, RegistryValueKind.DWord);
+                try { _registry.SetValue(@"HKEY_CURRENT_USER\Software\Tencent\MobileGamePC\RunFalgs\_100", "RendererEngine", 1u, RegistryValueKind.DWord); } catch { }
+                try { _registry.SetValue(@"HKEY_CURRENT_USER\Software\Tencent\MobileGamePC\RunFalgs\aow_100", "RendererEngine", 1u, RegistryValueKind.DWord); } catch { }
+            }
+            else if (engineMode == 2) // OpenGL+
+            {
+                _registry.SetValue(tencentKey, "ForceDirectX", 0u, RegistryValueKind.DWord);
+                _registry.SetValue(tencentKey, "RenderMode", 1u, RegistryValueKind.DWord);
+                _registry.SetValue(tencentKey, "UseVulkan", 0u, RegistryValueKind.DWord);
+                try { _registry.SetValue(@"HKEY_CURRENT_USER\Software\Tencent\MobileGamePC\RunFalgs\_100", "RendererEngine", 2u, RegistryValueKind.DWord); } catch { }
+                try { _registry.SetValue(@"HKEY_CURRENT_USER\Software\Tencent\MobileGamePC\RunFalgs\aow_100", "RendererEngine", 2u, RegistryValueKind.DWord); } catch { }
+            }
+            else if (engineMode == 4) // Vulkan
+            {
+                _registry.SetValue(tencentKey, "ForceDirectX", 0u, RegistryValueKind.DWord);
+                _registry.SetValue(tencentKey, "RenderMode", 4u, RegistryValueKind.DWord);
+                _registry.SetValue(tencentKey, "UseVulkan", 1u, RegistryValueKind.DWord);
+                try { _registry.SetValue(@"HKEY_CURRENT_USER\Software\Tencent\MobileGamePC\RunFalgs\_100", "RendererEngine", 4u, RegistryValueKind.DWord); } catch { }
+                try { _registry.SetValue(@"HKEY_CURRENT_USER\Software\Tencent\MobileGamePC\RunFalgs\aow_100", "RendererEngine", 4u, RegistryValueKind.DWord); } catch { }
+            }
+            else // Auto Smart Mode
+            {
+                _registry.SetValue(tencentKey, "ForceDirectX", 0u, RegistryValueKind.DWord);
+                _registry.SetValue(tencentKey, "RenderMode", 4u, RegistryValueKind.DWord);
+                _registry.SetValue(tencentKey, "UseVulkan", 0u, RegistryValueKind.DWord);
+            }
+
             var installPath = await _gameLoopDetection.GetInstallPathAsync();
             if (installPath != null)
             {
@@ -947,6 +996,7 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
                     {
                         UpdateIniKey(iniPath, "Engine", "renderer_type", engineMode.ToString());
                         UpdateIniKey(iniPath, "Engine", "render_engine", engineMode.ToString());
+                        UpdateIniKey(iniPath, "Engine", "Renderer", engineMode.ToString());
                     }
                 }
             }
@@ -970,12 +1020,20 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
             try
             {
                 const string tencentKey = @"HKEY_CURRENT_USER\Software\Tencent\MobileGamePC";
-                var rObj = _registry.GetValue(tencentKey, "RendererType");
-                if (rObj != null && int.TryParse(rObj.ToString(), out int mode))
+                var rObj = _registry.GetValue(tencentKey, "RendererType") ?? _registry.GetValue(tencentKey, "RenderEngine");
+                if (rObj != null && int.TryParse(rObj.ToString(), out int mode) && mode > 0)
                     return mode;
+
+                var fDx = _registry.GetValue(tencentKey, "ForceDirectX");
+                if (fDx != null && Convert.ToInt32(fDx) == 1)
+                    return 1; // DirectX+
+
+                var rEngine = _registry.GetValue(@"HKEY_CURRENT_USER\Software\Tencent\MobileGamePC\RunFalgs\_100", "RendererEngine");
+                if (rEngine != null && int.TryParse(rEngine.ToString(), out int reMode) && reMode > 0)
+                    return reMode;
             }
             catch { }
-            return 0; // Default DirectX+
+            return 1; // Default to DirectX+ (1)
         });
     }
 
