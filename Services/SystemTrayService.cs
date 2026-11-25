@@ -302,9 +302,9 @@ public class SystemTrayService : IDisposable
             {
                 Views.ToastNotificationWindow.Show(title, message, RestoreWindow);
             }
-            catch
+            catch (Exception ex)
             {
-                _notifyIcon?.ShowBalloonTip(2500, title, message, Forms.ToolTipIcon.None);
+                System.Diagnostics.Debug.WriteLine($"ShowNotification error: {ex}");
             }
         });
     }

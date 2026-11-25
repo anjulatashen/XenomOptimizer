@@ -128,6 +128,23 @@ public partial class MainWindow : Window
         {
             try
             {
+                // Terminate any currently running instance of XenomOptimizer before extracting
+                try
+                {
+                    var runningProcs = Process.GetProcessesByName("XenomOptimizer");
+                    foreach (var proc in runningProcs)
+                    {
+                        try
+                        {
+                            proc.Kill();
+                            proc.WaitForExit(1500);
+                        }
+                        catch { }
+                        finally { proc.Dispose(); }
+                    }
+                }
+                catch { }
+
                 Directory.CreateDirectory(targetDir);
 
                 // Extract embedded payload zip

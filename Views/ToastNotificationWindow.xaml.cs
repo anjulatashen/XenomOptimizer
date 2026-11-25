@@ -51,6 +51,16 @@ public partial class ToastNotificationWindow : Window
         TxtTitle.Text = string.IsNullOrWhiteSpace(title) ? "LAG Killer by XENOM" : title;
         TxtMessage.Text = message ?? string.Empty;
 
+        // Pre-position to bottom-right immediately to prevent any flicker or off-screen rendering
+        try
+        {
+            var wa = SystemParameters.WorkArea;
+            WindowStartupLocation = WindowStartupLocation.Manual;
+            Left = wa.Right - 382 - 16;
+            Top = wa.Bottom - 100 - 16;
+        }
+        catch { }
+
         LoadLogo();
         Loaded += ToastNotificationWindow_Loaded;
     }
@@ -170,14 +180,18 @@ public partial class ToastNotificationWindow : Window
     {
         try
         {
+            UpdateLayout();
+            double w = ActualWidth > 50 ? ActualWidth : 382;
+            double h = ActualHeight > 30 ? ActualHeight : 100;
+
             var wa = SystemParameters.WorkArea;
-            Left = wa.Right - ActualWidth - 12;
-            Top = wa.Bottom - ActualHeight - 12;
+            Left = wa.Right - w - 16;
+            Top = wa.Bottom - h - 16;
         }
         catch
         {
-            Left = SystemParameters.PrimaryScreenWidth - 370;
-            Top = SystemParameters.PrimaryScreenHeight - 130;
+            Left = SystemParameters.PrimaryScreenWidth - 390;
+            Top = SystemParameters.PrimaryScreenHeight - 120;
         }
     }
 
