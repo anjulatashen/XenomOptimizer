@@ -54,6 +54,89 @@ public class SystemDetectionService : ISystemDetectionService
         return ((ulong)(uint)ft.dwHighDateTime << 32) | (uint)ft.dwLowDateTime;
     }
 
+    // ── Native Storage Device Query P/Invoke (Direct Kernel IOCTL Detection) ──
+    private const uint OPEN_EXISTING = 3;
+    private const uint FILE_SHARE_READ = 0x00000001;
+    private const uint FILE_SHARE_WRITE = 0x00000002;
+    private const uint IOCTL_STORAGE_QUERY_PROPERTY = 0x002D1400;
+    private const uint IOCTL_STORAGE_GET_DEVICE_NUMBER = 0x002D1080;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct STORAGE_PROPERTY_QUERY
+    {
+        public int PropertyId;
+        public int QueryType;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 1)]
+        public byte[] AdditionalParameters;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct DEVICE_SEEK_PENALTY_DESCRIPTOR
+    {
+        public uint Version;
+        public uint Size;
+        [MarshalAs(UnmanagedType.I1)]
+        public bool IncursSeekPenalty;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct STORAGE_DEVICE_NUMBER
+    {
+        public int DeviceType;
+        public int DeviceNumber;
+        public int PartitionNumber;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    private static extern IntPtr CreateFile(
+        string lpFileName,
+        uint dwDesiredAccess,
+        uint dwShareMode,
+        IntPtr lpSecurityAttributes,
+        uint dwCreationDisposition,
+        uint dwFlagsAndAttributes,
+        IntPtr hTemplateFile);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool DeviceIoControl(
+        IntPtr hDevice,
+        uint dwIoControlCode,
+        ref STORAGE_PROPERTY_QUERY lpInBuffer,
+        uint nInBufferSize,
+        ref DEVICE_SEEK_PENALTY_DESCRIPTOR lpOutBuffer,
+        uint nOutBufferSize,
+        out uint lpBytesReturned,
+        IntPtr lpOverlapped);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool DeviceIoControl(
+        IntPtr hDevice,
+        uint dwIoControlCode,
+        IntPtr lpInBuffer,
+        uint nInBufferSize,
+        out STORAGE_DEVICE_NUMBER lpOutBuffer,
+        uint nOutBufferSize,
+        out uint lpBytesReturned,
+        IntPtr lpOverlapped);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool DeviceIoControl(
+        IntPtr hDevice,
+        uint dwIoControlCode,
+        ref STORAGE_PROPERTY_QUERY lpInBuffer,
+        uint nInBufferSize,
+        IntPtr lpOutBuffer,
+        uint nOutBufferSize,
+        out uint lpBytesReturned,
+        IntPtr lpOverlapped);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool CloseHandle(IntPtr hObject);
+
     private readonly ILogService _log;
     private readonly object _cpuLock = new();
     private ulong _prevIdleTime;
@@ -879,64 +962,77 @@ public class SystemDetectionService : ISystemDetectionService
             var results = new List<DiskDriveInfo>();
             try
             {
-                // Query MSFT_PhysicalDisk for friendly names, bus/media types (NVMe, SSD, HDD), and SMART Health Status
-                var physicalDisks = new Dictionary<string, (string Model, string MediaType, string HealthText, string HealthColor)>();
+                // 1. Query MSFT_PhysicalDisk for FriendlyName, SMART HealthStatus, SpindleSpeed, and MediaType
+                var physicalDisks = new Dictionary<string, (string FriendlyName, int MediaType, int BusType, int SpindleSpeed, string HealthText, string HealthColor)>();
                 try
                 {
-                    using var searcher = new ManagementObjectSearcher(@"root\Microsoft\Windows\Storage", "SELECT DeviceId, FriendlyName, MediaType, BusType, HealthStatus, OperationalStatus FROM MSFT_PhysicalDisk");
+                    using var searcher = new ManagementObjectSearcher(@"root\Microsoft\Windows\Storage", "SELECT DeviceId, FriendlyName, MediaType, BusType, SpindleSpeed, HealthStatus FROM MSFT_PhysicalDisk");
                     foreach (var obj in searcher.Get())
                     {
                         string id = obj["DeviceId"]?.ToString() ?? "";
                         string name = obj["FriendlyName"]?.ToString()?.Trim() ?? "";
                         int media = Convert.ToInt32(obj["MediaType"] ?? 0);
                         int bus = Convert.ToInt32(obj["BusType"] ?? 0);
+                        int spindle = 0;
+                        try { spindle = Convert.ToInt32(obj["SpindleSpeed"] ?? 0); } catch { }
                         int health = Convert.ToInt32(obj["HealthStatus"] ?? 0);
 
-                        string typeStr = "SSD";
-                        if (bus == 17) typeStr = "NVMe SSD";
-                        else if (media == 3) typeStr = "HDD";
-                        else if (media == 4) typeStr = "SATA SSD";
-
                         string healthText = "Health | Good";
-                        string healthColor = "#A3E635"; // Lime Green
-
-                        if (health == 1)
-                        {
-                            healthText = "Health | Normal";
-                            healthColor = "#F59E0B"; // Light Orange
-                        }
-                        else if (health == 2)
-                        {
-                            healthText = "Health | Bad";
-                            healthColor = "#EF4444"; // Red
-                        }
+                        string healthColor = "#A3E635";
+                        if (health == 1) { healthText = "Health | Normal"; healthColor = "#F59E0B"; }
+                        else if (health == 2) { healthText = "Health | Bad"; healthColor = "#EF4444"; }
 
                         if (!string.IsNullOrEmpty(id))
                         {
-                            physicalDisks[id] = (name, typeStr, healthText, healthColor);
+                            physicalDisks[id] = (name, media, bus, spindle, healthText, healthColor);
                         }
                     }
                 }
                 catch { }
 
-                // Query partitions to map DriveLetter -> PhysicalDisk
-                var driveToPhysical = new Dictionary<string, (string Model, string MediaType, string HealthText, string HealthColor)>(StringComparer.OrdinalIgnoreCase);
+                // 2. Query Win32_DiskDrive for model fallback
+                var win32Disks = new Dictionary<int, string>();
+                try
+                {
+                    using var ddSearcher = new ManagementObjectSearcher(@"root\cimv2", "SELECT Index, Model FROM Win32_DiskDrive");
+                    foreach (var dd in ddSearcher.Get())
+                    {
+                        if (int.TryParse(dd["Index"]?.ToString(), out int idx))
+                        {
+                            string m = dd["Model"]?.ToString()?.Trim() ?? "";
+                            if (!string.IsNullOrEmpty(m)) win32Disks[idx] = m;
+                        }
+                    }
+                }
+                catch { }
+
+                // 3. Query partitions to map DriveLetter -> PhysicalDisk ID
+                var letterToDiskNum = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 try
                 {
                     using var partSearcher = new ManagementObjectSearcher(@"root\Microsoft\Windows\Storage", "SELECT DiskNumber, DriveLetter FROM MSFT_Partition WHERE DriveLetter IS NOT NULL");
                     foreach (var p in partSearcher.Get())
                     {
-                        char letter = Convert.ToChar(p["DriveLetter"] ?? '\0');
-                        string diskNum = p["DiskNumber"]?.ToString() ?? "";
-                        if (letter != '\0' && physicalDisks.TryGetValue(diskNum, out var pd))
+                        var dlObj = p["DriveLetter"];
+                        char letter = '\0';
+                        if (dlObj is char c) letter = c;
+                        else if (dlObj != null && char.TryParse(dlObj.ToString(), out char parsedC) && parsedC != '\0') letter = parsedC;
+                        else if (dlObj != null)
                         {
-                            driveToPhysical[$"{letter}:\\"] = pd;
+                            string s = dlObj.ToString()?.Trim() ?? "";
+                            if (s.Length == 1 && char.IsLetter(s[0])) letter = s[0];
+                        }
+
+                        string diskNum = p["DiskNumber"]?.ToString() ?? "";
+                        if (letter != '\0' && !string.IsNullOrEmpty(diskNum))
+                        {
+                            letterToDiskNum[$"{char.ToUpperInvariant(letter)}:"] = diskNum;
                         }
                     }
                 }
                 catch { }
 
-                // Query DriveInfo for reliable space, label, and usage metrics
+                // 4. Query DriveInfo for reliable space, and apply Native Kernel IOCTL + WMI detection
                 foreach (var drive in DriveInfo.GetDrives())
                 {
                     if (drive.DriveType != DriveType.Fixed || !drive.IsReady)
@@ -946,29 +1042,79 @@ public class SystemDetectionService : ISystemDetectionService
                     long free = drive.TotalFreeSpace;
                     long used = total - free;
                     double usagePct = total > 0 ? (double)used / total * 100.0 : 0.0;
+                    string driveLetter = drive.Name.TrimEnd('\\');
 
-                    string model = drive.VolumeLabel;
-                    string mediaType = "SSD";
+                    // A. Direct Kernel IOCTL Query (Highest Priority Hardware Ground Truth)
+                    var (hasSeekPenalty, busType, productId, kernelDiskNum) = QueryNativeDriveInfo(driveLetter);
+
+                    // B. Physical Disk Info Lookup
+                    string diskIdStr = kernelDiskNum >= 0 ? kernelDiskNum.ToString() : (letterToDiskNum.TryGetValue(driveLetter, out var mappedId) ? mappedId : "");
+                    string friendlyName = "";
+                    int wmiMedia = 0;
+                    int wmiBus = 0;
+                    int spindleSpeed = 0;
                     string healthText = "Health | Good";
                     string healthColor = "#A3E635";
 
-                    if (driveToPhysical.TryGetValue(drive.Name, out var info))
+                    if (!string.IsNullOrEmpty(diskIdStr) && physicalDisks.TryGetValue(diskIdStr, out var pd))
                     {
-                        model = info.Model;
-                        mediaType = info.MediaType;
-                        healthText = info.HealthText;
-                        healthColor = info.HealthColor;
+                        friendlyName = pd.FriendlyName;
+                        wmiMedia = pd.MediaType;
+                        wmiBus = pd.BusType;
+                        spindleSpeed = pd.SpindleSpeed;
+                        healthText = pd.HealthText;
+                        healthColor = pd.HealthColor;
                     }
-                    else if (string.IsNullOrWhiteSpace(model))
+
+                    string win32Model = "";
+                    if (kernelDiskNum >= 0 && win32Disks.TryGetValue(kernelDiskNum, out var w32m))
                     {
-                        model = $"Drive ({drive.Name.TrimEnd('\\')})";
+                        win32Model = w32m;
+                    }
+
+                    // C. Resolve Model Name
+                    string resolvedModel = "";
+                    if (!string.IsNullOrWhiteSpace(friendlyName)) resolvedModel = friendlyName;
+                    else if (!string.IsNullOrWhiteSpace(productId)) resolvedModel = productId;
+                    else if (!string.IsNullOrWhiteSpace(win32Model)) resolvedModel = win32Model;
+                    else if (!string.IsNullOrWhiteSpace(drive.VolumeLabel)) resolvedModel = drive.VolumeLabel;
+
+                    // D. Resolve MediaType: HDD vs NVMe SSD vs SATA SSD
+                    bool isHdd = false;
+                    if (hasSeekPenalty) isHdd = true;
+                    else if (spindleSpeed > 0) isHdd = true;
+                    else if (wmiMedia == 3) isHdd = true;
+                    else if (IsHddModelName(resolvedModel)) isHdd = true;
+
+                    bool isNvme = false;
+                    if (!isHdd)
+                    {
+                        if (busType == 17 || wmiBus == 17) isNvme = true;
+                        else if (!string.IsNullOrEmpty(resolvedModel))
+                        {
+                            string u = resolvedModel.ToUpperInvariant();
+                            if (u.Contains("NVME") || u.Contains("PCIE") || u.Contains("NVM") || u.Contains("FALCON") || u.Contains("NM620") || u.Contains("NM790") || u.Contains("980 PRO") || u.Contains("970 EVO") || u.Contains("SN850") || u.Contains("SN770") || u.Contains("SN580"))
+                                isNvme = true;
+                        }
+                    }
+
+                    string finalMediaType;
+                    if (isHdd) finalMediaType = "HDD";
+                    else if (isNvme) finalMediaType = "NVMe SSD";
+                    else if (busType == 11 || wmiMedia == 4 || resolvedModel.Contains("SSD", StringComparison.OrdinalIgnoreCase) || resolvedModel.Contains("SATA", StringComparison.OrdinalIgnoreCase))
+                        finalMediaType = "SATA SSD";
+                    else finalMediaType = "SSD";
+
+                    if (string.IsNullOrWhiteSpace(resolvedModel))
+                    {
+                        resolvedModel = isHdd ? $"Hard Disk ({driveLetter})" : $"Drive ({driveLetter})";
                     }
 
                     results.Add(new DiskDriveInfo
                     {
-                        DriveLetter = drive.Name.TrimEnd('\\'),
-                        ModelName = model,
-                        MediaType = mediaType,
+                        DriveLetter = driveLetter,
+                        ModelName = resolvedModel,
+                        MediaType = finalMediaType,
                         TotalSizeFormatted = FormatBytes(total),
                         FreeSizeFormatted = FormatBytes(free),
                         UsedSizeFormatted = FormatBytes(used),
@@ -985,6 +1131,83 @@ public class SystemDetectionService : ISystemDetectionService
 
             return results;
         });
+    }
+
+    private static (bool HasSeekPenalty, int BusType, string ProductId, int DiskNumber) QueryNativeDriveInfo(string driveLetter)
+    {
+        bool hasSeekPenalty = false;
+        int busType = 0;
+        string product = "";
+        int diskNum = -1;
+
+        try
+        {
+            string cleanLetter = driveLetter.TrimEnd('\\', ':');
+            string path = @"\\.\" + cleanLetter + ":";
+            IntPtr h = CreateFile(path, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, IntPtr.Zero, OPEN_EXISTING, 0, IntPtr.Zero);
+            if (h.ToInt64() != -1 && h != IntPtr.Zero)
+            {
+                try
+                {
+                    // 1. Device Number (Physical Disk index)
+                    if (DeviceIoControl(h, IOCTL_STORAGE_GET_DEVICE_NUMBER, IntPtr.Zero, 0, out STORAGE_DEVICE_NUMBER sdn, (uint)Marshal.SizeOf(typeof(STORAGE_DEVICE_NUMBER)), out uint retNum, IntPtr.Zero))
+                    {
+                        diskNum = sdn.DeviceNumber;
+                    }
+
+                    // 2. Seek Penalty (true = Mechanical HDD, false = SSD/NVMe)
+                    var querySeek = new STORAGE_PROPERTY_QUERY { PropertyId = 7, QueryType = 0 }; // StorageDeviceSeekPenaltyProperty = 7
+                    var descSeek = new DEVICE_SEEK_PENALTY_DESCRIPTOR();
+                    if (DeviceIoControl(h, IOCTL_STORAGE_QUERY_PROPERTY, ref querySeek, (uint)Marshal.SizeOf(querySeek), ref descSeek, (uint)Marshal.SizeOf(descSeek), out uint retSeek, IntPtr.Zero))
+                    {
+                        hasSeekPenalty = descSeek.IncursSeekPenalty;
+                    }
+
+                    // 3. Storage Device Descriptor (BusType & ProductId)
+                    var queryDev = new STORAGE_PROPERTY_QUERY { PropertyId = 0, QueryType = 0 }; // StorageDeviceProperty = 0
+                    IntPtr buffer = Marshal.AllocHGlobal(1024);
+                    try
+                    {
+                        if (DeviceIoControl(h, IOCTL_STORAGE_QUERY_PROPERTY, ref queryDev, (uint)Marshal.SizeOf(queryDev), buffer, 1024, out uint retDev, IntPtr.Zero))
+                        {
+                            busType = Marshal.ReadInt32(buffer, 28); // BusType offset = 28
+                            int prodOffset = Marshal.ReadInt32(buffer, 16); // ProductIdOffset = 16
+                            if (prodOffset > 0 && prodOffset < retDev)
+                            {
+                                IntPtr prodPtr = new IntPtr(buffer.ToInt64() + prodOffset);
+                                string? str = Marshal.PtrToStringAnsi(prodPtr);
+                                if (!string.IsNullOrEmpty(str)) product = str.Trim();
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        Marshal.FreeHGlobal(buffer);
+                    }
+                }
+                finally
+                {
+                    CloseHandle(h);
+                }
+            }
+        }
+        catch { }
+
+        return (hasSeekPenalty, busType, product, diskNum);
+    }
+
+    private static bool IsHddModelName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return false;
+        string u = name.ToUpperInvariant();
+        if (u.Contains("HDD") || u.Contains("HARD DISK") || u.Contains("HARDDISK") || u.Contains("HARD DRIVE")) return true;
+        if (u.Contains("BARRACUDA") || u.Contains("IRONWOLF") || u.Contains("SKYHAWK") || u.Contains("FIRECUDA")) return true;
+        if (u.Contains("CAVIAR") || u.Contains("DESKSTAR") || u.Contains("SPINPOINT") || u.Contains("TRAVELSTAR")) return true;
+        if (u.Contains("WD BLUE") || u.Contains("WD BLACK") || u.Contains("WD RED") || u.Contains("WD GREEN") || u.Contains("WD PURPLE")) return true;
+        if (System.Text.RegularExpressions.Regex.IsMatch(u, @"\bST[0-9]{3,4}[A-Z0-9]*")) return true;
+        if (System.Text.RegularExpressions.Regex.IsMatch(u, @"\bWD[0-9]{2,4}[A-Z0-9]*") && !u.Contains("SSD") && !u.Contains("NVME")) return true;
+        if (u.Contains("DT01ACA") || u.Contains("MQ01") || u.Contains("MQ04") || u.Contains("HDWD") || u.Contains("DT01")) return true;
+        return false;
     }
 
     public Task<string> GetMotherboardModelAsync()

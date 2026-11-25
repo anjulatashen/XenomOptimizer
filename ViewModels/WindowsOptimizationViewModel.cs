@@ -4022,53 +4022,15 @@ public partial class WindowsOptimizationViewModel : ObservableObject
 				{
 				}
 			});
-			Task.Run(() =>
+			Task.Run(async () =>
 			{
 				try
 				{
-					string text = Path.GetPathRoot(Environment.SystemDirectory)?.TrimEnd('\\', ':') ?? "C";
-					int num = -1;
-					using (ManagementObjectSearcher managementObjectSearcher = new ManagementObjectSearcher("ROOT\\Microsoft\\Windows\\Storage", "SELECT DiskNumber FROM MSFT_Partition WHERE DriveLetter = '" + text + "'"))
+					var drives = await _systemDetection.GetStorageDrivesAsync();
+					var cDrive = drives.FirstOrDefault(d => d.DriveLetter.StartsWith("C", StringComparison.OrdinalIgnoreCase)) ?? drives.FirstOrDefault();
+					if (cDrive != null && !string.IsNullOrWhiteSpace(cDrive.MediaType))
 					{
-						foreach (ManagementBaseObject item4 in managementObjectSearcher.Get())
-						{
-							if (int.TryParse(item4["DiskNumber"]?.ToString(), out var result))
-							{
-								num = result;
-								break;
-							}
-						}
-					}
-					if (num >= 0)
-					{
-						using (ManagementObjectSearcher managementObjectSearcher2 = new ManagementObjectSearcher("ROOT\\Microsoft\\Windows\\Storage", $"SELECT BusType, MediaType, Model FROM MSFT_PhysicalDisk WHERE DeviceId = '{num}'"))
-						{
-							using ManagementObjectCollection.ManagementObjectEnumerator managementObjectEnumerator2 = managementObjectSearcher2.Get().GetEnumerator();
-							if (managementObjectEnumerator2.MoveNext())
-							{
-								ManagementBaseObject current2 = managementObjectEnumerator2.Current;
-								int num2 = Convert.ToInt32(current2["BusType"]);
-								int num3 = Convert.ToInt32(current2["MediaType"]);
-								string text2 = current2["Model"]?.ToString() ?? "";
-								if (num2 == 17 || text2.Contains("NVMe", StringComparison.OrdinalIgnoreCase))
-								{
-									StatDriveType = "NVMe SSD";
-								}
-								else if (num3 == 4 || text2.Contains("SSD", StringComparison.OrdinalIgnoreCase))
-								{
-									StatDriveType = "SATA SSD";
-								}
-								else if (num3 == 3 || text2.Contains("HDD", StringComparison.OrdinalIgnoreCase))
-								{
-									StatDriveType = "HDD";
-								}
-								else
-								{
-									StatDriveType = "SSD";
-								}
-							}
-							return;
-						}
+						StatDriveType = cDrive.MediaType;
 					}
 				}
 				catch
