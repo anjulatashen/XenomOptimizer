@@ -1206,6 +1206,8 @@ public partial class App : Application
 
         services.AddSingleton<IGameLoopOptimizerService, GameLoopOptimizerService>();
 
+        services.AddSingleton<IGameLoopKeyMappingService, GameLoopKeyMappingService>();
+
 
 
         // ViewModels

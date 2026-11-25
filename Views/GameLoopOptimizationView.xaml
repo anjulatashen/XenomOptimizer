@@ -60,7 +60,7 @@
             <!-- MODERN SEGMENTED PILL TAB NAVIGATION BAR                    -->
             <!-- ═══════════════════════════════════════════════════════════ -->
             <Border Background="#0C0E14" BorderBrush="#1E2333" BorderThickness="1" CornerRadius="22" Padding="5" Margin="0,0,0,24">
-                <UniformGrid Rows="1" Columns="5">
+                <UniformGrid Rows="1" Columns="6">
                     <!-- Tab 0: Graphics & 120 FPS -->
                     <Button Command="{Binding SwitchTabCommand}" CommandParameter="0" Height="40" Cursor="Hand">
                         <Button.Style>
@@ -73,7 +73,7 @@
                                             <Border x:Name="TabBorder" Background="{TemplateBinding Background}" CornerRadius="18" Padding="12,0">
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                     <TextBlock Text="🎮" FontSize="13" Margin="0,0,6,0"/>
-                                                    <TextBlock Text="Graphics &amp; 120 FPS" FontSize="12.5" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="TabText"/>
+                                                    <TextBlock Text="Graphics &amp; 120 FPS" FontSize="12" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="TabText"/>
                                                 </StackPanel>
                                             </Border>
                                             <ControlTemplate.Triggers>
@@ -103,7 +103,7 @@
                                             <Border x:Name="TabBorder" Background="{TemplateBinding Background}" CornerRadius="18" Padding="12,0">
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                                     <TextBlock Text="⚙️" FontSize="13" Margin="0,0,6,0"/>
-                                                    <TextBlock Text="Engine &amp; Cores" FontSize="12.5" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="TabText"/>
+                                                    <TextBlock Text="Engine &amp; Cores" FontSize="12" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="TabText"/>
                                                 </StackPanel>
                                             </Border>
                                             <ControlTemplate.Triggers>
@@ -121,7 +121,7 @@
                         </Button.Style>
                     </Button>
 
-                    <!-- Tab 2: Device Spoofing -->
+                    <!-- Tab 2: KeyMapping Suite -->
                     <Button Command="{Binding SwitchTabCommand}" CommandParameter="2" Height="40" Cursor="Hand">
                         <Button.Style>
                             <Style TargetType="Button">
@@ -132,8 +132,8 @@
                                         <ControlTemplate TargetType="Button">
                                             <Border x:Name="TabBorder" Background="{TemplateBinding Background}" CornerRadius="18" Padding="12,0">
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <TextBlock Text="📱" FontSize="13" Margin="0,0,6,0"/>
-                                                    <TextBlock Text="Device Spoofing" FontSize="12.5" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="TabText"/>
+                                                    <TextBlock Text="⌨️" FontSize="13" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="KeyMapping" FontSize="12" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="TabText"/>
                                                 </StackPanel>
                                             </Border>
                                             <ControlTemplate.Triggers>
@@ -151,7 +151,7 @@
                         </Button.Style>
                     </Button>
 
-                    <!-- Tab 3: PC Doctor & Tweaks -->
+                    <!-- Tab 3: Device Spoofing -->
                     <Button Command="{Binding SwitchTabCommand}" CommandParameter="3" Height="40" Cursor="Hand">
                         <Button.Style>
                             <Style TargetType="Button">
@@ -162,8 +162,8 @@
                                         <ControlTemplate TargetType="Button">
                                             <Border x:Name="TabBorder" Background="{TemplateBinding Background}" CornerRadius="18" Padding="12,0">
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <TextBlock Text="🩺" FontSize="13" Margin="0,0,6,0"/>
-                                                    <TextBlock Text="GameLoop Doctor" FontSize="12.5" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="TabText"/>
+                                                    <TextBlock Text="📱" FontSize="13" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="Device Spoofing" FontSize="12" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="TabText"/>
                                                 </StackPanel>
                                             </Border>
                                             <ControlTemplate.Triggers>
@@ -181,7 +181,7 @@
                         </Button.Style>
                     </Button>
 
-                    <!-- Tab 4: Storage & Safe Close -->
+                    <!-- Tab 4: PC Doctor & Tweaks -->
                     <Button Command="{Binding SwitchTabCommand}" CommandParameter="4" Height="40" Cursor="Hand">
                         <Button.Style>
                             <Style TargetType="Button">
@@ -192,12 +192,42 @@
                                         <ControlTemplate TargetType="Button">
                                             <Border x:Name="TabBorder" Background="{TemplateBinding Background}" CornerRadius="18" Padding="12,0">
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                    <TextBlock Text="🧹" FontSize="13" Margin="0,0,6,0"/>
-                                                    <TextBlock Text="Safe Close &amp; Cache" FontSize="12.5" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="TabText"/>
+                                                    <TextBlock Text="🩺" FontSize="13" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="GameLoop Doctor" FontSize="12" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="TabText"/>
                                                 </StackPanel>
                                             </Border>
                                             <ControlTemplate.Triggers>
                                                 <DataTrigger Binding="{Binding SelectedSubTab}" Value="4">
+                                                    <Setter TargetName="TabBorder" Property="Background" Value="#1C2335"/>
+                                                    <Setter TargetName="TabBorder" Property="BorderBrush" Value="#2D3A56"/>
+                                                    <Setter TargetName="TabBorder" Property="BorderThickness" Value="1"/>
+                                                    <Setter TargetName="TabText" Property="Foreground" Value="#38BDF8"/>
+                                                </DataTrigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+
+                    <!-- Tab 5: Storage & Safe Close -->
+                    <Button Command="{Binding SwitchTabCommand}" CommandParameter="5" Height="40" Cursor="Hand">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="TabBorder" Background="{TemplateBinding Background}" CornerRadius="18" Padding="12,0">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <TextBlock Text="🧹" FontSize="13" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="Safe Close &amp; Cache" FontSize="12" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="TabText"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedSubTab}" Value="5">
                                                     <Setter TargetName="TabBorder" Property="Background" Value="#1C2335"/>
                                                     <Setter TargetName="TabBorder" Property="BorderBrush" Value="#2D3A56"/>
                                                     <Setter TargetName="TabBorder" Property="BorderThickness" Value="1"/>
@@ -758,9 +788,591 @@
             </StackPanel>
 
             <!-- ═══════════════════════════════════════════════════════════ -->
-            <!-- TAB 2: DEVICE SPOOFING (120/90 FPS CERTIFIED PROFILES)      -->
+            <!-- TAB 2: KEYMAPPING SUITE (GLOBAL 64/32 & CHINESE EDITIONS)    -->
             <!-- ═══════════════════════════════════════════════════════════ -->
             <StackPanel Visibility="{Binding SelectedSubTab, Converter={StaticResource IntEqualsToVis}, ConverterParameter=2}">
+
+                <!-- KeyMapping Suite Banner Card -->
+                <Border Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2" CornerRadius="18" Padding="24,20" Margin="0,0,0,20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <TextBlock Text="⌨️ GameLoop KeyMapping Suite" FontSize="18" FontWeight="Bold" Foreground="#F8FAFC"/>
+                                <Border Background="#161B29" BorderBrush="#252F44" BorderThickness="1" CornerRadius="8" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="Smart Scaling &amp; Rebind" FontSize="11" FontWeight="SemiBold" Foreground="#38BDF8"/>
+                                </Border>
+                            </StackPanel>
+                            <TextBlock Text="Customize keyboard and mouse controls, switch Smart resolution profiles, adjust sensitivity and manage bindings across Global (32/64-bit) &amp; Chinese GameLoop." Foreground="#94A3B8" FontSize="12.5"/>
+                        </StackPanel>
+
+                        <!-- Detected Edition Badge on Right -->
+                        <Border Grid.Column="1" Background="#0F172A" BorderBrush="#1E293B" BorderThickness="1" CornerRadius="14" Padding="12,6" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Ellipse Width="8" Height="8" Fill="#10B981" Margin="0,0,8,0"/>
+                                <TextBlock Text="{Binding DetectedEditionText}" FontSize="12" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Configuration Cards: Edition, Mode & Secondary Settings -->
+                <Grid Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left Card: GameLoop Edition & Mode Selector -->
+                    <Border Grid.Column="0" Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2" CornerRadius="18" Padding="20">
+                        <StackPanel>
+                            <!-- Edition Selector -->
+                            <TextBlock Text="GameLoop Edition" FontSize="14" FontWeight="Bold" Foreground="#F8FAFC" Margin="0,0,0,4"/>
+                            <TextBlock Text="Select target GameLoop installation format" Foreground="#94A3B8" FontSize="11.5" Margin="0,0,0,12"/>
+
+                            <UniformGrid Rows="1" Columns="3" Margin="0,0,0,18">
+                                <!-- Global 64-bit -->
+                                <Button Command="{Binding SelectEditionCommand}" CommandParameter="0" Height="36" Margin="0,0,4,0" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="#161B28"/>
+                                            <Setter Property="BorderBrush" Value="#252E42"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10">
+                                                            <TextBlock Text="Global 64-bit" FontSize="11.5" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="Txt" Foreground="#94A3B8"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding SelectedEditionIndex}" Value="0">
+                                                                <Setter Property="Background" Value="#1E2A44"/>
+                                                                <Setter Property="BorderBrush" Value="#38BDF8"/>
+                                                                <Setter TargetName="Txt" Property="Foreground" Value="#38BDF8"/>
+                                                            </DataTrigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <!-- Global 32-bit -->
+                                <Button Command="{Binding SelectEditionCommand}" CommandParameter="1" Height="36" Margin="4,0,4,0" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="#161B28"/>
+                                            <Setter Property="BorderBrush" Value="#252E42"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10">
+                                                            <TextBlock Text="Global 32-bit" FontSize="11.5" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="Txt" Foreground="#94A3B8"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding SelectedEditionIndex}" Value="1">
+                                                                <Setter Property="Background" Value="#1E2A44"/>
+                                                                <Setter Property="BorderBrush" Value="#38BDF8"/>
+                                                                <Setter TargetName="Txt" Property="Foreground" Value="#38BDF8"/>
+                                                            </DataTrigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <!-- Chinese -->
+                                <Button Command="{Binding SelectEditionCommand}" CommandParameter="2" Height="36" Margin="4,0,0,0" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="#161B28"/>
+                                            <Setter Property="BorderBrush" Value="#252E42"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10">
+                                                            <TextBlock Text="Chinese (腾讯)" FontSize="11.5" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="Txt" Foreground="#94A3B8"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding SelectedEditionIndex}" Value="2">
+                                                                <Setter Property="Background" Value="#1E2A44"/>
+                                                                <Setter Property="BorderBrush" Value="#38BDF8"/>
+                                                                <Setter TargetName="Txt" Property="Foreground" Value="#38BDF8"/>
+                                                            </DataTrigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </UniformGrid>
+
+                            <!-- KeyMapping Mode Selector -->
+                            <TextBlock Text="KeyMapping Mode (Resolution Calibration)" FontSize="14" FontWeight="Bold" Foreground="#F8FAFC" Margin="0,0,0,4"/>
+                            <TextBlock Text="Align coordinate precision to emulator rendering resolution" Foreground="#94A3B8" FontSize="11.5" Margin="0,0,0,12"/>
+
+                            <UniformGrid Rows="2" Columns="2">
+                                <!-- Mode 1: Normal 720P -->
+                                <Button Command="{Binding SwitchKeyMapModeCommand}" CommandParameter="1" Height="46" Margin="0,0,6,6" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="#161B28"/>
+                                            <Setter Property="BorderBrush" Value="#252E42"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" Padding="12,6">
+                                                            <StackPanel VerticalAlignment="Center">
+                                                                <TextBlock Text="Normal 720P" FontSize="12.5" FontWeight="SemiBold" x:Name="T1" Foreground="#F8FAFC"/>
+                                                                <TextBlock Text="Static standard layout" FontSize="10.5" Foreground="#64748B"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding SelectedKeyMapModeId}" Value="1">
+                                                                <Setter Property="Background" Value="#122A26"/>
+                                                                <Setter Property="BorderBrush" Value="#10B981"/>
+                                                                <Setter TargetName="T1" Property="Foreground" Value="#10B981"/>
+                                                            </DataTrigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <!-- Mode 2: Smart 720P -->
+                                <Button Command="{Binding SwitchKeyMapModeCommand}" CommandParameter="2" Height="46" Margin="6,0,0,6" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="#161B28"/>
+                                            <Setter Property="BorderBrush" Value="#252E42"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" Padding="12,6">
+                                                            <StackPanel VerticalAlignment="Center">
+                                                                <TextBlock Text="Smart 720P" FontSize="12.5" FontWeight="SemiBold" x:Name="T2" Foreground="#F8FAFC"/>
+                                                                <TextBlock Text="Dynamic smart looting" FontSize="10.5" Foreground="#64748B"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding SelectedKeyMapModeId}" Value="2">
+                                                                <Setter Property="Background" Value="#122A26"/>
+                                                                <Setter Property="BorderBrush" Value="#10B981"/>
+                                                                <Setter TargetName="T2" Property="Foreground" Value="#10B981"/>
+                                                            </DataTrigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <!-- Mode 3: Smart 1080P -->
+                                <Button Command="{Binding SwitchKeyMapModeCommand}" CommandParameter="3" Height="46" Margin="0,6,6,0" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="#161B28"/>
+                                            <Setter Property="BorderBrush" Value="#252E42"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" Padding="12,6">
+                                                            <StackPanel VerticalAlignment="Center">
+                                                                <TextBlock Text="Smart 1080P" FontSize="12.5" FontWeight="SemiBold" x:Name="T3" Foreground="#F8FAFC"/>
+                                                                <TextBlock Text="Full HD calibrated" FontSize="10.5" Foreground="#64748B"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding SelectedKeyMapModeId}" Value="3">
+                                                                <Setter Property="Background" Value="#122A26"/>
+                                                                <Setter Property="BorderBrush" Value="#10B981"/>
+                                                                <Setter TargetName="T3" Property="Foreground" Value="#10B981"/>
+                                                            </DataTrigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <!-- Mode 4: Smart 2K -->
+                                <Button Command="{Binding SwitchKeyMapModeCommand}" CommandParameter="4" Height="46" Margin="6,6,0,0" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="#161B28"/>
+                                            <Setter Property="BorderBrush" Value="#252E42"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" Padding="12,6">
+                                                            <StackPanel VerticalAlignment="Center">
+                                                                <TextBlock Text="Smart 2K" FontSize="12.5" FontWeight="SemiBold" x:Name="T4" Foreground="#F8FAFC"/>
+                                                                <TextBlock Text="Ultra HD 1440P high-DPI" FontSize="10.5" Foreground="#64748B"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding SelectedKeyMapModeId}" Value="4">
+                                                                <Setter Property="Background" Value="#122A26"/>
+                                                                <Setter Property="BorderBrush" Value="#10B981"/>
+                                                                <Setter TargetName="T4" Property="Foreground" Value="#10B981"/>
+                                                            </DataTrigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </UniformGrid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Right Card: Secondary Settings & Mouse Sensitivity -->
+                    <Border Grid.Column="2" Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2" CornerRadius="18" Padding="20">
+                        <StackPanel>
+                            <TextBlock Text="Secondary Settings &amp; Mouse Engine" FontSize="14" FontWeight="Bold" Foreground="#F8FAFC" Margin="0,0,0,4"/>
+                            <TextBlock Text="Overlay reminders, auto mode detection and mouse sensitivity" Foreground="#94A3B8" FontSize="11.5" Margin="0,0,0,14"/>
+
+                            <!-- Checkboxes -->
+                            <CheckBox IsChecked="{Binding EnableKeyTips}" Margin="0,0,0,10">
+                                <TextBlock Text="Display key mapping tips (F1)" Foreground="#E2E8F0" FontSize="12.5"/>
+                            </CheckBox>
+
+                            <CheckBox IsChecked="{Binding AutoSwitchResolution}" Margin="0,0,0,10">
+                                <TextBlock Text="Auto switch mode based on screen resolution" Foreground="#E2E8F0" FontSize="12.5"/>
+                            </CheckBox>
+
+                            <CheckBox IsChecked="{Binding HoldShiftToRun}" Margin="0,0,0,16">
+                                <TextBlock Text="Hold Shift to run (Instant sprint toggle)" Foreground="#E2E8F0" FontSize="12.5"/>
+                            </CheckBox>
+
+                            <!-- Sliders -->
+                            <!-- Key Tips Brightness -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Tips Overlay Brightness" Foreground="#94A3B8" FontSize="12"/>
+                                <TextBlock Grid.Column="1" Text="{Binding KeyTipsBrightness, StringFormat={}{0:F0}%}" Foreground="#38BDF8" FontWeight="SemiBold" FontSize="12"/>
+                            </Grid>
+                            <Slider Minimum="0" Maximum="100" Value="{Binding KeyTipsBrightness}" Margin="0,0,0,14"/>
+
+                            <!-- Horizontal Mouse Sensitivity -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Horizontal Mouse Sensitivity" Foreground="#94A3B8" FontSize="12"/>
+                                <TextBlock Grid.Column="1" Text="{Binding HorizontalSensitivity, StringFormat={}{0:F0}%}" Foreground="#10B981" FontWeight="SemiBold" FontSize="12"/>
+                            </Grid>
+                            <Slider Minimum="50" Maximum="200" Value="{Binding HorizontalSensitivity}" Margin="0,0,0,14"/>
+
+                            <!-- Vertical Mouse Sensitivity -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Vertical Mouse Sensitivity" Foreground="#94A3B8" FontSize="12"/>
+                                <TextBlock Grid.Column="1" Text="{Binding VerticalSensitivity, StringFormat={}{0:F0}%}" Foreground="#10B981" FontWeight="SemiBold" FontSize="12"/>
+                            </Grid>
+                            <Slider Minimum="50" Maximum="200" Value="{Binding VerticalSensitivity}"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Key Bindings Editor Card -->
+                <Border Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2" CornerRadius="18" Padding="20" Margin="0,0,0,20">
+                    <StackPanel>
+                        <!-- Category Header Pills -->
+                        <Grid Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Interactive Key Controls" FontSize="16" FontWeight="Bold" Foreground="#F8FAFC" Margin="0,0,0,2"/>
+                                <TextBlock Text="Click any key badge below to rebind directly from your keyboard" Foreground="#94A3B8" FontSize="12"/>
+                            </StackPanel>
+
+                            <!-- Category Pills on Right -->
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Command="{Binding FilterKeyCategoryCommand}" CommandParameter="All" Height="30" Margin="0,0,6,0" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="#161B28"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="10,0">
+                                                            <TextBlock Text="All Keys" FontSize="11.5" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="Txt" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding SelectedKeyCategory}" Value="All">
+                                                                <Setter Property="Background" Value="#1E2A44"/>
+                                                                <Setter TargetName="Txt" Property="Foreground" Value="#38BDF8"/>
+                                                            </DataTrigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <Button Command="{Binding FilterKeyCategoryCommand}" CommandParameter="Movement" Height="30" Margin="0,0,6,0" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="#161B28"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="10,0">
+                                                            <TextBlock Text="🏃 Movement" FontSize="11.5" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="Txt" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding SelectedKeyCategory}" Value="Movement">
+                                                                <Setter Property="Background" Value="#1E2A44"/>
+                                                                <Setter TargetName="Txt" Property="Foreground" Value="#38BDF8"/>
+                                                            </DataTrigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <Button Command="{Binding FilterKeyCategoryCommand}" CommandParameter="Combat" Height="30" Margin="0,0,6,0" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="#161B28"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="10,0">
+                                                            <TextBlock Text="🎯 Combat" FontSize="11.5" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="Txt" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding SelectedKeyCategory}" Value="Combat">
+                                                                <Setter Property="Background" Value="#1E2A44"/>
+                                                                <Setter TargetName="Txt" Property="Foreground" Value="#38BDF8"/>
+                                                            </DataTrigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <Button Command="{Binding FilterKeyCategoryCommand}" CommandParameter="Grenades &amp; Meds" Height="30" Margin="0,0,6,0" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="#161B28"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="10,0">
+                                                            <TextBlock Text="💣 Grenades &amp; Meds" FontSize="11.5" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="Txt" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding SelectedKeyCategory}" Value="Grenades &amp; Meds">
+                                                                <Setter Property="Background" Value="#1E2A44"/>
+                                                                <Setter TargetName="Txt" Property="Foreground" Value="#38BDF8"/>
+                                                            </DataTrigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <Button Command="{Binding FilterKeyCategoryCommand}" CommandParameter="Interaction" Height="30" Cursor="Hand">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Background" Value="#161B28"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="10,0">
+                                                            <TextBlock Text="🚗 Interaction" FontSize="11.5" FontWeight="SemiBold" Foreground="#94A3B8" x:Name="Txt" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding SelectedKeyCategory}" Value="Interaction">
+                                                                <Setter Property="Background" Value="#1E2A44"/>
+                                                                <Setter TargetName="Txt" Property="Foreground" Value="#38BDF8"/>
+                                                            </DataTrigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Rebinding Banner (Visible when ListeningKeyItem != null) -->
+                        <Border Background="#0C283E" BorderBrush="#0284C7" BorderThickness="1.5" CornerRadius="12" Padding="16,10" Margin="0,0,0,16"
+                                Visibility="{Binding ListeningKeyItem, Converter={StaticResource StringToVis}}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                        <TextBlock Text="🔴 Waiting for input..." FontWeight="Bold" FontSize="13" Foreground="#38BDF8"/>
+                                        <TextBlock Text=" Press any key on your keyboard to assign:" FontSize="13" Foreground="#F8FAFC"/>
+                                        <TextBlock Text="{Binding ListeningKeyItem.DisplayName}" FontWeight="Bold" FontSize="13" Foreground="#A3E635" Margin="6,0,0,0"/>
+                                    </StackPanel>
+                                    <TextBlock Text="Press Esc on your keyboard or click Cancel to abort." FontSize="11.5" Foreground="#94A3B8"/>
+                                </StackPanel>
+
+                                <!-- Mouse Shortcut Buttons -->
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Command="{Binding ApplyMouseRebindCommand}" CommandParameter="Left Click" Content="Left Click" Style="{StaticResource SecondaryButton}" Height="30" Margin="0,0,6,0" Padding="10,0" FontSize="11.5" Cursor="Hand"/>
+                                    <Button Command="{Binding ApplyMouseRebindCommand}" CommandParameter="Right Click" Content="Right Click" Style="{StaticResource SecondaryButton}" Height="30" Margin="0,0,6,0" Padding="10,0" FontSize="11.5" Cursor="Hand"/>
+                                    <Button Command="{Binding ApplyMouseRebindCommand}" CommandParameter="Middle Click" Content="Middle Click" Style="{StaticResource SecondaryButton}" Height="30" Margin="0,0,8,0" Padding="10,0" FontSize="11.5" Cursor="Hand"/>
+                                    <Button Command="{Binding CancelRebindKeyCommand}" Content="Cancel (Esc)" Style="{StaticResource SecondaryButton}" Height="30" Padding="12,0" Background="#3B1C1C" BorderBrush="#7F1D1D" Foreground="#FCA5A5" FontSize="11.5" Cursor="Hand"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Key Grid ItemsControl -->
+                        <ItemsControl ItemsSource="{Binding DisplayedKeyItems}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="2"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#151926" BorderBrush="#232B3E" BorderThickness="1" CornerRadius="12" Padding="14,10" Margin="4">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,2">
+                                                    <TextBlock Text="{Binding DisplayName}" FontSize="13" FontWeight="SemiBold" Foreground="#F8FAFC"/>
+                                                    <Border Background="#1C2335" CornerRadius="6" Padding="6,1" Margin="8,0,0,0">
+                                                        <TextBlock Text="{Binding Category}" FontSize="10" Foreground="#64748B"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding Description}" FontSize="11.5" Foreground="#94A3B8"/>
+                                            </StackPanel>
+
+                                            <!-- Keycap Button -->
+                                            <Button Grid.Column="1" Command="{Binding DataContext.StartRebindKeyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Height="36" MinWidth="74" Padding="12,0" Cursor="Hand">
+                                                <Button.Style>
+                                                    <Style TargetType="Button">
+                                                        <Setter Property="Background" Value="#1E2538"/>
+                                                        <Setter Property="BorderBrush" Value="#2E3A54"/>
+                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                        <Setter Property="Template">
+                                                            <Setter.Value>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border x:Name="KeyBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+                                                                        <TextBlock x:Name="KeyText" Text="{Binding CurrentKey}" FontSize="13" FontWeight="Bold" Foreground="#38BDF8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsListeningForRebind}" Value="True">
+                                                                            <Setter TargetName="KeyBorder" Property="Background" Value="#0284C7"/>
+                                                                            <Setter TargetName="KeyBorder" Property="BorderBrush" Value="#38BDF8"/>
+                                                                            <Setter TargetName="KeyText" Property="Text" Value="Press key..."/>
+                                                                            <Setter TargetName="KeyText" Property="Foreground" Value="#FFFFFF"/>
+                                                                        </DataTrigger>
+                                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                                            <Setter TargetName="KeyBorder" Property="BorderBrush" Value="#38BDF8"/>
+                                                                            <Setter TargetName="KeyBorder" Property="Background" Value="#253048"/>
+                                                                        </Trigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                    </Style>
+                                                </Button.Style>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Footer Action Bar -->
+                <Border Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2" CornerRadius="18" Padding="20,16">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Status Message -->
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding KeyMappingStatusMessage}" FontSize="12.5" FontWeight="SemiBold" Foreground="#10B981" Visibility="{Binding KeyMappingStatusMessage, Converter={StaticResource StringToVis}}"/>
+                        </StackPanel>
+
+                        <!-- Buttons -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- Reset Button -->
+                            <Button Command="{Binding ResetKeyMappingDefaultsCommand}" Style="{StaticResource SecondaryButton}" Height="40" Padding="18,0" Margin="0,0,12,0" Cursor="Hand">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="🔄" FontSize="12" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Reset Defaults" FontSize="12.5" FontWeight="SemiBold" Foreground="#94A3B8"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Save & Apply Button -->
+                            <Button Command="{Binding SaveKeyMappingCommand}" Style="{StaticResource PrimaryButton}" Height="40" Padding="24,0" Cursor="Hand">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="💾" FontSize="13" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Apply &amp; Save KeyMapping" FontSize="13" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </StackPanel>
+
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <!-- TAB 3: DEVICE SPOOFING (120/90 FPS CERTIFIED PROFILES)      -->
+            <!-- ═══════════════════════════════════════════════════════════ -->
+            <StackPanel Visibility="{Binding SelectedSubTab, Converter={StaticResource IntEqualsToVis}, ConverterParameter=3}">
                 <Border Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2" CornerRadius="18" Padding="24,20" Margin="0,0,0,20">
                     <StackPanel>
                         <Grid Margin="0,0,0,16">
@@ -921,9 +1533,9 @@
             </StackPanel>
 
             <!-- ═══════════════════════════════════════════════════════════ -->
-            <!-- TAB 3: GAMELOOP DOCTOR & REGISTRY TWEAKS                    -->
+            <!-- TAB 4: GAMELOOP DOCTOR & REGISTRY TWEAKS                    -->
             <!-- ═══════════════════════════════════════════════════════════ -->
-            <StackPanel Visibility="{Binding SelectedSubTab, Converter={StaticResource IntEqualsToVis}, ConverterParameter=3}">
+            <StackPanel Visibility="{Binding SelectedSubTab, Converter={StaticResource IntEqualsToVis}, ConverterParameter=4}">
 
                 <!-- System Micro-stutter Fixes (HVCI & AppMarket) -->
                 <Border Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2" CornerRadius="18" Padding="24,20" Margin="0,0,0,20">
@@ -1063,9 +1675,9 @@
             </StackPanel>
 
             <!-- ═══════════════════════════════════════════════════════════ -->
-            <!-- TAB 4: STORAGE & SAFE CLOSE                                 -->
+            <!-- TAB 5: STORAGE & SAFE CLOSE                                 -->
             <!-- ═══════════════════════════════════════════════════════════ -->
-            <StackPanel Visibility="{Binding SelectedSubTab, Converter={StaticResource IntEqualsToVis}, ConverterParameter=4}">
+            <StackPanel Visibility="{Binding SelectedSubTab, Converter={StaticResource IntEqualsToVis}, ConverterParameter=5}">
                 <Border Background="#121520" BorderBrush="#252B3E" BorderThickness="1.2" CornerRadius="18" Padding="24,20" Margin="0,0,0,20">
                     <StackPanel>
                         <TextBlock Text="Safe Close &amp; Cache Maintenance" FontSize="17" FontWeight="Bold" Foreground="#F8FAFC" Margin="0,0,0,4"/>
