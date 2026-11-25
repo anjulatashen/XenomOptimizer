@@ -300,7 +300,7 @@ public class SystemTrayService : IDisposable
         {
             try
             {
-                Views.ToastNotificationWindow.Show(title, message, RestoreWindow);
+                _notifyIcon?.ShowBalloonTip(2500, title, message, Forms.ToolTipIcon.None);
             }
             catch (Exception ex)
             {
