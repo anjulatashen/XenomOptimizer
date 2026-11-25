@@ -57,12 +57,12 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
     public bool IsPage3Active => SelectedSlideIndex == 2;
 
     // ── Slide 0: GameLoop Engine Configuration Center ──
-    [ObservableProperty] private int _selectedEngineIndex = 0; // DirectX+
-    [ObservableProperty] private int _selectedResolutionIndex = 3; // 1440x1080 iPad View
+    [ObservableProperty] private int _selectedEngineIndex = 0; // OpenGL+ (Zero Black Screen Bug)
+    [ObservableProperty] private int _selectedResolutionIndex = 0; // 1920x1080 FHD
     [ObservableProperty] private int _selectedRamIndex = 3; // 8192 MB (8GB)
     [ObservableProperty] private int _selectedCoresIndex = 2; // 4 Cores
     [ObservableProperty] private int _selectedDpiIndex = 1; // 240 DPI
-    [ObservableProperty] private int _selectedDeviceProfileIndex = 0; // Samsung SM-X910 120Hz
+    [ObservableProperty] private int _selectedDeviceProfileIndex = 0; // Samsung SM-X920 120Hz
     [ObservableProperty] private bool _isRenderCacheEnabled = true;
     [ObservableProperty] private bool _isDiscreteGpuEnforced = true;
     [ObservableProperty] private bool _isRenderOptimizationEnabled = true;
@@ -268,8 +268,19 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
             {
                 _selectedQualityIndex = _settings.Settings.SelectedQualityIndex;
             }
+            if (_settings.Settings.SelectedEngineIndex >= 0 && _settings.Settings.SelectedEngineIndex <= 3)
+            {
+                _selectedEngineIndex = _settings.Settings.SelectedEngineIndex;
+            }
+            if (_settings.Settings.SelectedResolutionIndex >= 0 && _settings.Settings.SelectedResolutionIndex <= 5)
+            {
+                _selectedResolutionIndex = _settings.Settings.SelectedResolutionIndex;
+            }
             _isFrameGenActive = _settings.Settings.IsFrameGenActive;
         }
+
+        // Load active GameLoop configuration directly from registry to preserve user settings
+        LoadCurrentGameLoopSettings();
 
         // Apply GPU route on init silently
         _cleaner.ForceDedicatedGpu();
@@ -278,6 +289,116 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
         // Initialize Registry Items
         InitializeRegistryItems();
         CheckAllRegistryStatuses();
+    }
+
+    private void LoadCurrentGameLoopSettings()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(@"Software\Tencent\MobileGamePC", false);
+            if (key != null)
+            {
+                // 1. Resolution
+                int width = 1920, height = 1080;
+                var wObj = key.GetValue("VMResWidth") ?? key.GetValue("ResolutionWidth");
+                var hObj = key.GetValue("VMResHeight") ?? key.GetValue("ResolutionHeight");
+                if (wObj != null && int.TryParse(wObj.ToString(), out int pw)) width = pw;
+                if (hObj != null && int.TryParse(hObj.ToString(), out int ph)) height = ph;
+
+                SelectedResolutionIndex = (width, height) switch
+                {
+                    (1920, 1080) => 0,
+                    (2560, 1440) => 1,
+                    (3840, 2160) => 2,
+                    (1440, 1080) => 3,
+                    (1920, 1440) => 4,
+                    (1280, 720) => 5,
+                    _ => 0
+                };
+
+                // 2. Engine: 2=OpenGL+, 1=DirectX+, 4=Vulkan
+                var rtObj = key.GetValue("RendererType") ?? key.GetValue("RenderEngine");
+                var fdxObj = key.GetValue("ForceDirectX");
+                int rendererType = 2; // Default OpenGL+
+                if (rtObj != null && int.TryParse(rtObj.ToString(), out int prt)) rendererType = prt;
+                if (fdxObj != null && int.TryParse(fdxObj.ToString(), out int fdx) && fdx == 1) rendererType = 1;
+
+                SelectedEngineIndex = rendererType switch
+                {
+                    2 => 0, // OpenGL+ (Index 0 in EngineOptions)
+                    1 => 1, // DirectX+
+                    4 => 2, // Vulkan
+                    _ => 0  // Default OpenGL+
+                };
+
+                // 3. RAM (VMMemory or MemorySize)
+                var ramObj = key.GetValue("VMMemory") ?? key.GetValue("MemorySize");
+                if (ramObj != null && int.TryParse(ramObj.ToString(), out int ramMb))
+                {
+                    SelectedRamIndex = ramMb switch
+                    {
+                        2048 => 1,
+                        4096 => 2,
+                        8192 => 3,
+                        12288 => 4,
+                        _ => 3
+                    };
+                }
+
+                // 4. Cores (VMCores or CpuCount)
+                var coresObj = key.GetValue("VMCores") ?? key.GetValue("CpuCount");
+                if (coresObj != null && int.TryParse(coresObj.ToString(), out int cores))
+                {
+                    SelectedCoresIndex = cores switch
+                    {
+                        2 => 1,
+                        4 => 2,
+                        6 => 3,
+                        8 => 4,
+                        _ => 2
+                    };
+                }
+
+                // 5. DPI
+                var dpiObj = key.GetValue("VMDpi") ?? key.GetValue("DPI");
+                if (dpiObj != null && int.TryParse(dpiObj.ToString(), out int dpi))
+                {
+                    SelectedDpiIndex = dpi switch
+                    {
+                        160 => 0,
+                        240 => 1,
+                        320 => 2,
+                        480 => 3,
+                        _ => 1
+                    };
+                }
+
+                // 6. Device Model
+                var modelObj = key.GetValue("VMDeviceModel");
+                if (modelObj != null && modelObj.ToString()?.Contains("920") == true)
+                {
+                    SelectedDeviceProfileIndex = 0; // Samsung SM-X920
+                }
+
+                // 7. Ensure RunFalgs match current Engine
+                if (rendererType == 2)
+                {
+                    try
+                    {
+                        using var rf1 = Registry.CurrentUser.CreateSubKey(@"Software\Tencent\MobileGamePC\RunFalgs\_100");
+                        rf1?.SetValue("RendererEngine", 2, RegistryValueKind.DWord);
+                    }
+                    catch { }
+                    try
+                    {
+                        using var rf2 = Registry.CurrentUser.CreateSubKey(@"Software\Tencent\MobileGamePC\RunFalgs\aow_100");
+                        rf2?.SetValue("RendererEngine", 2, RegistryValueKind.DWord);
+                    }
+                    catch { }
+                }
+            }
+        }
+        catch { }
     }
 
     [RelayCommand]
@@ -416,8 +537,23 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
                     key.SetValue("VSyncEnabled", IsVsyncDisabled ? 0 : 1, RegistryValueKind.DWord);
                     key.SetValue("AdbDisable", 0, RegistryValueKind.DWord);
                     key.SetValue("FPSLock", 0, RegistryValueKind.DWord);
+                    key.SetValue("com.tencent.ig_ContentScale", width >= 1920 ? 2 : 1, RegistryValueKind.DWord);
                 }
             }
+
+            // Sync RunFalgs so GameLoop doesn't auto-revert to DirectX
+            try
+            {
+                using var rf1 = Registry.CurrentUser.CreateSubKey(@"Software\Tencent\MobileGamePC\RunFalgs\_100");
+                rf1?.SetValue("RendererEngine", engineCode, RegistryValueKind.DWord);
+            }
+            catch { }
+            try
+            {
+                using var rf2 = Registry.CurrentUser.CreateSubKey(@"Software\Tencent\MobileGamePC\RunFalgs\aow_100");
+                rf2?.SetValue("RendererEngine", engineCode, RegistryValueKind.DWord);
+            }
+            catch { }
 
             // HKLM MobileGamePC
             using (var hklmKey = Registry.LocalMachine.CreateSubKey(@"SOFTWARE\WOW6432Node\Tencent\MobileGamePC"))
@@ -429,6 +565,14 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
                     hklmKey.SetValue("UseVulkan", SelectedEngineIndex == 2 ? 1 : 0, RegistryValueKind.DWord);
                     hklmKey.SetValue("ForceDirectX", SelectedEngineIndex == 1 ? 1 : 0, RegistryValueKind.DWord);
                 }
+            }
+
+            // Persist to user settings
+            if (_settings != null)
+            {
+                _settings.Settings.SelectedEngineIndex = SelectedEngineIndex;
+                _settings.Settings.SelectedResolutionIndex = SelectedResolutionIndex;
+                _settings.Save();
             }
 
             // GPU Route
@@ -457,7 +601,7 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
 
         SelectedRamIndex = 3; // 8192 MB
         SelectedEngineIndex = 0; // OpenGL+ (Zero Black Screen Bug)
-        SelectedResolutionIndex = 3; // 1440x1080 (4:3 iPad View)
+        SelectedResolutionIndex = 0; // 1920x1080 (1080p FHD)
         SelectedDpiIndex = 1; // 240 DPI
         SelectedDeviceProfileIndex = 0; // Samsung SM-X920
         IsRenderCacheEnabled = true;
@@ -465,7 +609,7 @@ public partial class OptimizerFrameGenViewModel : ObservableObject
         IsRenderOptimizationEnabled = true;
         IsVsyncDisabled = true;
 
-        EngineStatusMessage = $"Auto-detected {logicalCores} CPU threads. Best gaming profile loaded! Click 'Save & Apply Engine Settings'.";
+        EngineStatusMessage = $"Auto-detected {logicalCores} CPU threads. Best 1080p OpenGL+ gaming profile loaded! Click 'Save & Apply Engine Settings'.";
     }
 
     private void InitializeRegistryItems()

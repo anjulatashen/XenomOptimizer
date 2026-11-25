@@ -176,4 +176,6 @@ public class AppSettings
     public int TargetFps { get; set; } = 90;
     public int SelectedQualityIndex { get; set; } = 0;
     public bool IsFrameGenActive { get; set; } = false;
+    public int SelectedEngineIndex { get; set; } = 0; // 0=OpenGL+
+    public int SelectedResolutionIndex { get; set; } = 0; // 0=1920x1080 FHD
 }
