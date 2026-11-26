@@ -53,20 +53,38 @@ public partial class KeyMappingViewModel : ObservableObject
                 _ => 0
             };
 
-            DetectedEditionText = detected switch
-            {
-                GameLoopEdition.Global64 => "Detected: Global 64-bit Edition",
-                GameLoopEdition.Global32 => "Detected: Global 32-bit Edition",
-                GameLoopEdition.Chinese => "Detected: Chinese Edition (腾讯手游助手)",
-                _ => "Detected: Standard Edition"
-            };
+            var detectedMode = _keyMapping.DetectActiveResolutionModeId();
+            SelectedKeyMapModeId = detectedMode;
 
-            await ReloadKeyProfileAsync(null);
+            await ReloadKeyProfileAsync(detectedMode);
+            UpdateDetectedBadge(detected, SelectedKeyMapModeId);
         }
         catch (Exception ex)
         {
             KeyMappingStatusMessage = $"Failed to load keymapping: {ex.Message}";
         }
+    }
+
+    private void UpdateDetectedBadge(GameLoopEdition edition, int modeId)
+    {
+        string editionStr = edition switch
+        {
+            GameLoopEdition.Chinese => "Chinese (腾讯手游助手)",
+            GameLoopEdition.Global64 => "Global 64-bit",
+            GameLoopEdition.Global32 => "Global 32-bit",
+            _ => "Global"
+        };
+
+        string modeStr = modeId switch
+        {
+            4 => "Smart 2K (1440P)",
+            3 => "Smart 1080P (FHD)",
+            2 => "Smart 720P (HD)",
+            1 => "Normal 720P (SD)",
+            _ => $"Mode {modeId}"
+        };
+
+        DetectedEditionText = $"Detected: {editionStr} • {modeStr}";
     }
 
     private async Task ReloadKeyProfileAsync(int? modeId = null)
@@ -113,14 +131,23 @@ public partial class KeyMappingViewModel : ObservableObject
     [RelayCommand]
     private async Task SwitchKeyMapModeAsync(object? parameter)
     {
-        int modeId = 2;
+        int modeId = 4;
         if (parameter is int i) modeId = i;
         else if (parameter != null && int.TryParse(parameter.ToString(), out int parsed)) modeId = parsed;
 
         SelectedKeyMapModeId = modeId;
-        KeyMappingStatusMessage = $"Switching to Mode {modeId}...";
+        KeyMappingStatusMessage = $"Switching to {GetModeName(modeId)}...";
         await ReloadKeyProfileAsync(modeId);
         KeyMappingStatusMessage = $"Active Mode: {GetModeName(modeId)}";
+
+        var edition = SelectedEditionIndex switch
+        {
+            0 => GameLoopEdition.Global64,
+            1 => GameLoopEdition.Global32,
+            2 => GameLoopEdition.Chinese,
+            _ => GameLoopEdition.Global64
+        };
+        UpdateDetectedBadge(edition, modeId);
     }
 
     [RelayCommand]
@@ -131,9 +158,18 @@ public partial class KeyMappingViewModel : ObservableObject
         else if (parameter != null && int.TryParse(parameter.ToString(), out int parsed)) index = parsed;
 
         SelectedEditionIndex = index;
-        KeyMappingStatusMessage = "Loading edition keymap...";
-        await ReloadKeyProfileAsync(null);
-        KeyMappingStatusMessage = $"Loaded {GetEditionName(index)} keymapping profile.";
+        KeyMappingStatusMessage = $"Loading {GetEditionName(index)} keymap...";
+        await ReloadKeyProfileAsync(SelectedKeyMapModeId);
+        KeyMappingStatusMessage = $"Loaded {GetEditionName(index)} • {GetModeName(SelectedKeyMapModeId)}.";
+
+        var edition = index switch
+        {
+            0 => GameLoopEdition.Global64,
+            1 => GameLoopEdition.Global32,
+            2 => GameLoopEdition.Chinese,
+            _ => GameLoopEdition.Global64
+        };
+        UpdateDetectedBadge(edition, SelectedKeyMapModeId);
     }
 
     [RelayCommand]

@@ -107,12 +107,83 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
         return is64Bit ? GameLoopEdition.Global64 : GameLoopEdition.Global32;
     }
 
+    public int DetectActiveResolutionModeId()
+    {
+        try
+        {
+            using var cuKey = Registry.CurrentUser.OpenSubKey(@"Software\Tencent\MobileGamePC");
+            using var lmKey = Registry.LocalMachine.OpenSubKey(@"Software\WOW6432Node\Tencent\MobileGamePC")
+                           ?? Registry.LocalMachine.OpenSubKey(@"Software\Tencent\MobileGamePC");
+
+            // 1. Check RenderResolutionQuality in HKLM (3 = Ultra HD 2K)
+            var rrq = lmKey?.GetValue("RenderResolutionQuality");
+            if (rrq is int ir && ir >= 3) return 4;
+            if (rrq is string sr && int.TryParse(sr, out int pr) && pr >= 3) return 4;
+
+            // 2. Check individual PUBG game render quality in HKCU (4 = 2K, 2 or 3 = 1080P)
+            string[] renderQualityKeys = {
+                "com.tencent.ig_RenderQuality",
+                "com.vng.pubgmobile_RenderQuality",
+                "com.pubg.krmobile_RenderQuality",
+                "com.pubg.imobile_RenderQuality",
+                "com.tencent.tmgp.pubgmhd_RenderQuality"
+            };
+            foreach (var rqKey in renderQualityKeys)
+            {
+                var val = cuKey?.GetValue(rqKey);
+                if (val is int v && v >= 4) return 4;
+                if (val is string sv && int.TryParse(sv, out int pv) && pv >= 4) return 4;
+            }
+
+            // 3. Check VM and screen resolution widths (>= 2560 = 2K, >= 1920 = 1080P)
+            string[] resKeys = { "VMResWidth", "ResolutionWidth", "ClientWidth" };
+            foreach (var rk in resKeys)
+            {
+                var val = cuKey?.GetValue(rk);
+                if (val is int w && w >= 2560) return 4;
+                if (val is string sw && int.TryParse(sw, out int pw) && pw >= 2560) return 4;
+            }
+
+            // Check 1080P
+            foreach (var rqKey in renderQualityKeys)
+            {
+                var val = cuKey?.GetValue(rqKey);
+                if (val is int v && (v == 2 || v == 3)) return 3;
+                if (val is string sv && int.TryParse(sv, out int pv) && (pv == 2 || pv == 3)) return 3;
+            }
+            foreach (var rk in resKeys)
+            {
+                var val = cuKey?.GetValue(rk);
+                if (val is int w && w >= 1920) return 3;
+                if (val is string sw && int.TryParse(sw, out int pw) && pw >= 1920) return 3;
+            }
+
+            // 4. If high-end GPU is present (e.g. RTX 3070), default to Smart 2K (Mode 4)
+            var glRender = cuKey?.OpenSubKey("DeviceInfo")?.GetValue("glRender")?.ToString() ?? "";
+            if (glRender.Contains("RTX", StringComparison.OrdinalIgnoreCase) ||
+                glRender.Contains("GTX", StringComparison.OrdinalIgnoreCase) ||
+                glRender.Contains("Radeon", StringComparison.OrdinalIgnoreCase))
+            {
+                return 4; // Smart 2K
+            }
+
+            return 3; // Smart 1080P default
+        }
+        catch
+        {
+            return 4; // Smart 2K fallback
+        }
+    }
+
     public async Task<GameLoopKeyMappingProfile> LoadProfileAsync(GameLoopEdition edition, int? modeId = null)
     {
+        int activeDetectedMode = DetectActiveResolutionModeId();
+        int initialModeId = modeId ?? activeDetectedMode;
+
         var profile = new GameLoopKeyMappingProfile
         {
             Edition = edition,
-            SelectedModeId = modeId ?? 2
+            SelectedModeId = initialModeId
         };
 
         var xmlPath = await GetMainXmlPathAsync();
@@ -134,6 +205,11 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
                 // Fallback to Global if specific variant item not found
                 itemMatch = Regex.Match(content, @"(<Item ApkName=""com\.tencent\.ig""[^>]*>.*?</Item>)", RegexOptions.Singleline);
             }
+            if (!itemMatch.Success)
+            {
+                // Fallback to Chinese PUBG if Global not found
+                itemMatch = Regex.Match(content, @"(<Item ApkName=""com\.tencent\.tmgp\.pubgmhd""[^>]*>.*?</Item>)", RegexOptions.Singleline);
+            }
 
             if (itemMatch.Success)
             {
@@ -147,10 +223,18 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
                     if (modeId == null)
                     {
                         var modeMatch = Regex.Match(attrs, @"ModeID=""(\d+)""");
-                        if (modeMatch.Success && int.TryParse(modeMatch.Groups[1].Value, out int id))
+                        if (modeMatch.Success && int.TryParse(modeMatch.Groups[1].Value, out int id) && id > 1)
                         {
                             profile.SelectedModeId = Math.Clamp(id, 1, 4);
                         }
+                        else
+                        {
+                            profile.SelectedModeId = activeDetectedMode;
+                        }
+                    }
+                    else
+                    {
+                        profile.SelectedModeId = Math.Clamp(modeId.Value, 1, 4);
                     }
 
                     var tipsMatch = Regex.Match(attrs, @"EnableTips=""(\d+)""");
@@ -176,7 +260,7 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
                 try
                 {
                     using var hkcu = Registry.CurrentUser.OpenSubKey(@"Software\Tencent\MobileGamePC");
-                    var shiftVal = hkcu?.GetValue("shift_run_pubgmhd");
+                    var shiftVal = hkcu?.GetValue("shift_run_pubgmhd") ?? hkcu?.GetValue("shift_run_pubgm");
                     if (shiftVal is int iVal)
                     {
                         profile.HoldShiftToRun = iVal == 1;
@@ -185,8 +269,12 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
                     {
                         profile.HoldShiftToRun = parsed == 1;
                     }
+                    else
+                    {
+                        profile.HoldShiftToRun = true;
+                    }
                 }
-                catch { }
+                catch { profile.HoldShiftToRun = true; }
 
                 // Parse Mode's keys
                 profile.Keys = ParseKeysFromMode(itemText, profile.SelectedModeId);
@@ -217,11 +305,10 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
             }
 
             var (primaryApk, smartApk) = GetApkNames(profile.Edition);
-            var apksToUpdate = new List<string> { primaryApk };
-            if (!string.IsNullOrEmpty(smartApk))
-            {
-                apksToUpdate.Add(smartApk);
-            }
+            var apksToUpdate = new HashSet<string> { primaryApk, "com.tencent.ig", "com.tencent.tmgp.pubgmhd" };
+            if (!string.IsNullOrEmpty(smartApk)) apksToUpdate.Add(smartApk);
+            apksToUpdate.Add("com.tencent.ig_ss");
+            apksToUpdate.Add("com.tencent.tmgp.pubgmhd_ss");
 
             foreach (var xmlPath in xmlPaths)
             {
@@ -262,14 +349,14 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
                 using var key = Registry.CurrentUser.CreateSubKey(@"Software\Tencent\MobileGamePC");
                 if (key != null)
                 {
-                    key.SetValue("shift_run_pubgmhd", profile.HoldShiftToRun ? 1 : 0, RegistryValueKind.DWord);
+                    int shift = profile.HoldShiftToRun ? 1 : 0;
+                    key.SetValue("shift_run_pubgmhd", shift, RegistryValueKind.DWord);
+                    key.SetValue("shift_run_pubgm", shift, RegistryValueKind.DWord);
+                    key.SetValue("shift_run_ig", shift, RegistryValueKind.DWord);
                     key.SetValue("KeyMindTipsPressed", profile.EnableTips ? 1 : 0, RegistryValueKind.DWord);
                 }
             }
-            catch (Exception ex)
-            {
-                _log.Log("KeyMapping", $"Registry sync failed: {ex.Message}", "WARNING");
-            }
+            catch { }
 
             return true;
         }
@@ -569,6 +656,34 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
 
     private (string primary, string smart) GetApkNames(GameLoopEdition edition)
     {
+        // 1. Check registry for user's actively played PUBG variant
+        try
+        {
+            using var cuKey = Registry.CurrentUser.OpenSubKey(@"Software\Tencent\MobileGamePC");
+            string matchApk = cuKey?.OpenSubKey("RunFalgs")?.GetValue("MatchRuleApk")?.ToString() ?? "";
+            if (string.IsNullOrEmpty(matchApk))
+            {
+                matchApk = cuKey?.OpenSubKey("RunFalgs")?.OpenSubKey("_100")?.GetValue("ApkName")?.ToString() ?? "";
+            }
+            if (string.IsNullOrEmpty(matchApk))
+            {
+                var history = cuKey?.OpenSubKey("GameHistory")?.GetValue("ReverseOrder")?.ToString() ?? "";
+                var first = history.Split('|', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+                if (!string.IsNullOrEmpty(first) && first.StartsWith("com.")) matchApk = first;
+            }
+
+            if (!string.IsNullOrEmpty(matchApk))
+            {
+                if (matchApk.Contains("pubgmhd")) return ("com.tencent.tmgp.pubgmhd", "com.tencent.tmgp.pubgmhd_ss");
+                if (matchApk.Contains("krmobile")) return ("com.pubg.krmobile", "com.pubg.krmobile_ss");
+                if (matchApk.Contains("vng")) return ("com.vng.pubgmobile", "com.vng.pubgmobile_ss");
+                if (matchApk.Contains("imobile")) return ("com.pubg.imobile", "");
+                if (matchApk.Contains("ig")) return ("com.tencent.ig", "com.tencent.ig_ss");
+            }
+        }
+        catch { }
+
+        // Default based on edition
         return edition switch
         {
             GameLoopEdition.Chinese => ("com.tencent.tmgp.pubgmhd", "com.tencent.tmgp.pubgmhd_ss"),

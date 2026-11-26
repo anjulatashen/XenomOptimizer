@@ -30,6 +30,11 @@ public interface IGameLoopKeyMappingService
     Task<GameLoopKeyMappingProfile> ResetToDefaultsAsync(GameLoopEdition edition, int modeId);
 
     /// <summary>
+    /// Detects active GameLoop rendering resolution mode (4=Smart 2K, 3=Smart 1080P, 2=Smart 720P).
+    /// </summary>
+    int DetectActiveResolutionModeId();
+
+    /// <summary>
     /// Converts WPF Key event to GameLoop ASCII code and readable display name.
     /// </summary>
     (string displayKey, int asciiCode) ConvertWpfKey(Key key);
