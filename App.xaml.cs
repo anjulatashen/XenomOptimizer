@@ -1220,6 +1220,8 @@ public partial class App : Application
 
         services.AddTransient<GameLoopOptimizationViewModel>();
 
+        services.AddTransient<KeyMappingViewModel>();
+
         services.AddTransient<RegistryOptimizationViewModel>();
 
         services.AddTransient<PubgOptimizationViewModel>();

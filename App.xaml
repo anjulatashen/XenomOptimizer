@@ -18,6 +18,7 @@
             <conv:DownloadPercentToHeightConverter x:Key="DownloadPercentToHeight"/>
             <conv:IntEqualsToVisibilityConverter x:Key="IntEqualsToVis"/>
             <conv:EqualityToBooleanConverter x:Key="EqToBool"/>
+            <conv:NotNullToVisibilityConverter x:Key="NotNullToVis"/>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

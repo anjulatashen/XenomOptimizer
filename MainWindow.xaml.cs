@@ -22,13 +22,14 @@ public partial class MainWindow : Window
         { "Windows", 1 },
         { "Registry", 2 },
         { "Optimizer", 3 },
-        { "GameLoop", 4 },
-        { "PUBG", 5 },
-        { "Network", 6 },
-        { "Cleanup", 7 },
-        { "Backup", 8 },
-        { "System", 9 },
-        { "Settings", 10 }
+        { "KeyMapping", 4 },
+        { "GameLoop", 5 },
+        { "PUBG", 6 },
+        { "Network", 7 },
+        { "Cleanup", 8 },
+        { "Backup", 9 },
+        { "System", 10 },
+        { "Settings", 11 }
     };
     private int _currentIndex = 0;
     private SystemTrayService? _trayService;
@@ -77,6 +78,7 @@ public partial class MainWindow : Window
             NavWindows,
             NavRegistry,
             NavOptimizer,
+            NavKeyMapping,
             NavGameLoop,
             NavPubg,
             NavNetwork,

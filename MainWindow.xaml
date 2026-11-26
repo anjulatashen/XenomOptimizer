@@ -32,6 +32,9 @@
         <DataTemplate DataType="{x:Type vm:OptimizerFrameGenViewModel}">
             <views:OptimizerFrameGenView/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:KeyMappingViewModel}">
+            <views:KeyMappingView/>
+        </DataTemplate>
         <DataTemplate DataType="{x:Type vm:GameLoopOptimizationViewModel}">
             <views:GameLoopOptimizationView/>
         </DataTemplate>
@@ -248,15 +251,15 @@
                                                  PreviewMouseLeftButtonDown="NavButton_PreviewMouseLeftButtonDown"
                                                  Command="{Binding NavigateToCommand}" CommandParameter="Optimizer"/>
 
-                                    <RadioButton x:Name="NavGameLoop" Style="{StaticResource HaulixSidebarButton}" Content="GameLoop Engine" Tag="&#xE7FC;"
-                                                 IsChecked="{Binding IsGameLoopActive, Mode=OneWay}"
-                                                 PreviewMouseLeftButtonDown="NavButton_PreviewMouseLeftButtonDown"
-                                                 Command="{Binding NavigateToCommand}" CommandParameter="GameLoop"/>
-
                                     <RadioButton x:Name="NavKeyMapping" Style="{StaticResource HaulixSidebarButton}" Content="KeyMapping Suite" Tag="&#xE765;"
                                                  IsChecked="{Binding IsKeyMappingActive, Mode=OneWay}"
                                                  PreviewMouseLeftButtonDown="NavButton_PreviewMouseLeftButtonDown"
                                                  Command="{Binding NavigateToCommand}" CommandParameter="KeyMapping"/>
+
+                                    <RadioButton x:Name="NavGameLoop" Style="{StaticResource HaulixSidebarButton}" Content="GameLoop Engine" Tag="&#xE7FC;"
+                                                 IsChecked="{Binding IsGameLoopActive, Mode=OneWay}"
+                                                 PreviewMouseLeftButtonDown="NavButton_PreviewMouseLeftButtonDown"
+                                                 Command="{Binding NavigateToCommand}" CommandParameter="GameLoop"/>
 
                                     <RadioButton x:Name="NavPubg" Style="{StaticResource HaulixSidebarButton}" Content="PUBG Mobile" Tag="&#xE7F4;"
                                                  IsChecked="{Binding IsPubgActive, Mode=OneWay}"

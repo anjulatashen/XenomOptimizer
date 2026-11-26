@@ -186,25 +186,6 @@ public partial class MainViewModel : ObservableObject
             WindowsVm?.MarkGuideStepCompleted(6);
         }
 
-        if (page == "KeyMapping")
-        {
-            if (!_pageCache.TryGetValue("GameLoop", out var glCached) || glCached == null)
-            {
-                glCached = App.Services.GetService(typeof(GameLoopOptimizationViewModel)) as ObservableObject;
-                _pageCache["GameLoop"] = glCached;
-            }
-
-            if (glCached is GameLoopOptimizationViewModel glVm)
-            {
-                glVm.SelectedSubTab = 2; // KeyMapping Suite tab
-            }
-
-            CurrentPageTitle = "KeyMapping";
-            CurrentPage = glCached;
-            OnCurrentPageTitleChanged(CurrentPageTitle);
-            return;
-        }
-
         if (!_pageCache.TryGetValue(page, out var cachedVm) || cachedVm == null)
         {
             cachedVm = page switch
@@ -212,6 +193,7 @@ public partial class MainViewModel : ObservableObject
                 "Dashboard" => App.Services.GetService(typeof(DashboardViewModel)) as ObservableObject,
                 "Windows" => WindowsVm,
                 "Optimizer" => App.Services.GetService(typeof(OptimizerFrameGenViewModel)) as ObservableObject,
+                "KeyMapping" => App.Services.GetService(typeof(KeyMappingViewModel)) as ObservableObject,
                 "GameLoop" => App.Services.GetService(typeof(GameLoopOptimizationViewModel)) as ObservableObject,
                 "Registry" => App.Services.GetService(typeof(RegistryOptimizationViewModel)) as ObservableObject,
                 "PUBG" => App.Services.GetService(typeof(PubgOptimizationViewModel)) as ObservableObject,
