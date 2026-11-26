@@ -341,6 +341,11 @@ public partial class App : Application
 
                     mvm.NavigateToCommand.Execute(targetPage);
 
+                    if (e.Args.Contains("--drawer"))
+                    {
+                        mvm.IsAppDrawerOpen = true;
+                    }
+
 
 
                     if (mvm.CurrentPage is GameLoopOptimizationViewModel gvm)
@@ -1207,6 +1212,8 @@ public partial class App : Application
         services.AddSingleton<IGameLoopOptimizerService, GameLoopOptimizerService>();
 
         services.AddSingleton<IGameLoopKeyMappingService, GameLoopKeyMappingService>();
+
+        services.AddSingleton<IGameLoopLauncherService, GameLoopLauncherService>();
 
 
 

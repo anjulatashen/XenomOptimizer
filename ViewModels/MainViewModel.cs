@@ -11,6 +11,7 @@ public partial class MainViewModel : ObservableObject
 {
     private readonly IAdminService _adminService;
     private readonly ISettingsService? _settingsService;
+    private readonly IGameLoopLauncherService _launcherService;
 
     [ObservableProperty]
     private ObservableObject? _currentPage;
@@ -73,6 +74,12 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _isGameLoopUnlocked = false;
 
+    [ObservableProperty]
+    private bool _isAppDrawerOpen = false;
+
+    [ObservableProperty]
+    private string _appDrawerStatusMessage = "Ready to launch GameLoop apps";
+
     private static readonly HashSet<string> LockedTabs = new(StringComparer.OrdinalIgnoreCase)
     {
         "GameLoop",
@@ -91,10 +98,11 @@ public partial class MainViewModel : ObservableObject
         WindowsVm?.IsRescanCompleted != true &&
         WindowsVm?.IsCustomPresetEditActive != true;
 
-    public MainViewModel(IAdminService adminService, WindowsOptimizationViewModel windowsVm)
+    public MainViewModel(IAdminService adminService, WindowsOptimizationViewModel windowsVm, IGameLoopLauncherService launcherService)
     {
         _adminService = adminService;
         WindowsVm = windowsVm;
+        _launcherService = launcherService;
         WindowsVm.RequestPageNavigation = page => NavigateTo(page);
         _isAdmin = adminService.IsRunningAsAdmin;
         _isDownloadModalActive = WindowsVm.IsDownloadFlyoutOpen;
@@ -250,5 +258,96 @@ public partial class MainViewModel : ObservableObject
         IsPasscodeModalActive = false;
         _pendingLockedPage = null;
         OnCurrentPageTitleChanged(CurrentPageTitle);
+    }
+
+    [RelayCommand]
+    public void ToggleAppDrawer()
+    {
+        IsAppDrawerOpen = !IsAppDrawerOpen;
+    }
+
+    [RelayCommand]
+    public void OpenAppDrawer()
+    {
+        IsAppDrawerOpen = true;
+        AppDrawerStatusMessage = "GameLoop Environment Ready";
+    }
+
+    [RelayCommand]
+    public void CloseAppDrawer()
+    {
+        IsAppDrawerOpen = false;
+    }
+
+    [RelayCommand]
+    public async Task LaunchPubgAsync()
+    {
+        AppDrawerStatusMessage = "Launching PUBG Mobile in GameLoop...";
+        var success = await _launcherService.LaunchPubgAsync();
+        AppDrawerStatusMessage = success ? "PUBG Mobile launched successfully" : "Failed to launch PUBG Mobile (GameLoop not found)";
+    }
+
+    [RelayCommand]
+    public async Task LaunchSettingsAsync()
+    {
+        AppDrawerStatusMessage = "Opening internal Android Settings (F9)...";
+        var success = await _launcherService.LaunchSettingsAsync();
+        AppDrawerStatusMessage = success ? "Android Settings launched successfully" : "Failed to launch Android Settings";
+    }
+
+    [RelayCommand]
+    public async Task LaunchFilesAsync()
+    {
+        AppDrawerStatusMessage = "Opening File Explorer / OBB storage...";
+        var success = await _launcherService.LaunchAppAsync("nextapp.fx");
+        AppDrawerStatusMessage = success ? "File Explorer launched" : "Failed to open File Explorer";
+    }
+
+    [RelayCommand]
+    public async Task LaunchBrowserAsync()
+    {
+        AppDrawerStatusMessage = "Opening Android Web Browser...";
+        var success = await _launcherService.LaunchAppAsync("com.android.browser");
+        AppDrawerStatusMessage = success ? "Browser launched" : "Failed to open Browser";
+    }
+
+    [RelayCommand]
+    public async Task LaunchAppMarketAsync()
+    {
+        AppDrawerStatusMessage = "Opening Tencent AppMarket...";
+        var success = await _launcherService.LaunchAppMarketAsync();
+        AppDrawerStatusMessage = success ? "AppMarket launched" : "Failed to open AppMarket";
+    }
+
+    [RelayCommand]
+    public async Task LaunchPlayStoreAsync()
+    {
+        AppDrawerStatusMessage = "Opening Google Play Store...";
+        var success = await _launcherService.LaunchAppAsync("com.android.vending");
+        AppDrawerStatusMessage = success ? "Google Play Store launched" : "Failed to open Play Store";
+    }
+
+    [RelayCommand]
+    public async Task InstallApkFileAsync()
+    {
+        try
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "APK Package (*.apk)|*.apk|All files (*.*)|*.*",
+                Title = "Select APK File to Install into GameLoop"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                AppDrawerStatusMessage = $"Installing {System.IO.Path.GetFileName(dialog.FileName)}...";
+                var success = await _launcherService.InstallLocalApkAsync(dialog.FileName);
+                AppDrawerStatusMessage = success ? $"Installed {System.IO.Path.GetFileName(dialog.FileName)} successfully" : "APK installation failed. Ensure GameLoop is running.";
+            }
+        }
+        catch (Exception ex)
+        {
+            AppDrawerStatusMessage = $"Error: {ex.Message}";
+        }
     }
 }

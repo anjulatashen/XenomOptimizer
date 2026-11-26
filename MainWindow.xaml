@@ -300,6 +300,41 @@
                                                  IsChecked="{Binding IsSettingsActive, Mode=OneWay}"
                                                  PreviewMouseLeftButtonDown="NavButton_PreviewMouseLeftButtonDown"
                                                  Command="{Binding NavigateToCommand}" CommandParameter="Settings"/>
+
+                                    <!-- Bottom Drawer Arrow Trigger Button (User Request) -->
+                                    <Button x:Name="BtnOpenAppDrawer"
+                                            Command="{Binding OpenAppDrawerCommand}"
+                                            ToolTip="GameLoop AppMarket &amp; Launcher (Click to open)"
+                                            Width="38" Height="28" Margin="0,6,0,6"
+                                            Background="#141824"
+                                            BorderBrush="#253046"
+                                            BorderThickness="1"
+                                            Cursor="Hand">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border x:Name="ArrowBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
+                                                                <TextBlock Text="&#xE70E;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#00D4FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter TargetName="ArrowBorder" Property="Background" Value="#1E283C"/>
+                                                                    <Setter TargetName="ArrowBorder" Property="BorderBrush" Value="#00D4FF"/>
+                                                                    <Setter Property="Effect">
+                                                                        <Setter.Value>
+                                                                            <DropShadowEffect BlurRadius="10" Color="#00D4FF" Opacity="0.5" ShadowDepth="0"/>
+                                                                        </Setter.Value>
+                                                                    </Setter>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -346,5 +381,11 @@
                                     WindowChrome.IsHitTestVisibleInChrome="True"
                                     Visibility="{Binding IsPasscodeModalActive, Converter={StaticResource BoolToVis}}"
                                     Panel.ZIndex="1005"/>
+
+        <!-- ═══ FULL-WINDOW GAMELOOP APP MARKET & DRAWER OVERLAY (IMAGE 2 STYLE) ═══ -->
+        <views:GameLoopAppDrawerControl x:Name="GameLoopAppDrawer"
+                                        WindowChrome.IsHitTestVisibleInChrome="True"
+                                        Visibility="{Binding IsAppDrawerOpen, Converter={StaticResource BoolToVis}}"
+                                        Panel.ZIndex="1050"/>
     </Grid>
 </Window>
