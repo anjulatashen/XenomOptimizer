@@ -8,16 +8,14 @@
 
     <!-- Dim Backdrop Overlay (Covers the entire window & sidebar) -->
     <Grid Background="#B0000000" MouseLeftButtonDown="Backdrop_MouseLeftButtonDown">
-        <!-- Bottom Sheet / Drawer with side margins and deep curved top corners (Image 2 style) -->
+        <!-- Bottom Sheet / Drawer flush at bottom, no space at bottom, no stroke, smooth top curves -->
         <Border x:Name="DrawerPanel"
                 VerticalAlignment="Bottom"
                 Height="740"
-                Margin="16,0,16,12"
-                Background="#0A0C12"
-                BorderBrush="#1E2436"
-                BorderThickness="1"
-                CornerRadius="38,38,20,20"
-                ClipToBounds="True"
+                Margin="16,0,16,0"
+                Background="Transparent"
+                BorderThickness="0"
+                CornerRadius="36,36,0,0"
                 MouseLeftButtonDown="DrawerPanel_MouseLeftButtonDown">
 
             <Border.Effect>
@@ -25,29 +23,25 @@
             </Border.Effect>
 
             <Grid>
-                <!-- ═══ LAYER 0: SMOOTH GRADIENT VIDEO BACKGROUND ═══ -->
-                <!-- DirectShow / MediaFoundation hardware acceleration, slow motion, 0% CPU when closed -->
-                <MediaElement x:Name="BackgroundVideo"
-                              LoadedBehavior="Manual"
-                              UnloadedBehavior="Manual"
-                              IsMuted="True"
-                              Stretch="UniformToFill"
-                              Opacity="0.38"
-                              IsHitTestVisible="False"
-                              MediaEnded="BackgroundVideo_MediaEnded"/>
+                <!-- Mask element that defines the exact smooth rounded top boundary -->
+                <Border x:Name="DrawerClipMask" Background="Black" CornerRadius="36,36,0,0"/>
 
-                <!-- Deep Dark Obsidian Tint Overlay (ensures high contrast and dark look) -->
-                <Border Background="#DE090B12" IsHitTestVisible="False"/>
+                <!-- Clipped container (MediaElement & all UI are anti-aliased and clipped to CornerRadius) -->
+                <Grid>
+                    <Grid.OpacityMask>
+                        <VisualBrush Visual="{Binding ElementName=DrawerClipMask}"/>
+                    </Grid.OpacityMask>
 
-                <!-- Background Subtle Ambient Top Cyan Glow -->
-                <Border IsHitTestVisible="False">
-                    <Border.Background>
-                        <RadialGradientBrush Center="0.5,0.0" RadiusX="0.6" RadiusY="0.35">
-                            <GradientStop Color="#0D00D4FF" Offset="0.0"/>
-                            <GradientStop Color="#00000000" Offset="1.0"/>
-                        </RadialGradientBrush>
-                    </Border.Background>
-                </Border>
+                    <!-- ═══ LAYER 0: SMOOTH GRADIENT VIDEO BACKGROUND (FULL 100% VISIBILITY) ═══ -->
+                    <!-- DirectShow / MediaFoundation hardware acceleration, slow motion, 0% CPU when closed -->
+                    <MediaElement x:Name="BackgroundVideo"
+                                  LoadedBehavior="Manual"
+                                  UnloadedBehavior="Manual"
+                                  IsMuted="True"
+                                  Stretch="Fill"
+                                  Opacity="1.0"
+                                  IsHitTestVisible="False"
+                                  MediaEnded="BackgroundVideo_MediaEnded"/>
 
                 <!-- ═══ DRAWER CONTENT ═══ -->
                 <Grid>
@@ -340,6 +334,7 @@
                     </ScrollViewer>
                 </Grid>
             </Grid>
-        </Border>
-    </Grid>
+        </Grid>
+    </Border>
+</Grid>
 </UserControl>
