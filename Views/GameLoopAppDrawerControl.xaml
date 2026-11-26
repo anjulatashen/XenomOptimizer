@@ -8,15 +8,24 @@
 
     <!-- Dim Backdrop Overlay (Covers the entire window & sidebar) -->
     <Grid Background="#B0000000" MouseLeftButtonDown="Backdrop_MouseLeftButtonDown">
-        <!-- Bottom Sheet / Drawer flush at bottom, no space at bottom, no stroke, smooth top curves -->
+        <!-- Bottom Sheet / Drawer with reduced side margins (8px) and sleek dark gray to black gradient -->
         <Border x:Name="DrawerPanel"
                 VerticalAlignment="Bottom"
                 Height="740"
-                Margin="16,0,16,0"
-                Background="Transparent"
+                Margin="8,0,8,0"
                 BorderThickness="0"
-                CornerRadius="36,36,0,0"
+                CornerRadius="28,28,0,0"
                 MouseLeftButtonDown="DrawerPanel_MouseLeftButtonDown">
+
+            <!-- Premium Dark Gray to Black Gradient Background -->
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#232733" Offset="0.0"/>
+                    <GradientStop Color="#181B24" Offset="0.25"/>
+                    <GradientStop Color="#101219" Offset="0.65"/>
+                    <GradientStop Color="#08090C" Offset="1.0"/>
+                </LinearGradientBrush>
+            </Border.Background>
 
             <Border.Effect>
                 <DropShadowEffect BlurRadius="40" ShadowDepth="0" Direction="0" Color="#000000" Opacity="0.95"/>
@@ -24,27 +33,16 @@
 
             <Grid>
                 <!-- Mask element that defines the exact smooth rounded top boundary -->
-                <Border x:Name="DrawerClipMask" Background="Black" CornerRadius="36,36,0,0"/>
+                <Border x:Name="DrawerClipMask" Background="Black" CornerRadius="28,28,0,0"/>
 
-                <!-- Clipped container (MediaElement & all UI are anti-aliased and clipped to CornerRadius) -->
+                <!-- Clipped container (all UI anti-aliased and clipped to CornerRadius) -->
                 <Grid>
                     <Grid.OpacityMask>
                         <VisualBrush Visual="{Binding ElementName=DrawerClipMask}"/>
                     </Grid.OpacityMask>
 
-                    <!-- ═══ LAYER 0: SMOOTH GRADIENT VIDEO BACKGROUND (FULL 100% VISIBILITY) ═══ -->
-                    <!-- DirectShow / MediaFoundation hardware acceleration, slow motion, 0% CPU when closed -->
-                    <MediaElement x:Name="BackgroundVideo"
-                                  LoadedBehavior="Manual"
-                                  UnloadedBehavior="Manual"
-                                  IsMuted="True"
-                                  Stretch="Fill"
-                                  Opacity="1.0"
-                                  IsHitTestVisible="False"
-                                  MediaEnded="BackgroundVideo_MediaEnded"/>
-
-                <!-- ═══ DRAWER CONTENT ═══ -->
-                <Grid>
+                    <!-- ═══ DRAWER CONTENT ═══ -->
+                    <Grid>
                     <Grid.RowDefinitions>
                         <!-- Row 0: Centered Enlarged Clickable Pull Handle (User Request) -->
                         <RowDefinition Height="Auto"/>
