@@ -8,7 +8,7 @@
 
     <!-- Dim Backdrop Overlay (Covers the entire window & sidebar) -->
     <Grid Background="#B0000000" MouseLeftButtonDown="Backdrop_MouseLeftButtonDown">
-        <!-- Bottom Sheet / Drawer with reduced side margins (8px) and sleek dark gray to black gradient -->
+        <!-- Bottom Sheet / Drawer with reduced side margins (8px) and plain clean dark theme -->
         <Border x:Name="DrawerPanel"
                 VerticalAlignment="Bottom"
                 Height="740"
@@ -17,13 +17,12 @@
                 CornerRadius="28,28,0,0"
                 MouseLeftButtonDown="DrawerPanel_MouseLeftButtonDown">
 
-            <!-- Premium Visible Dark Charcoal to Obsidian Gradient Background -->
+            <!-- Clean Plain Dark Theme Gradient matching the App -->
             <Border.Background>
-                <LinearGradientBrush StartPoint="0.1,0.0" EndPoint="0.8,1.0">
-                    <GradientStop Color="#242938" Offset="0.0"/>
-                    <GradientStop Color="#1B1F2A" Offset="0.3"/>
-                    <GradientStop Color="#13161F" Offset="0.65"/>
-                    <GradientStop Color="#0E1016" Offset="1.0"/>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                    <GradientStop Color="#13151C" Offset="0.0"/>
+                    <GradientStop Color="#0F1016" Offset="0.4"/>
+                    <GradientStop Color="#0B0C0F" Offset="1.0"/>
                 </LinearGradientBrush>
             </Border.Background>
 
@@ -40,25 +39,6 @@
                     <Grid.OpacityMask>
                         <VisualBrush Visual="{Binding ElementName=DrawerClipMask}"/>
                     </Grid.OpacityMask>
-
-                    <!-- Top Ambient Soft Cyan Sheen (Gives Depth & Polish) -->
-                    <Border IsHitTestVisible="False" VerticalAlignment="Top" Height="300">
-                        <Border.Background>
-                            <RadialGradientBrush Center="0.5,0.0" RadiusX="0.65" RadiusY="0.9">
-                                <GradientStop Color="#2200D4FF" Offset="0.0"/>
-                                <GradientStop Color="#0A3B82F6" Offset="0.5"/>
-                                <GradientStop Color="#00000000" Offset="1.0"/>
-                            </RadialGradientBrush>
-                        </Border.Background>
-                    </Border>
-
-                    <!-- Signature Xenom Topo Texture (Seamlessly matches Welcome Hero card) -->
-                    <Image Source="/Assets/topo_transparent.png"
-                           Stretch="UniformToFill"
-                           HorizontalAlignment="Right"
-                           VerticalAlignment="Bottom"
-                           Opacity="0.10"
-                           IsHitTestVisible="False"/>
 
                     <!-- ═══ DRAWER CONTENT ═══ -->
                     <Grid>
