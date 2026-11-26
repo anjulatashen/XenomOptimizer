@@ -1,15 +1,16 @@
+using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using Microsoft.Win32;
 using XenomOptimizer.Models;
 
 namespace XenomOptimizer.Services;
 
-/// <summary>
-/// Implements full keymapping management for GameLoop across Global 32-bit, Global 64-bit, and Chinese editions.
-/// </summary>
 public class GameLoopKeyMappingService : IGameLoopKeyMappingService
 {
     private readonly IGameLoopDetectionService _gameLoopDetection;
@@ -31,25 +32,64 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
             installPath = @"C:\Program Files\TxGameAssistant";
         }
 
-        // Check for 64-bit Rootfs / vshell / 64-bit AppMarket
-        bool is64Bit = Directory.Exists(Path.Combine(installPath, "AOW_Rootfs_100")) ||
-                       Directory.Exists(Path.Combine(installPath, "vshell")) ||
-                       File.Exists(Path.Combine(installPath, "AOW_Rootfs_100", "init"));
-
-        // Check for Chinese version in registry or directory
+        // 1. Check for Chinese version via Registry
         try
         {
-            using var key = Registry.CurrentUser.OpenSubKey(@"Software\Tencent\MobileGamePC");
-            var region = key?.GetValue("Region")?.ToString();
-            if (string.Equals(region, "CN", StringComparison.OrdinalIgnoreCase))
+            using var lmKey = Registry.LocalMachine.OpenSubKey(@"Software\WOW6432Node\Tencent\MobileGamePC")
+                           ?? Registry.LocalMachine.OpenSubKey(@"Software\Tencent\MobileGamePC");
+            if (lmKey?.GetValue("TSyzsVersion") != null)
             {
-                // If it has Peace Elite installed or CN region
-                return is64Bit ? GameLoopEdition.Global64 : GameLoopEdition.Global64;
+                _log.Log("KeyMapping", "Detected Chinese GameLoop via TSyzsVersion in registry", "INFO");
+                return GameLoopEdition.Chinese;
+            }
+
+            using var cuKey = Registry.CurrentUser.OpenSubKey(@"Software\Tencent\MobileGamePC");
+            if (cuKey != null)
+            {
+                var region = cuKey.GetValue("Region")?.ToString();
+                if (string.Equals(region, "CN", StringComparison.OrdinalIgnoreCase) || cuKey.GetValue("shift_run_pubgmhd") != null)
+                {
+                    _log.Log("KeyMapping", "Detected Chinese GameLoop via Region=CN or shift_run_pubgmhd in HKCU", "INFO");
+                    return GameLoopEdition.Chinese;
+                }
             }
         }
         catch { }
 
-        // Check DefaultKeyMapping.xml for active APK
+        // 2. Check AppMarket.exe / AndroidEmulator VersionInfo (FileDescription / ProductName)
+        try
+        {
+            var appMarketPaths = new[]
+            {
+                Path.Combine(installPath, "AppMarket", "AppMarket.exe"),
+                Path.Combine(installPath, "AppMarket.exe"),
+                @"C:\Program Files\TxGameAssistant\AppMarket\AppMarket.exe",
+                @"D:\Program Files\TxGameAssistant\AppMarket\AppMarket.exe",
+                @"E:\Program Files\TxGameAssistant\AppMarket\AppMarket.exe"
+            };
+
+            foreach (var amp in appMarketPaths)
+            {
+                if (File.Exists(amp))
+                {
+                    var vi = System.Diagnostics.FileVersionInfo.GetVersionInfo(amp);
+                    if ((vi.ProductName != null && vi.ProductName.Contains("腾讯手游助手")) ||
+                        (vi.FileDescription != null && vi.FileDescription.Contains("腾讯手游助手")))
+                    {
+                        _log.Log("KeyMapping", "Detected Chinese GameLoop via AppMarket FileDescription/ProductName", "INFO");
+                        return GameLoopEdition.Chinese;
+                    }
+                }
+            }
+        }
+        catch { }
+
+        // 3. Check for 64-bit Rootfs / vshell / 64-bit AppMarket
+        bool is64Bit = Directory.Exists(Path.Combine(installPath, "AOW_Rootfs_100")) ||
+                       Directory.Exists(Path.Combine(installPath, "vshell")) ||
+                       File.Exists(Path.Combine(installPath, "AOW_Rootfs_100", "init"));
+
+        // 4. Check DefaultKeyMapping.xml for active APK
         try
         {
             var xmlPath = await GetMainXmlPathAsync();
@@ -100,7 +140,7 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
                 var itemText = itemMatch.Groups[1].Value;
 
                 // Read LastMode
-                var lastModeMatch = Regex.Match(itemText, @"<LastMode\s+([^>]+)/>");
+                var lastModeMatch = Regex.Match(itemText, @"<LastMode\s+([^>]+?)(?:/>|>)");
                 if (lastModeMatch.Success)
                 {
                     var attrs = lastModeMatch.Groups[1].Value;
@@ -219,13 +259,16 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
             // Save Registry settings
             try
             {
-                using var hkcu = Registry.CurrentUser.CreateSubKey(@"Software\Tencent\MobileGamePC");
-                hkcu?.SetValue("shift_run_pubgmhd", profile.HoldShiftToRun ? 1 : 0, RegistryValueKind.DWord);
-                hkcu?.SetValue("KeyMindTipsPressed", profile.EnableTips ? 1 : 0, RegistryValueKind.DWord);
+                using var key = Registry.CurrentUser.CreateSubKey(@"Software\Tencent\MobileGamePC");
+                if (key != null)
+                {
+                    key.SetValue("shift_run_pubgmhd", profile.HoldShiftToRun ? 1 : 0, RegistryValueKind.DWord);
+                    key.SetValue("KeyMindTipsPressed", profile.EnableTips ? 1 : 0, RegistryValueKind.DWord);
+                }
             }
-            catch (Exception regEx)
+            catch (Exception ex)
             {
-                _log.Log("KeyMapping", $"Warning writing registry: {regEx.Message}", "WARNING");
+                _log.Log("KeyMapping", $"Registry sync failed: {ex.Message}", "WARNING");
             }
 
             return true;
@@ -266,18 +309,19 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
         string modeStr = profile.SelectedModeId.ToString();
 
         // Update LastMode attributes
-        itemXml = Regex.Replace(itemXml, @"<LastMode\s+([^>]+)/>", m =>
+        itemXml = Regex.Replace(itemXml, @"<LastMode\s+([^>]+?)(/?>)", m =>
         {
             var attrs = m.Groups[1].Value;
+            var endTag = m.Groups[2].Value;
             attrs = Regex.Replace(attrs, @"ModeID=""\d+""", $@"ModeID=""{modeStr}""");
             attrs = Regex.Replace(attrs, @"EnableTips=""\d+""", $@"EnableTips=""{tipsStr}""");
             attrs = Regex.Replace(attrs, @"EnableGameKeyDT=""\d+""", $@"EnableGameKeyDT=""{dtStr}""");
             attrs = Regex.Replace(attrs, @"Lightness=""[\d\.]+""", $@"Lightness=""{lightnessStr}""");
             attrs = Regex.Replace(attrs, @"TipsTransparent=""[\d\.]+""", $@"TipsTransparent=""{transStr}""");
-            return $"<LastMode {attrs}/>";
+            return $"<LastMode {attrs}{endTag}";
         });
 
-        // 2. Find KeyMapMode for SelectedModeId
+        // 2. Find KeyMapMode for SelectedModeId (only the 16:9 standard one, before <Resolution_16x10>)
         var modePattern = $@"(<KeyMapMode ModeID=""{profile.SelectedModeId}""[^>]*>.*?</KeyMapMode>)";
         var modeMatch = Regex.Match(itemXml, modePattern, RegexOptions.Singleline);
         if (!modeMatch.Success) return itemXml;
@@ -292,27 +336,29 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
             {
                 // CrossKey WASD
                 modifiedMode = Regex.Replace(modifiedMode,
-                    @"<KeyMappingEx\s+([^>]*ItemName=""WASD""[^>]*)/>",
+                    @"<KeyMappingEx\s+([^>]*ItemName=""WASD""[^>]*?)(/?>)",
                     m =>
                     {
                         var attrs = m.Groups[1].Value;
+                        var endTag = m.Groups[2].Value;
                         if (key.Id == "MoveUp") attrs = Regex.Replace(attrs, @"UP_AsciiCode=""\d+""", $@"UP_AsciiCode=""{key.AsciiCode}""");
                         if (key.Id == "MoveDown") attrs = Regex.Replace(attrs, @"DOWN_AsciiCode=""\d+""", $@"DOWN_AsciiCode=""{key.AsciiCode}""");
                         if (key.Id == "MoveLeft") attrs = Regex.Replace(attrs, @"LEFT_AsciiCode=""\d+""", $@"LEFT_AsciiCode=""{key.AsciiCode}""");
                         if (key.Id == "MoveRight") attrs = Regex.Replace(attrs, @"RIGHT_AsciiCode=""\d+""", $@"RIGHT_AsciiCode=""{key.AsciiCode}""");
-                        return $"<KeyMappingEx {attrs}/>";
+                        return $"<KeyMappingEx {attrs}{endTag}";
                     });
             }
             else if (key.IsEx)
             {
                 // KeyMappingEx with ItemName or Type
                 string searchPattern = !string.IsNullOrEmpty(key.XmlItemName)
-                    ? $@"<KeyMappingEx\s+([^>]*ItemName=""{Regex.Escape(key.XmlItemName)}""[^>]*)/>"
-                    : $@"<KeyMappingEx\s+([^>]*Type=""{Regex.Escape(key.XmlType)}""[^>]*)/>";
+                    ? $@"<KeyMappingEx\s+([^>]*ItemName=""{Regex.Escape(key.XmlItemName)}""[^>]*?)(/?>)"
+                    : $@"<KeyMappingEx\s+([^>]*Type=""{Regex.Escape(key.XmlType)}""[^>]*?)(/?>)";
 
                 modifiedMode = Regex.Replace(modifiedMode, searchPattern, m =>
                 {
                     var attrs = m.Groups[1].Value;
+                    var endTag = m.Groups[2].Value;
                     if (attrs.Contains("AsciiCode="))
                     {
                         attrs = Regex.Replace(attrs, @"AsciiCode=""\d+""", $@"AsciiCode=""{key.AsciiCode}""");
@@ -321,24 +367,22 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
                     {
                         attrs = Regex.Replace(attrs, @"ItemName=""[^""]*""", $@"ItemName=""{key.CurrentKey}""");
                     }
-                    return $"<KeyMappingEx {attrs}/>";
+                    return $"<KeyMappingEx {attrs}{endTag}";
                 });
             }
             else
             {
                 // Standard KeyMapping
-                // Match by either ItemName or Description
-                string searchPattern = $@"<KeyMapping\s+([^>]*AsciiCode=""[^""]*""[^>]*)/>";
-                // Target exact key mapping by default item name or description
                 if (!string.IsNullOrEmpty(key.XmlItemName))
                 {
-                    searchPattern = $@"<KeyMapping\s+([^>]*ItemName=""{Regex.Escape(key.XmlItemName)}""[^>]*)/>";
+                    string searchPattern = $@"<KeyMapping\s+([^>]*ItemName=""{Regex.Escape(key.XmlItemName)}""[^>]*?)(/?>)";
                     modifiedMode = Regex.Replace(modifiedMode, searchPattern, m =>
                     {
                         var attrs = m.Groups[1].Value;
+                        var endTag = m.Groups[2].Value;
                         attrs = Regex.Replace(attrs, @"AsciiCode=""[^""]*""", $@"AsciiCode=""{key.AsciiCode}""");
                         attrs = Regex.Replace(attrs, @"ItemName=""[^""]*""", $@"ItemName=""{key.CurrentKey}""");
-                        return $"<KeyMapping {attrs}/>";
+                        return $"<KeyMapping {attrs}{endTag}";
                     }, RegexOptions.None);
                 }
             }
@@ -356,7 +400,7 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
 
         var modeText = modeMatch.Groups[1].Value;
 
-        // Parse WASD CrossKey
+        // 1. Parse WASD CrossKey
         var wasdMatch = Regex.Match(modeText, @"<KeyMappingEx\s+[^>]*ItemName=""WASD""[^>]*UP_AsciiCode=""(\d+)""[^>]*DOWN_AsciiCode=""(\d+)""[^>]*LEFT_AsciiCode=""(\d+)""[^>]*RIGHT_AsciiCode=""(\d+)""");
         if (wasdMatch.Success)
         {
@@ -366,8 +410,8 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
             SetKeyByAscii(keys, "MoveRight", int.Parse(wasdMatch.Groups[4].Value));
         }
 
-        // Parse single keys
-        var keyMatches = Regex.Matches(modeText, @"<KeyMapping\s+([^>]+)/>");
+        // 2. Parse single KeyMapping items (both /> and > endings)
+        var keyMatches = Regex.Matches(modeText, @"<KeyMapping\s+([^>]+?)(?:/>|>)");
         foreach (Match km in keyMatches)
         {
             var raw = km.Groups[1].Value;
@@ -380,11 +424,30 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
                 string name = nameMatch.Success ? nameMatch.Groups[1].Value : "";
                 string desc = descMatch.Success ? descMatch.Groups[1].Value : "";
 
-                // Match against existing keys by Name or Desc
                 foreach (var k in keys.Where(x => !x.IsEx))
                 {
                     if ((!string.IsNullOrEmpty(k.XmlItemName) && k.XmlItemName.Equals(name, StringComparison.OrdinalIgnoreCase)) ||
-                        (!string.IsNullOrEmpty(k.Description) && k.Description.Equals(desc, StringComparison.OrdinalIgnoreCase)))
+                        (!string.IsNullOrEmpty(k.Description_XML) && k.Description_XML.Equals(desc, StringComparison.OrdinalIgnoreCase)) ||
+                        (!string.IsNullOrEmpty(desc) && (
+                            (k.Id == "Sprint" && (desc.Contains("加速跑") || name == "Shift" || name == "=")) ||
+                            (k.Id == "Jump" && desc.Contains("跳")) ||
+                            (k.Id == "Crouch" && desc.Contains("蹲")) ||
+                            (k.Id == "Prone" && desc.Contains("趴")) ||
+                            (k.Id == "Reload" && desc.Contains("换弹")) ||
+                            (k.Id == "Weapon1" && (desc.Contains("1号武器") || name == "1")) ||
+                            (k.Id == "Weapon2" && (desc.Contains("2号武器") || name == "2")) ||
+                            (k.Id == "Pistol" && (desc.Contains("3号武器") || name == "3")) ||
+                            (k.Id == "Melee" && (desc.Contains("冷兵器") || name == "5")) ||
+                            (k.Id == "Interact" && (desc.Contains("开车、开门") || name == "F")) ||
+                            (k.Id == "Drive" && (desc.Contains("乘车") || name == "G")) ||
+                            (k.Id == "Loot" && (desc.Contains("捡物") || name == "H")) ||
+                            (k.Id == "Backpack" && (desc.Contains("背包") || name == "Tab")) ||
+                            (k.Id == "Map" && (desc.Contains("地图") || name == "M")) ||
+                            (k.Id == "FppTpp" && (desc.Contains("人称") || name == "V")) ||
+                            (k.Id == "Voice" && (desc.Contains("语音") || name == "T")) ||
+                            (k.Id == "Settings" && (desc.Contains("设置") || name == "Esc")) ||
+                            (k.Id == "Aim" && (name == "右键" || desc.Contains("开镜") || desc.Contains("瞄准")))
+                        )))
                     {
                         k.AsciiCode = ascii;
                         k.CurrentKey = GetKeyNameFromAscii(ascii);
@@ -393,28 +456,52 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
             }
         }
 
-        // Parse KeyMappingEx items (Alt freelook, Grenades, Meds, etc.)
-        var exMatches = Regex.Matches(modeText, @"<KeyMappingEx\s+([^>]+)/>");
+        // 3. Parse KeyMappingEx items (both /> and > endings)
+        var exMatches = Regex.Matches(modeText, @"<KeyMappingEx\s+([^>]+?)(?:/>|>)");
         foreach (Match em in exMatches)
         {
             var raw = em.Groups[1].Value;
             var nameMatch = Regex.Match(raw, @"ItemName=""([^""]*)""");
             var asciiMatch = Regex.Match(raw, @"AsciiCode=""(\d+)""");
             var typeMatch = Regex.Match(raw, @"Type=""([^""]+)""");
+            var descMatch = Regex.Match(raw, @"Description=""([^""]+)""");
 
-            if (asciiMatch.Success && int.TryParse(asciiMatch.Groups[1].Value, out int ascii))
+            string name = nameMatch.Success ? nameMatch.Groups[1].Value : "";
+            string type = typeMatch.Success ? typeMatch.Groups[1].Value : "";
+            string desc = descMatch.Success ? descMatch.Groups[1].Value : "";
+
+            int? ascii = null;
+            if (asciiMatch.Success && int.TryParse(asciiMatch.Groups[1].Value, out int a)) ascii = a;
+
+            foreach (var k in keys.Where(x => x.IsEx && x.Id != "MoveUp" && x.Id != "MoveDown" && x.Id != "MoveLeft" && x.Id != "MoveRight"))
             {
-                string name = nameMatch.Success ? nameMatch.Groups[1].Value : "";
-                string type = typeMatch.Success ? typeMatch.Groups[1].Value : "";
-
-                foreach (var k in keys.Where(x => x.IsEx && x.Id != "MoveUp" && x.Id != "MoveDown" && x.Id != "MoveLeft" && x.Id != "MoveRight"))
+                if ((type == "LClick" || desc.Contains("开火")) && k.Id == "Fire")
                 {
-                    if ((!string.IsNullOrEmpty(k.XmlItemName) && k.XmlItemName.Equals(name, StringComparison.OrdinalIgnoreCase)) ||
-                        (!string.IsNullOrEmpty(k.XmlType) && k.XmlType.Equals(type, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        k.AsciiCode = ascii;
-                        k.CurrentKey = GetKeyNameFromAscii(ascii);
-                    }
+                    k.AsciiCode = -1;
+                    k.CurrentKey = "Left Click";
+                }
+                else if ((type == "RClick" || desc.Contains("视角") || name == "右键") && k.Id == "Aim")
+                {
+                    k.AsciiCode = -2;
+                    k.CurrentKey = "Right Click";
+                }
+                else if (ascii.HasValue && (
+                    (!string.IsNullOrEmpty(k.XmlItemName) && k.XmlItemName.Equals(name, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(k.XmlType) && k.XmlType.Equals(type, StringComparison.OrdinalIgnoreCase)) ||
+                    (!string.IsNullOrEmpty(desc) && (
+                        (k.Id == "FreeLook" && desc.Contains("自由视角")) ||
+                        (k.Id == "Frag" && (desc.Contains("手雷") || name == "4")) ||
+                        (k.Id == "Smoke" && (desc.Contains("烟雾") || name == "5")) ||
+                        (k.Id == "Molotov" && (desc.Contains("燃烧") || name == "6")) ||
+                        (k.Id == "MedKit" && (desc.Contains("急救箱") || name == "7")) ||
+                        (k.Id == "FirstAid" && (desc.Contains("急救包") || name == "8")) ||
+                        (k.Id == "Bandage" && (desc.Contains("绷带") || name == "9")) ||
+                        (k.Id == "Painkiller" && (desc.Contains("药") || name == "0")) ||
+                        (k.Id == "FireMode" && (desc.Contains("单发/连发") || name == "B"))
+                    ))))
+                {
+                    k.AsciiCode = ascii.Value;
+                    k.CurrentKey = GetKeyNameFromAscii(ascii.Value);
                 }
             }
         }
@@ -448,34 +535,35 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
             new() { Id = "FreeLook", DisplayName = "Free Look (Eye)", Category = "Movement", Description = "Look around without turning body", DefaultKey = "Alt", CurrentKey = "Alt", AsciiCode = 18, IsEx = true, XmlItemName = "Alt", XmlType = "KeyMove" },
 
             // Combat & Weapons
-            new() { Id = "Fire", DisplayName = "Fire / Shoot", Category = "Combat & Weapons", Description = "Trigger primary weapon fire", DefaultKey = "Left Click", CurrentKey = "Left Click", AsciiCode = -1, IsEx = true, XmlItemName = "鼠标左键", XmlType = "LClick" },
-            new() { Id = "Aim", DisplayName = "Aim Down Sight (ADS)", Category = "Combat & Weapons", Description = "Scope / right click aim", DefaultKey = "Right Click", CurrentKey = "Right Click", AsciiCode = -2, IsEx = false, XmlItemName = "右键" },
-            new() { Id = "Reload", DisplayName = "Reload Weapon", Category = "Combat & Weapons", Description = "Reload active magazine", DefaultKey = "R", CurrentKey = "R", AsciiCode = 82, IsEx = false, XmlItemName = "R" },
-            new() { Id = "PeekLeft", DisplayName = "Lean / Peek Left", Category = "Combat & Weapons", Description = "Lean body left behind cover", DefaultKey = "Q", CurrentKey = "Q", AsciiCode = 81, IsEx = false, XmlItemName = "Q" },
-            new() { Id = "PeekRight", DisplayName = "Lean / Peek Right", Category = "Combat & Weapons", Description = "Lean body right behind cover", DefaultKey = "E", CurrentKey = "E", AsciiCode = 69, IsEx = false, XmlItemName = "E" },
-            new() { Id = "FireMode", DisplayName = "Switch Fire Mode", Category = "Combat & Weapons", Description = "Single / Burst / Full-Auto", DefaultKey = "B", CurrentKey = "B", AsciiCode = 66, IsEx = true, XmlItemName = "B", XmlType = "MultiPoint" },
-            new() { Id = "Weapon1", DisplayName = "Primary Weapon", Category = "Combat & Weapons", Description = "Equip 1st main gun", DefaultKey = "1", CurrentKey = "1", AsciiCode = 49, IsEx = false, XmlItemName = "1" },
-            new() { Id = "Weapon2", DisplayName = "Secondary Weapon", Category = "Combat & Weapons", Description = "Equip 2nd main gun", DefaultKey = "2", CurrentKey = "2", AsciiCode = 50, IsEx = false, XmlItemName = "2" },
-            new() { Id = "Sidearm", DisplayName = "Pistol / Sidearm", Category = "Combat & Weapons", Description = "Equip pistol", DefaultKey = "3", CurrentKey = "3", AsciiCode = 51, IsEx = false, XmlItemName = "3" },
-            new() { Id = "Melee", DisplayName = "Holster / Melee Weapon", Category = "Combat & Weapons", Description = "Put away guns / hold melee weapon", DefaultKey = "X", CurrentKey = "X", AsciiCode = 88, IsEx = true, XmlItemName = "X", XmlType = "FoldClick2" },
+            new() { Id = "Fire", DisplayName = "Fire / Shoot", Category = "Combat & Weapons", Description = "Left click to shoot weapon", DefaultKey = "Left Click", CurrentKey = "Left Click", AsciiCode = -1, IsEx = true, XmlType = "LClick" },
+            new() { Id = "Aim", DisplayName = "Aim / Scope (Toggle)", Category = "Combat & Weapons", Description = "Right click to aim down sights", DefaultKey = "Right Click", CurrentKey = "Right Click", AsciiCode = -2, IsEx = true, XmlType = "RClick", XmlItemName = "右键" },
+            new() { Id = "Reload", DisplayName = "Reload Weapon", Category = "Combat & Weapons", Description = "Reload active weapon magazine", DefaultKey = "R", CurrentKey = "R", AsciiCode = 82, IsEx = false, XmlItemName = "R" },
+            new() { Id = "Weapon1", DisplayName = "Primary Weapon", Category = "Combat & Weapons", Description = "Equip slot 1 primary firearm", DefaultKey = "1", CurrentKey = "1", AsciiCode = 49, IsEx = false, XmlItemName = "1" },
+            new() { Id = "Weapon2", DisplayName = "Secondary Weapon", Category = "Combat & Weapons", Description = "Equip slot 2 secondary firearm", DefaultKey = "2", CurrentKey = "2", AsciiCode = 50, IsEx = false, XmlItemName = "2" },
+            new() { Id = "Pistol", DisplayName = "Sidearm (Pistol)", Category = "Combat & Weapons", Description = "Equip slot 3 handgun / pistol", DefaultKey = "3", CurrentKey = "3", AsciiCode = 51, IsEx = false, XmlItemName = "3" },
+            new() { Id = "Melee", DisplayName = "Melee Weapon", Category = "Combat & Weapons", Description = "Equip pan / crowbar / machete", DefaultKey = "5", CurrentKey = "5", AsciiCode = 53, IsEx = false, XmlItemName = "5" },
+            new() { Id = "FireMode", DisplayName = "Fire Mode Switch", Category = "Combat & Weapons", Description = "Single / Burst / Full Auto", DefaultKey = "B", CurrentKey = "B", AsciiCode = 66, IsEx = true, XmlItemName = "B", XmlType = "MultiPoint" },
+            new() { Id = "PeekLeft", DisplayName = "Peek Left", Category = "Combat & Weapons", Description = "Lean torso left around corner", DefaultKey = "Q", CurrentKey = "Q", AsciiCode = 81, IsEx = false, XmlItemName = "Q" },
+            new() { Id = "PeekRight", DisplayName = "Peek Right", Category = "Combat & Weapons", Description = "Lean torso right around corner", DefaultKey = "E", CurrentKey = "E", AsciiCode = 69, IsEx = false, XmlItemName = "E" },
 
             // Throwables & Meds
-            new() { Id = "Frag", DisplayName = "Frag Grenade", Category = "Throwables & Meds", Description = "Quick select frag grenade", DefaultKey = "4", CurrentKey = "4", AsciiCode = 52, IsEx = true, XmlItemName = "4", XmlType = "FoldClick2" },
-            new() { Id = "Smoke", DisplayName = "Smoke Grenade", Category = "Throwables & Meds", Description = "Quick select smoke grenade", DefaultKey = "5", CurrentKey = "5", AsciiCode = 53, IsEx = true, XmlItemName = "5", XmlType = "FoldClick2" },
-            new() { Id = "Molotov", DisplayName = "Molotov Cocktail", Category = "Throwables & Meds", Description = "Quick select fire bomb", DefaultKey = "6", CurrentKey = "6", AsciiCode = 54, IsEx = true, XmlItemName = "6", XmlType = "FoldClick2" },
-            new() { Id = "MedKit", DisplayName = "Med Kit (100% HP)", Category = "Throwables & Meds", Description = "Quick use Med Kit", DefaultKey = "7", CurrentKey = "7", AsciiCode = 55, IsEx = true, XmlItemName = "7", XmlType = "FoldClick2" },
-            new() { Id = "FirstAid", DisplayName = "First Aid Kit (75% HP)", Category = "Throwables & Meds", Description = "Quick use First Aid Kit", DefaultKey = "8", CurrentKey = "8", AsciiCode = 56, IsEx = true, XmlItemName = "8", XmlType = "FoldClick2" },
-            new() { Id = "Bandage", DisplayName = "Bandage (10% HP)", Category = "Throwables & Meds", Description = "Quick use Bandage", DefaultKey = "9", CurrentKey = "9", AsciiCode = 57, IsEx = true, XmlItemName = "9", XmlType = "FoldClick2" },
-            new() { Id = "EnergyDrink", DisplayName = "Energy Drink / Painkiller", Category = "Throwables & Meds", Description = "Quick use boost drink/pills", DefaultKey = "0", CurrentKey = "0", AsciiCode = 48, IsEx = true, XmlItemName = "0", XmlType = "FoldClick2" },
+            new() { Id = "Frag", DisplayName = "Frag Grenade", Category = "Throwables & Meds", Description = "Equip explosive fragmentation grenade", DefaultKey = "4", CurrentKey = "4", AsciiCode = 52, IsEx = true, XmlItemName = "4", XmlType = "FoldClick2" },
+            new() { Id = "Smoke", DisplayName = "Smoke Grenade", Category = "Throwables & Meds", Description = "Equip smoke grenade for cover", DefaultKey = "5", CurrentKey = "5", AsciiCode = 53, IsEx = true, XmlItemName = "5", XmlType = "FoldClick2" },
+            new() { Id = "Molotov", DisplayName = "Molotov / Stun", Category = "Throwables & Meds", Description = "Equip molotov cocktail or flashbang", DefaultKey = "6", CurrentKey = "6", AsciiCode = 54, IsEx = true, XmlItemName = "6", XmlType = "FoldClick2" },
+            new() { Id = "MedKit", DisplayName = "Med Kit", Category = "Throwables & Meds", Description = "Full heal 100% health restore", DefaultKey = "7", CurrentKey = "7", AsciiCode = 55, IsEx = true, XmlItemName = "7", XmlType = "FoldClick2" },
+            new() { Id = "FirstAid", DisplayName = "First Aid Kit", Category = "Throwables & Meds", Description = "Restore up to 75% health", DefaultKey = "8", CurrentKey = "8", AsciiCode = 56, IsEx = true, XmlItemName = "8", XmlType = "FoldClick2" },
+            new() { Id = "Bandage", DisplayName = "Bandage", Category = "Throwables & Meds", Description = "Small health pack", DefaultKey = "9", CurrentKey = "9", AsciiCode = 57, IsEx = true, XmlItemName = "9", XmlType = "FoldClick2" },
+            new() { Id = "Painkiller", DisplayName = "Energy Drink / Booster", Category = "Throwables & Meds", Description = "Painkiller or energy drink boost", DefaultKey = "0", CurrentKey = "0", AsciiCode = 48, IsEx = true, XmlItemName = "0", XmlType = "FoldClick2" },
 
             // Interaction & System
-            new() { Id = "InteractF", DisplayName = "Main Action / Drive / Loot", Category = "Interaction & System", Description = "Drive, open doors, pick up item 1, parachute, revive", DefaultKey = "F", CurrentKey = "F", AsciiCode = 70, IsEx = false, XmlItemName = "F" },
-            new() { Id = "InteractG", DisplayName = "Passenger / Secondary Loot", Category = "Interaction & System", Description = "Get in as passenger, pick up item 2", DefaultKey = "G", CurrentKey = "G", AsciiCode = 71, IsEx = false, XmlItemName = "G" },
-            new() { Id = "InteractH", DisplayName = "Third Loot Slot", Category = "Interaction & System", Description = "Pick up item 3", DefaultKey = "H", CurrentKey = "H", AsciiCode = 72, IsEx = false, XmlItemName = "H" },
-            new() { Id = "Backpack", DisplayName = "Inventory / Backpack", Category = "Interaction & System", Description = "Open player bag", DefaultKey = "Tab", CurrentKey = "Tab", AsciiCode = 9, IsEx = false, XmlItemName = "Tab" },
-            new() { Id = "Map", DisplayName = "Full Map", Category = "Interaction & System", Description = "Open / close tactical map", DefaultKey = "M", CurrentKey = "M", AsciiCode = 77, IsEx = false, XmlItemName = "M" },
-            new() { Id = "MouseLock", DisplayName = "Mouse Lock / Free Cursor", Category = "Interaction & System", Description = "Show or lock mouse cursor in game", DefaultKey = "Ctrl", CurrentKey = "Ctrl", AsciiCode = 17, IsEx = true, XmlItemName = "鼠标移动", XmlType = "RClick" },
-            new() { Id = "KeyReminder", DisplayName = "Key Reminder Overlay", Category = "Interaction & System", Description = "Toggle key overlay on screen", DefaultKey = "F1", CurrentKey = "F1", AsciiCode = 112, IsEx = false, XmlItemName = "F1" }
+            new() { Id = "Interact", DisplayName = "Interact / Pick Up / Parachute", Category = "Interaction & System", Description = "Open doors, drive, pick up loot, revive", DefaultKey = "F", CurrentKey = "F", AsciiCode = 70, IsEx = false, XmlItemName = "F" },
+            new() { Id = "Drive", DisplayName = "Get In / Secondary Loot", Category = "Interaction & System", Description = "Enter passenger seat or grab 2nd item", DefaultKey = "G", CurrentKey = "G", AsciiCode = 71, IsEx = false, XmlItemName = "G" },
+            new() { Id = "Loot", DisplayName = "Loot Slot 3", Category = "Interaction & System", Description = "Pick up 3rd item from loot crate", DefaultKey = "H", CurrentKey = "H", AsciiCode = 72, IsEx = false, XmlItemName = "H" },
+            new() { Id = "Backpack", DisplayName = "Open Backpack", Category = "Interaction & System", Description = "View and manage inventory", DefaultKey = "Tab", CurrentKey = "Tab", AsciiCode = 9, IsEx = false, XmlItemName = "Tab" },
+            new() { Id = "Map", DisplayName = "Open Map", Category = "Interaction & System", Description = "Toggle full map overlay", DefaultKey = "M", CurrentKey = "M", AsciiCode = 77, IsEx = false, XmlItemName = "M" },
+            new() { Id = "FppTpp", DisplayName = "FPP / TPP Switch", Category = "Interaction & System", Description = "Switch 1st and 3rd person camera", DefaultKey = "V", CurrentKey = "V", AsciiCode = 86, IsEx = false, XmlItemName = "V" },
+            new() { Id = "Voice", DisplayName = "Voice Mute / Channel", Category = "Interaction & System", Description = "Toggle microphone mute", DefaultKey = "T", CurrentKey = "T", AsciiCode = 84, IsEx = false, XmlItemName = "T" },
+            new() { Id = "Settings", DisplayName = "Settings / Cancel", Category = "Interaction & System", Description = "Open settings or cancel throwable", DefaultKey = "Esc", CurrentKey = "Esc", AsciiCode = 27, IsEx = false, XmlItemName = "Esc" }
         };
     }
 
@@ -504,8 +592,14 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
 
         if (!string.IsNullOrEmpty(installPath))
         {
-            results.Add(Path.Combine(installPath, "ui", "DefaultKeyMapping.xml"));
-            results.Add(Path.Combine(installPath, "ui", "ConfigFile", "DefaultKeyMapping.xml"));
+            var cleanRoot = installPath.EndsWith("ui", StringComparison.OrdinalIgnoreCase) || installPath.EndsWith("appmarket", StringComparison.OrdinalIgnoreCase)
+                ? (Directory.GetParent(installPath)?.FullName ?? installPath)
+                : installPath;
+
+            results.Add(Path.Combine(cleanRoot, "ui", "DefaultKeyMapping.xml"));
+            results.Add(Path.Combine(cleanRoot, "ui", "ConfigFile", "DefaultKeyMapping.xml"));
+            results.Add(Path.Combine(installPath, "DefaultKeyMapping.xml"));
+            results.Add(Path.Combine(installPath, "ConfigFile", "DefaultKeyMapping.xml"));
         }
 
         // Common default locations
@@ -515,7 +609,8 @@ public class GameLoopKeyMappingService : IGameLoopKeyMappingService
             @"D:\Program Files\TxGameAssistant",
             @"E:\Program Files\TxGameAssistant",
             @"C:\TxGameAssistant",
-            @"D:\TxGameAssistant"
+            @"D:\TxGameAssistant",
+            @"E:\TxGameAssistant"
         };
 
         foreach (var root in commonRoots)

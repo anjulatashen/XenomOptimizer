@@ -61,7 +61,7 @@ public partial class KeyMappingViewModel : ObservableObject
                 _ => "Detected: Standard Edition"
             };
 
-            await ReloadKeyProfileAsync();
+            await ReloadKeyProfileAsync(null);
         }
         catch (Exception ex)
         {
@@ -69,7 +69,7 @@ public partial class KeyMappingViewModel : ObservableObject
         }
     }
 
-    private async Task ReloadKeyProfileAsync()
+    private async Task ReloadKeyProfileAsync(int? modeId = null)
     {
         var edition = SelectedEditionIndex switch
         {
@@ -79,7 +79,7 @@ public partial class KeyMappingViewModel : ObservableObject
             _ => GameLoopEdition.Global64
         };
 
-        var profile = await _keyMapping.LoadProfileAsync(edition, SelectedKeyMapModeId);
+        var profile = await _keyMapping.LoadProfileAsync(edition, modeId);
         SelectedKeyMapModeId = profile.SelectedModeId;
         EnableKeyTips = profile.EnableTips;
         AutoSwitchResolution = profile.AutoSwitchResolutionMode;
@@ -119,7 +119,7 @@ public partial class KeyMappingViewModel : ObservableObject
 
         SelectedKeyMapModeId = modeId;
         KeyMappingStatusMessage = $"Switching to Mode {modeId}...";
-        await ReloadKeyProfileAsync();
+        await ReloadKeyProfileAsync(modeId);
         KeyMappingStatusMessage = $"Active Mode: {GetModeName(modeId)}";
     }
 
@@ -132,7 +132,7 @@ public partial class KeyMappingViewModel : ObservableObject
 
         SelectedEditionIndex = index;
         KeyMappingStatusMessage = "Loading edition keymap...";
-        await ReloadKeyProfileAsync();
+        await ReloadKeyProfileAsync(null);
         KeyMappingStatusMessage = $"Loaded {GetEditionName(index)} keymapping profile.";
     }
 
