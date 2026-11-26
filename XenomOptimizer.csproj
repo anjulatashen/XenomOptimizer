@@ -39,6 +39,7 @@
     <Resource Include="Assets\topo_transparent.png" />
     <Resource Include="Assets\pubg.png" />
     <Resource Include="Assets\original_pubg_icon.png" />
+    <Resource Include="Assets\library_drawer_bg.png" />
     <Resource Include="Assets\playstore_icon.png" />
     <Resource Include="Assets\gameloop_icon.png" />
     <Resource Include="Assets\animated.gif" />
@@ -60,6 +61,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\Gradiant.mp4">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\library_drawer_bg.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\original_pubg_icon.png">

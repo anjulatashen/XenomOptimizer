@@ -41,6 +41,13 @@
                         <VisualBrush Visual="{Binding ElementName=DrawerClipMask}"/>
                     </Grid.OpacityMask>
 
+                    <!-- ═══ USER GRADIENT BACKGROUND IMAGE (Stretch=Fill) ═══ -->
+                    <Image Source="/Assets/library_drawer_bg.png"
+                           Stretch="Fill"
+                           HorizontalAlignment="Stretch"
+                           VerticalAlignment="Stretch"
+                           IsHitTestVisible="False"/>
+
                     <!-- ═══ DRAWER CONTENT ═══ -->
                     <Grid>
                     <Grid.RowDefinitions>
