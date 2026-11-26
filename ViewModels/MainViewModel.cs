@@ -71,10 +71,12 @@ public partial class MainViewModel : ObservableObject
     private bool _isPasscodeModalActive;
 
     [ObservableProperty]
-    private bool _isGameLoopUnlocked = true;
+    private bool _isGameLoopUnlocked = false;
 
     private static readonly HashSet<string> LockedTabs = new(StringComparer.OrdinalIgnoreCase)
     {
+        "GameLoop",
+        "PUBG",
         "Network",
         "Cleanup",
         "Backup",
