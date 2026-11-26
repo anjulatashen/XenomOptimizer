@@ -38,6 +38,7 @@
     <Resource Include="Assets\logo.png" />
     <Resource Include="Assets\topo_transparent.png" />
     <Resource Include="Assets\pubg.png" />
+    <Resource Include="Assets\playstore_icon.png" />
     <Resource Include="Assets\gameloop_icon.png" />
     <Resource Include="Assets\animated.gif" />
     <Resource Include="Assets\discord.gif" />
@@ -55,6 +56,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\pubg.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\playstore_icon.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\gameloop_icon.png">

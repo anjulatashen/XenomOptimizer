@@ -300,41 +300,6 @@
                                                  IsChecked="{Binding IsSettingsActive, Mode=OneWay}"
                                                  PreviewMouseLeftButtonDown="NavButton_PreviewMouseLeftButtonDown"
                                                  Command="{Binding NavigateToCommand}" CommandParameter="Settings"/>
-
-                                    <!-- Bottom Drawer Arrow Trigger Button (User Request) -->
-                                    <Button x:Name="BtnOpenAppDrawer"
-                                            Command="{Binding OpenAppDrawerCommand}"
-                                            ToolTip="GameLoop AppMarket &amp; Launcher (Click to open)"
-                                            Width="38" Height="28" Margin="0,6,0,6"
-                                            Background="#141824"
-                                            BorderBrush="#253046"
-                                            BorderThickness="1"
-                                            Cursor="Hand">
-                                        <Button.Style>
-                                            <Style TargetType="Button">
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate TargetType="Button">
-                                                            <Border x:Name="ArrowBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
-                                                                <TextBlock Text="&#xE70E;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#00D4FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            </Border>
-                                                            <ControlTemplate.Triggers>
-                                                                <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter TargetName="ArrowBorder" Property="Background" Value="#1E283C"/>
-                                                                    <Setter TargetName="ArrowBorder" Property="BorderBrush" Value="#00D4FF"/>
-                                                                    <Setter Property="Effect">
-                                                                        <Setter.Value>
-                                                                            <DropShadowEffect BlurRadius="10" Color="#00D4FF" Opacity="0.5" ShadowDepth="0"/>
-                                                                        </Setter.Value>
-                                                                    </Setter>
-                                                                </Trigger>
-                                                            </ControlTemplate.Triggers>
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -382,10 +347,48 @@
                                     Visibility="{Binding IsPasscodeModalActive, Converter={StaticResource BoolToVis}}"
                                     Panel.ZIndex="1005"/>
 
-        <!-- ═══ FULL-WINDOW GAMELOOP APP MARKET & DRAWER OVERLAY (IMAGE 2 STYLE) ═══ -->
+        <!-- ═══ FULL-WINDOW GAMELOOP APP MARKET & DRAWER OVERLAY (IMAGE 2 & 4 STYLE) ═══ -->
         <views:GameLoopAppDrawerControl x:Name="GameLoopAppDrawer"
                                         WindowChrome.IsHitTestVisibleInChrome="True"
                                         Visibility="{Binding IsAppDrawerOpen, Converter={StaticResource BoolToVis}}"
                                         Panel.ZIndex="1050"/>
+
+        <!-- ═══ BOTTOM-CENTER FLOATING DRAWER TRIGGER (Image 2 & User Request) ═══ -->
+        <Border HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,1" Panel.ZIndex="990">
+            <Button x:Name="BtnBottomCenterArrow"
+                    Command="{Binding OpenAppDrawerCommand}"
+                    ToolTip="Open GameLoop Library"
+                    Cursor="Hand"
+                    Background="#141722"
+                    BorderBrush="#253046"
+                    BorderThickness="1,1,1,0"
+                    Padding="18,3"
+                    Width="60" Height="18">
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border x:Name="PillHandle" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9,9,0,0">
+                                        <TextBlock Text="&#xE70E;" FontFamily="{StaticResource IconFont}" FontSize="9.5" Foreground="#00D4FF" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-2,0,0"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="PillHandle" Property="Background" Value="#1E283C"/>
+                                            <Setter TargetName="PillHandle" Property="BorderBrush" Value="#00D4FF"/>
+                                            <Setter Property="Effect">
+                                                <Setter.Value>
+                                                    <DropShadowEffect BlurRadius="12" Color="#00D4FF" Opacity="0.7" ShadowDepth="0"/>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </Border>
     </Grid>
 </Window>

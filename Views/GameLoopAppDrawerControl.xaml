@@ -12,104 +12,157 @@
         <Border x:Name="DrawerPanel"
                 VerticalAlignment="Bottom"
                 Height="780"
-                Background="#0D0F17"
-                BorderBrush="#1E2436"
+                Background="#0F1117"
+                BorderBrush="#1E2332"
                 BorderThickness="1,1,1,0"
                 CornerRadius="24,24,0,0"
                 ClipToBounds="True"
                 MouseLeftButtonDown="DrawerPanel_MouseLeftButtonDown">
 
             <Border.Effect>
-                <DropShadowEffect BlurRadius="32" ShadowDepth="0" Direction="0" Color="#000000" Opacity="0.9"/>
+                <DropShadowEffect BlurRadius="36" ShadowDepth="0" Direction="0" Color="#000000" Opacity="0.95"/>
             </Border.Effect>
 
             <Grid>
                 <Grid.RowDefinitions>
-                    <!-- Row 0: Top Drag Handle & Back Button Header -->
+                    <!-- Row 0: Top Header & Pull Handle & Controls -->
                     <RowDefinition Height="Auto"/>
-                    <!-- Row 1: App Market Title & Category Filters -->
+                    <!-- Row 1: Notice Banner ("GameLoop Status") -->
                     <RowDefinition Height="Auto"/>
-                    <!-- Row 2: Scrollable App Cards Grid -->
+                    <!-- Row 2: Library App Tiles (Image 4 Style) -->
                     <RowDefinition Height="*"/>
                     <!-- Row 3: Bottom Status Bar -->
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Background Subtle Ambient Glow -->
+                <!-- Background Subtle Ambient Top Glow -->
                 <Border Grid.RowSpan="4" IsHitTestVisible="False">
                     <Border.Background>
-                        <RadialGradientBrush Center="0.5,0.0" RadiusX="0.6" RadiusY="0.4">
-                            <GradientStop Color="#1200D4FF" Offset="0.0"/>
+                        <RadialGradientBrush Center="0.5,0.0" RadiusX="0.6" RadiusY="0.35">
+                            <GradientStop Color="#0D00D4FF" Offset="0.0"/>
                             <GradientStop Color="#00000000" Offset="1.0"/>
                         </RadialGradientBrush>
                     </Border.Background>
                 </Border>
 
-                <!-- ═══ ROW 0: TOP HANDLE & BACK BUTTON HEADER ═══ -->
-                <Grid Grid.Row="0" Margin="24,14,24,0">
+                <!-- ═══ ROW 0: TOP HEADER & CONTROLS (Image 4 Style) ═══ -->
+                <Grid Grid.Row="0" Margin="32,16,32,12">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Back Button: Closes the drawer and restores the normal left side menu -->
-                    <Button Grid.Column="0"
-                            Command="{Binding CloseAppDrawerCommand}"
-                            Background="#161B28"
-                            BorderBrush="#252F46"
-                            BorderThickness="1"
-                            Padding="14,8"
-                            Cursor="Hand">
-                        <Button.Style>
-                            <Style TargetType="Button">
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border Background="{TemplateBinding Background}"
-                                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                                    CornerRadius="10"
-                                                    Padding="{TemplateBinding Padding}">
-                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <TextBlock Text="&#xE72B;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#00D4FF" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                                    <TextBlock Text="Back to Main Menu" FontSize="12" FontWeight="SemiBold" Foreground="#F8FAFC" VerticalAlignment="Center"/>
-                                                </StackPanel>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter Property="Background" Value="#1E2638"/>
-                                                    <Setter Property="BorderBrush" Value="#00D4FF"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </Button.Style>
-                    </Button>
+                    <!-- Left: Back Button & Library Title -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Back to Main Menu Button -->
+                        <Button Command="{Binding CloseAppDrawerCommand}"
+                                Background="#161922"
+                                BorderBrush="#262D3D"
+                                BorderThickness="1"
+                                Padding="12,8"
+                                Margin="0,0,20,0"
+                                Cursor="Hand">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                        CornerRadius="10"
+                                                        Padding="{TemplateBinding Padding}">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="&#xE72B;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#00D4FF" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="Back" FontSize="12" FontWeight="SemiBold" Foreground="#F8FAFC" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#1E2433"/>
+                                                        <Setter Property="BorderBrush" Value="#00D4FF"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
+                        </Button>
 
-                    <!-- Center Pill Pull-Handle (Image 2 Style) -->
-                    <StackPanel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Border Width="48" Height="4" CornerRadius="2" Background="#334155" Margin="0,0,0,2"/>
-                        <TextBlock Text="GAMELOOP APP DRAWER" FontSize="9.5" FontWeight="Bold" Foreground="#475569" HorizontalAlignment="Center"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="Library" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF"/>
+                            <TextBlock Text="From GameLoop's own app list. Refresh while GameLoop runs to add versions and running status."
+                                       FontSize="11.5" Foreground="#64748B" Margin="0,2,0,0"/>
+                        </StackPanel>
                     </StackPanel>
 
-                    <!-- Right Quick Close / Status Badge -->
+                    <!-- Center Pill Pull-Handle (Image 2 & 4 Style) -->
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,-4,0,0">
+                        <Border Width="44" Height="4" CornerRadius="2" Background="#262E3D"/>
+                    </StackPanel>
+
+                    <!-- Right: Status Badge, Search Box, Refresh & Close -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Background="#10251F" BorderBrush="#10B981" BorderThickness="1" CornerRadius="8" Padding="10,5" Margin="0,0,10,0">
+                        <!-- Setup Status Badge (Image 4 Style: "• Setup 10 of 11") -->
+                        <Border Background="#161924" BorderBrush="#263044" BorderThickness="1" CornerRadius="12" Padding="12,6" Margin="0,0,12,0" VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <Ellipse Width="6" Height="6" Fill="#10B981" Margin="0,0,6,0"/>
-                                <TextBlock Text="GameLoop Environment" FontSize="11" FontWeight="SemiBold" Foreground="#10B981"/>
+                                <Ellipse Width="6" Height="6" Fill="#F59E0B" Margin="0,0,8,0"/>
+                                <TextBlock Text="GameLoop Environment" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8"/>
                             </StackPanel>
                         </Border>
 
+                        <!-- Search Apps Input (Image 4 Style) -->
+                        <Border Width="160" Height="34" Background="#141722" BorderBrush="#242C3E" BorderThickness="1" CornerRadius="8" Margin="0,0,10,0" Padding="10,0">
+                            <Grid VerticalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="&#xE721;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#64748B" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                <TextBox Grid.Column="1" Background="Transparent" BorderThickness="0" Foreground="#F8FAFC" FontSize="11.5" VerticalAlignment="Center" CaretBrush="#00D4FF"/>
+                                <TextBlock Grid.Column="1" Text="Search apps" FontSize="11.5" Foreground="#475569" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Refresh Button (Image 4 Style: ↻) -->
+                        <Button Width="34" Height="34"
+                                Background="#141722"
+                                BorderBrush="#242C3E"
+                                BorderThickness="1"
+                                Margin="0,0,8,0"
+                                Cursor="Hand"
+                                ToolTip="Refresh App List">
+                            <Button.Style>
+                                <Style TargetType="Button">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
+                                                    <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" FontSize="13" Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#1E2436"/>
+                                                        <Setter Property="BorderBrush" Value="#00D4FF"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+
+                        <!-- Close Button (✕) -->
                         <Button Command="{Binding CloseAppDrawerCommand}"
                                 Width="34" Height="34"
-                                Background="#161B28"
-                                BorderBrush="#252F46"
+                                Background="#141722"
+                                BorderBrush="#242C3E"
                                 BorderThickness="1"
-                                Cursor="Hand">
+                                Cursor="Hand"
+                                ToolTip="Close Library">
                             <Button.Style>
                                 <Style TargetType="Button">
                                     <Setter Property="Template">
@@ -133,47 +186,175 @@
                     </StackPanel>
                 </Grid>
 
-                <!-- ═══ ROW 1: TITLE & CATEGORY FILTER ═══ -->
-                <Border Grid.Row="1" Margin="28,16,28,12" Background="#11141E" BorderBrush="#1C2234" BorderThickness="1" CornerRadius="14" Padding="20,14">
+                <!-- ═══ ROW 1: ALERT BANNER (Image 4 Style) ═══ -->
+                <Border Grid.Row="1" Margin="32,4,32,24" Background="#151722" BorderBrush="#222736" BorderThickness="1" CornerRadius="8" Padding="16,11">
                     <Grid>
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Amber Info Icon (Image 4 Style) -->
+                        <Border Grid.Column="0" Width="20" Height="20" CornerRadius="10" Background="#262215" BorderBrush="#F59E0B" BorderThickness="1" Margin="0,0,12,0" VerticalAlignment="Center">
+                            <TextBlock Text="!" FontSize="11" FontWeight="Bold" Foreground="#F59E0B" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="GameLoop is ready" FontSize="12" FontWeight="Bold" Foreground="#E2E8F0"/>
+                            <TextBlock Text="Open any app below to start it. PUBG Mobile always starts as GameLoop's only app, at full frame rate."
+                                       FontSize="11.5" Foreground="#94A3B8" Margin="0,1,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ═══ ROW 2: LIBRARY APP ICONS (Image 4 Style) ═══ -->
+                <!-- Only installed apps, Settings, and Install APK! -->
+                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="32,0,32,20">
+                    <WrapPanel Orientation="Horizontal">
+
+                        <!-- ═══ APP 1: PUBG MOBILE (Image 4 Style) ═══ -->
+                        <Border Width="110" Height="136" Margin="0,0,16,16" Background="Transparent" CornerRadius="14" Cursor="Hand">
+                            <Border.InputBindings>
+                                <MouseBinding Gesture="LeftClick" Command="{Binding LaunchPubgCommand}"/>
+                            </Border.InputBindings>
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#1A1E2B"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <!-- App Icon: Official PUBG Mobile Helmet with rounded corners -->
+                                <Border Width="72" Height="72" CornerRadius="18" ClipToBounds="True" Background="#1E2332" BorderBrush="#2F384C" BorderThickness="1">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.5"/>
+                                    </Border.Effect>
+                                    <Image Source="/Assets/pubg.png" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="PUBG MOBILE" FontSize="11.5" FontWeight="Bold" Foreground="#F1F5F9" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ═══ APP 2: Play Store (Image 4 Style) ═══ -->
+                        <Border Width="110" Height="136" Margin="0,0,16,16" Background="Transparent" CornerRadius="14" Cursor="Hand">
+                            <Border.InputBindings>
+                                <MouseBinding Gesture="LeftClick" Command="{Binding LaunchPlayStoreCommand}"/>
+                            </Border.InputBindings>
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#1A1E2B"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <!-- App Icon: White rounded card with Google Play logo -->
+                                    <Border Width="72" Height="72" CornerRadius="18" ClipToBounds="True" Background="#FFFFFF">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.4"/>
+                                        </Border.Effect>
+                                        <Image Source="/Assets/playstore_icon.png" Stretch="Uniform" Margin="6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Play Store" FontSize="11.5" FontWeight="Bold" Foreground="#F1F5F9" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                                </StackPanel>
+
+                                <!-- Three dots icon (Image 4 Style: ··· in top right) -->
+                                <TextBlock Text="···" FontSize="13" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-4,0"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- ═══ APP 3: Settings (Image 4 Style) ═══ -->
+                        <Border Width="110" Height="136" Margin="0,0,16,16" Background="Transparent" CornerRadius="14" Cursor="Hand">
+                            <Border.InputBindings>
+                                <MouseBinding Gesture="LeftClick" Command="{Binding LaunchSettingsCommand}"/>
+                            </Border.InputBindings>
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#1A1E2B"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <!-- App Icon: Dark rounded square with gear -->
+                                <Border Width="72" Height="72" CornerRadius="18" Background="#181B26" BorderBrush="#282E40" BorderThickness="1">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.5"/>
+                                    </Border.Effect>
+                                    <TextBlock Text="&#xE713;" FontFamily="{StaticResource IconFont}" FontSize="28" Foreground="#E2E8F0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="Settings" FontSize="11.5" FontWeight="Bold" Foreground="#F1F5F9" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ═══ APP 4: Install APK (Image 4 Style: Golden rounded square with +) ═══ -->
+                        <Border Width="110" Height="136" Margin="0,0,16,16" Background="Transparent" CornerRadius="14" Cursor="Hand">
+                            <Border.InputBindings>
+                                <MouseBinding Gesture="LeftClick" Command="{Binding InstallApkFileCommand}"/>
+                            </Border.InputBindings>
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#1E1C16"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <!-- App Icon: Dark square with golden border and golden plus icon -->
+                                <Border Width="72" Height="72" CornerRadius="18" Background="#181714" BorderBrush="#D97706" BorderThickness="1.5">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#D97706" Opacity="0.3"/>
+                                    </Border.Effect>
+                                    <TextBlock Text="&#xE710;" FontFamily="{StaticResource IconFont}" FontSize="28" Foreground="#F59E0B" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="Install APK" FontSize="11.5" FontWeight="Bold" Foreground="#F59E0B" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                    </WrapPanel>
+                </ScrollViewer>
+
+                <!-- ═══ ROW 3: BOTTOM STATUS BAR (Image 4 Style: ⬇ Update & Close) ═══ -->
+                <Border Grid.Row="3" Background="#0C0E14" BorderBrush="#181D2A" BorderThickness="0,1,0,0" Padding="32,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <StackPanel Grid.Column="0">
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <TextBlock Text="GameLoop AppMarket &amp; Launcher" FontSize="18" FontWeight="ExtraBold" Foreground="#FFFFFF"/>
-                                <Border CornerRadius="6" Background="#18233A" BorderBrush="#00D4FF" BorderThickness="1" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock Text="Instant Launcher" FontSize="10" FontWeight="Bold" Foreground="#00D4FF"/>
-                                </Border>
-                            </StackPanel>
-                            <TextBlock Text="Direct access to PUBG Mobile, internal Android F9 Settings, OBB storage &amp; APK sideloading without opening menus"
-                                       FontSize="12" Foreground="#94A3B8"/>
-                        </StackPanel>
-
-                        <!-- Sideload Button on Header -->
-                        <Button Grid.Column="1"
-                                Command="{Binding InstallApkFileCommand}"
-                                Background="#10B981"
-                                BorderThickness="0"
-                                Padding="16,8"
-                                Cursor="Hand"
-                                VerticalAlignment="Center">
+                        <!-- Bottom-left: ⬇ Update button (Image 4 Style) -->
+                        <Button Grid.Column="0"
+                                Background="#141722"
+                                BorderBrush="#222A3B"
+                                BorderThickness="1"
+                                Padding="10,5"
+                                Cursor="Hand">
                             <Button.Style>
                                 <Style TargetType="Button">
                                     <Setter Property="Template">
                                         <Setter.Value>
                                             <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                                                <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
                                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                        <TextBlock Text="&#xE898;" FontFamily="{StaticResource IconFont}" FontSize="13" Foreground="#FFFFFF" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                                        <TextBlock Text="Install APK File" FontSize="12" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="&#xE896;" FontFamily="{StaticResource IconFont}" FontSize="11" Foreground="#94A3B8" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="Update" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8" VerticalAlignment="Center"/>
                                                     </StackPanel>
                                                 </Border>
                                                 <ControlTemplate.Triggers>
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Background" Value="#059669"/>
+                                                        <Setter Property="Background" Value="#1E2436"/>
+                                                        <Setter Property="BorderBrush" Value="#00D4FF"/>
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
@@ -182,431 +363,15 @@
                                 </Style>
                             </Button.Style>
                         </Button>
-                    </Grid>
-                </Border>
 
-                <!-- ═══ ROW 2: SCROLLABLE APP CARDS ═══ -->
-                <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="28,4,28,12">
-                    <StackPanel>
-                        <!-- Featured Top Hero Card: PUBG Mobile Global -->
-                        <Border CornerRadius="16" Background="#131722" BorderBrush="#25324E" BorderThickness="1.5" Margin="0,0,0,16" Padding="24,20">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="20" ShadowDepth="4" Direction="270" Color="#00D4FF" Opacity="0.15"/>
-                            </Border.Effect>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <!-- Game Icon Banner -->
-                                <Border Grid.Column="0" Width="68" Height="68" CornerRadius="16" Background="#1E2638" BorderBrush="#00D4FF" BorderThickness="1.5" Margin="0,0,20,0" VerticalAlignment="Center">
-                                    <TextBlock Text="&#xE7FC;" FontFamily="{StaticResource IconFont}" FontSize="32" Foreground="#00D4FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-
-                                <!-- Info -->
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                        <TextBlock Text="PUBG Mobile (Global Edition)" FontSize="17" FontWeight="Bold" Foreground="#FFFFFF"/>
-                                        <Border CornerRadius="6" Background="#152E24" BorderBrush="#10B981" BorderThickness="1" Padding="7,2" Margin="10,0,0,0">
-                                            <TextBlock Text="120 FPS • Ultra HD 2K" FontSize="10" FontWeight="Bold" Foreground="#10B981"/>
-                                        </Border>
-                                    </StackPanel>
-                                    <TextBlock Text="Direct game launch into GameLoop with 120 FPS high-refresh rate unlocker, calibrated Smart 2K keymapping, and peak rendering stability."
-                                               FontSize="12" Foreground="#94A3B8" TextWrapping="Wrap" Margin="0,0,16,0"/>
-                                </StackPanel>
-
-                                <!-- Launch Button -->
-                                <Button Grid.Column="2"
-                                        Command="{Binding LaunchPubgCommand}"
-                                        Height="46" Width="170"
-                                        Cursor="Hand">
-                                    <Button.Style>
-                                        <Style TargetType="Button">
-                                            <Setter Property="Template">
-                                                <Setter.Value>
-                                                    <ControlTemplate TargetType="Button">
-                                                        <Border x:Name="PlayBtnBorder" CornerRadius="12" Background="#00D4FF">
-                                                            <Border.Effect>
-                                                                <DropShadowEffect BlurRadius="12" ShadowDepth="0" Color="#00D4FF" Opacity="0.5"/>
-                                                            </Border.Effect>
-                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                                                <TextBlock Text="&#xE768;" FontFamily="{StaticResource IconFont}" FontSize="15" Foreground="#000000" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                                                <TextBlock Text="PLAY GAME" FontSize="13" FontWeight="ExtraBold" Foreground="#000000" VerticalAlignment="Center"/>
-                                                            </StackPanel>
-                                                        </Border>
-                                                        <ControlTemplate.Triggers>
-                                                            <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter TargetName="PlayBtnBorder" Property="Background" Value="#38BDF8"/>
-                                                            </Trigger>
-                                                        </ControlTemplate.Triggers>
-                                                    </ControlTemplate>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Style>
-                                    </Button.Style>
-                                </Button>
-                            </Grid>
-                        </Border>
-
-                        <!-- Apps Grid (2 Columns, 3 Rows) -->
-                        <UniformGrid Columns="2" Margin="0,0,0,8">
-                            <!-- Card 1: Android System Settings (F9 Shortcut) -->
-                            <Border CornerRadius="14" Background="#121520" BorderBrush="#1F2638" BorderThickness="1" Margin="0,0,8,14" Padding="18,16">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <Border Grid.Column="0" Width="48" Height="48" CornerRadius="12" Background="#182032" BorderBrush="#00D4FF" BorderThickness="1" Margin="0,0,14,0" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE713;" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="#00D4FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="Android Settings" FontSize="14" FontWeight="Bold" Foreground="#FFFFFF"/>
-                                            <Border CornerRadius="5" Background="#1B2B3E" BorderBrush="#38BDF8" BorderThickness="1" Padding="6,1.5" Margin="8,0,0,0">
-                                                <TextBlock Text="F9 Direct" FontSize="9.5" FontWeight="Bold" Foreground="#38BDF8"/>
-                                            </Border>
-                                        </StackPanel>
-                                        <TextBlock Text="Direct access to internal Android VM settings, developer options, language &amp; app permissions."
-                                                   FontSize="11" Foreground="#94A3B8" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                                    </StackPanel>
-
-                                    <Button Grid.Column="2"
-                                            Command="{Binding LaunchSettingsCommand}"
-                                            Background="#1E293B"
-                                            BorderBrush="#334155"
-                                            BorderThickness="1"
-                                            Padding="14,8"
-                                            Height="38"
-                                            Cursor="Hand"
-                                            VerticalAlignment="Center">
-                                        <Button.Style>
-                                            <Style TargetType="Button">
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate TargetType="Button">
-                                                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9" Padding="{TemplateBinding Padding}">
-                                                                <TextBlock Text="Open" FontSize="11.5" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            </Border>
-                                                            <ControlTemplate.Triggers>
-                                                                <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter Property="Background" Value="#00D4FF"/>
-                                                                    <Setter Property="BorderBrush" Value="#00D4FF"/>
-                                                                </Trigger>
-                                                            </ControlTemplate.Triggers>
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
-                                </Grid>
-                            </Border>
-
-                            <!-- Card 2: FX File Explorer / OBB Manager -->
-                            <Border CornerRadius="14" Background="#121520" BorderBrush="#1F2638" BorderThickness="1" Margin="8,0,0,14" Padding="18,16">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <Border Grid.Column="0" Width="48" Height="48" CornerRadius="12" Background="#241E15" BorderBrush="#F59E0B" BorderThickness="1" Margin="0,0,14,0" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xED25;" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="#F59E0B" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="FX File Explorer" FontSize="14" FontWeight="Bold" Foreground="#FFFFFF"/>
-                                            <Border CornerRadius="5" Background="#2C2417" BorderBrush="#F59E0B" BorderThickness="1" Padding="6,1.5" Margin="8,0,0,0">
-                                                <TextBlock Text="OBB &amp; Data" FontSize="9.5" FontWeight="Bold" Foreground="#F59E0B"/>
-                                            </Border>
-                                        </StackPanel>
-                                        <TextBlock Text="Explore internal /Android/data and /obb folders to transfer custom textures, configs &amp; saves."
-                                                   FontSize="11" Foreground="#94A3B8" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                                    </StackPanel>
-
-                                    <Button Grid.Column="2"
-                                            Command="{Binding LaunchFilesCommand}"
-                                            Background="#1E293B"
-                                            BorderBrush="#334155"
-                                            BorderThickness="1"
-                                            Padding="14,8"
-                                            Height="38"
-                                            Cursor="Hand"
-                                            VerticalAlignment="Center">
-                                        <Button.Style>
-                                            <Style TargetType="Button">
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate TargetType="Button">
-                                                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9" Padding="{TemplateBinding Padding}">
-                                                                <TextBlock Text="Open" FontSize="11.5" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            </Border>
-                                                            <ControlTemplate.Triggers>
-                                                                <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter Property="Background" Value="#F59E0B"/>
-                                                                    <Setter Property="BorderBrush" Value="#F59E0B"/>
-                                                                </Trigger>
-                                                            </ControlTemplate.Triggers>
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
-                                </Grid>
-                            </Border>
-
-                            <!-- Card 3: Android Web Browser -->
-                            <Border CornerRadius="14" Background="#121520" BorderBrush="#1F2638" BorderThickness="1" Margin="0,0,8,14" Padding="18,16">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <Border Grid.Column="0" Width="48" Height="48" CornerRadius="12" Background="#141E30" BorderBrush="#3B82F6" BorderThickness="1" Margin="0,0,14,0" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE12B;" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="#3B82F6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="Android Web Browser" FontSize="14" FontWeight="Bold" Foreground="#FFFFFF"/>
-                                            <Border CornerRadius="5" Background="#1A2844" BorderBrush="#3B82F6" BorderThickness="1" Padding="6,1.5" Margin="8,0,0,0">
-                                                <TextBlock Text="Web &amp; DL" FontSize="9.5" FontWeight="Bold" Foreground="#3B82F6"/>
-                                            </Border>
-                                        </StackPanel>
-                                        <TextBlock Text="Browse the web inside GameLoop to download APKs, GFX tools, or updates directly."
-                                                   FontSize="11" Foreground="#94A3B8" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                                    </StackPanel>
-
-                                    <Button Grid.Column="2"
-                                            Command="{Binding LaunchBrowserCommand}"
-                                            Background="#1E293B"
-                                            BorderBrush="#334155"
-                                            BorderThickness="1"
-                                            Padding="14,8"
-                                            Height="38"
-                                            Cursor="Hand"
-                                            VerticalAlignment="Center">
-                                        <Button.Style>
-                                            <Style TargetType="Button">
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate TargetType="Button">
-                                                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9" Padding="{TemplateBinding Padding}">
-                                                                <TextBlock Text="Open" FontSize="11.5" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            </Border>
-                                                            <ControlTemplate.Triggers>
-                                                                <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter Property="Background" Value="#3B82F6"/>
-                                                                    <Setter Property="BorderBrush" Value="#3B82F6"/>
-                                                                </Trigger>
-                                                            </ControlTemplate.Triggers>
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
-                                </Grid>
-                            </Border>
-
-                            <!-- Card 4: Official Tencent AppMarket -->
-                            <Border CornerRadius="14" Background="#121520" BorderBrush="#1F2638" BorderThickness="1" Margin="8,0,0,14" Padding="18,16">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <Border Grid.Column="0" Width="48" Height="48" CornerRadius="12" Background="#211832" BorderBrush="#8B5CF6" BorderThickness="1" Margin="0,0,14,0" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE719;" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="#8B5CF6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="Tencent AppMarket" FontSize="14" FontWeight="Bold" Foreground="#FFFFFF"/>
-                                            <Border CornerRadius="5" Background="#2A1E42" BorderBrush="#8B5CF6" BorderThickness="1" Padding="6,1.5" Margin="8,0,0,0">
-                                                <TextBlock Text="Official Store" FontSize="9.5" FontWeight="Bold" Foreground="#8B5CF6"/>
-                                            </Border>
-                                        </StackPanel>
-                                        <TextBlock Text="Open the official GameLoop AppMarket store to browse games, update components &amp; login."
-                                                   FontSize="11" Foreground="#94A3B8" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                                    </StackPanel>
-
-                                    <Button Grid.Column="2"
-                                            Command="{Binding LaunchAppMarketCommand}"
-                                            Background="#1E293B"
-                                            BorderBrush="#334155"
-                                            BorderThickness="1"
-                                            Padding="14,8"
-                                            Height="38"
-                                            Cursor="Hand"
-                                            VerticalAlignment="Center">
-                                        <Button.Style>
-                                            <Style TargetType="Button">
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate TargetType="Button">
-                                                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9" Padding="{TemplateBinding Padding}">
-                                                                <TextBlock Text="Open" FontSize="11.5" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            </Border>
-                                                            <ControlTemplate.Triggers>
-                                                                <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter Property="Background" Value="#8B5CF6"/>
-                                                                    <Setter Property="BorderBrush" Value="#8B5CF6"/>
-                                                                </Trigger>
-                                                            </ControlTemplate.Triggers>
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
-                                </Grid>
-                            </Border>
-
-                            <!-- Card 5: Google Play Store -->
-                            <Border CornerRadius="14" Background="#121520" BorderBrush="#1F2638" BorderThickness="1" Margin="0,0,8,0" Padding="18,16">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <Border Grid.Column="0" Width="48" Height="48" CornerRadius="12" Background="#281524" BorderBrush="#EC4899" BorderThickness="1" Margin="0,0,14,0" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE896;" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="#EC4899" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="Google Play Store" FontSize="14" FontWeight="Bold" Foreground="#FFFFFF"/>
-                                            <Border CornerRadius="5" Background="#361730" BorderBrush="#EC4899" BorderThickness="1" Padding="6,1.5" Margin="8,0,0,0">
-                                                <TextBlock Text="Google Services" FontSize="9.5" FontWeight="Bold" Foreground="#EC4899"/>
-                                            </Border>
-                                        </StackPanel>
-                                        <TextBlock Text="Manage Google accounts, update Play Services, and download certified Play Store apps."
-                                                   FontSize="11" Foreground="#94A3B8" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                                    </StackPanel>
-
-                                    <Button Grid.Column="2"
-                                            Command="{Binding LaunchPlayStoreCommand}"
-                                            Background="#1E293B"
-                                            BorderBrush="#334155"
-                                            BorderThickness="1"
-                                            Padding="14,8"
-                                            Height="38"
-                                            Cursor="Hand"
-                                            VerticalAlignment="Center">
-                                        <Button.Style>
-                                            <Style TargetType="Button">
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate TargetType="Button">
-                                                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9" Padding="{TemplateBinding Padding}">
-                                                                <TextBlock Text="Open" FontSize="11.5" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            </Border>
-                                                            <ControlTemplate.Triggers>
-                                                                <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter Property="Background" Value="#EC4899"/>
-                                                                    <Setter Property="BorderBrush" Value="#EC4899"/>
-                                                                </Trigger>
-                                                            </ControlTemplate.Triggers>
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
-                                </Grid>
-                            </Border>
-
-                            <!-- Card 6: Direct Sideload APK -->
-                            <Border CornerRadius="14" Background="#121520" BorderBrush="#1F2638" BorderThickness="1" Margin="8,0,0,0" Padding="18,16">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <Border Grid.Column="0" Width="48" Height="48" CornerRadius="12" Background="#122524" BorderBrush="#14B8A6" BorderThickness="1" Margin="0,0,14,0" VerticalAlignment="Center">
-                                        <TextBlock Text="&#xE898;" FontFamily="{StaticResource IconFont}" FontSize="22" Foreground="#14B8A6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="Direct APK Sideload" FontSize="14" FontWeight="Bold" Foreground="#FFFFFF"/>
-                                            <Border CornerRadius="5" Background="#152E2C" BorderBrush="#14B8A6" BorderThickness="1" Padding="6,1.5" Margin="8,0,0,0">
-                                                <TextBlock Text="Local Package" FontSize="9.5" FontWeight="Bold" Foreground="#14B8A6"/>
-                                            </Border>
-                                        </StackPanel>
-                                        <TextBlock Text="Select any APK or XAPK from your PC to install directly into GameLoop without opening AppMarket."
-                                                   FontSize="11" Foreground="#94A3B8" TextWrapping="Wrap" Margin="0,4,0,0"/>
-                                    </StackPanel>
-
-                                    <Button Grid.Column="2"
-                                            Command="{Binding InstallApkFileCommand}"
-                                            Background="#1E293B"
-                                            BorderBrush="#334155"
-                                            BorderThickness="1"
-                                            Padding="14,8"
-                                            Height="38"
-                                            Cursor="Hand"
-                                            VerticalAlignment="Center">
-                                        <Button.Style>
-                                            <Style TargetType="Button">
-                                                <Setter Property="Template">
-                                                    <Setter.Value>
-                                                        <ControlTemplate TargetType="Button">
-                                                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9" Padding="{TemplateBinding Padding}">
-                                                                <TextBlock Text="Browse" FontSize="11.5" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                            </Border>
-                                                            <ControlTemplate.Triggers>
-                                                                <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter Property="Background" Value="#14B8A6"/>
-                                                                    <Setter Property="BorderBrush" Value="#14B8A6"/>
-                                                                </Trigger>
-                                                            </ControlTemplate.Triggers>
-                                                        </ControlTemplate>
-                                                    </Setter.Value>
-                                                </Setter>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
-                                </Grid>
-                            </Border>
-                        </UniformGrid>
-                    </StackPanel>
-                </ScrollViewer>
-
-                <!-- ═══ ROW 3: STATUS BAR & FOOTER ═══ -->
-                <Border Grid.Row="3" Background="#0A0C13" BorderBrush="#1A2030" BorderThickness="0,1,0,0" Padding="28,12">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-
-                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="&#xE783;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#00D4FF" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <!-- Center Status Message -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                             <TextBlock Text="{Binding AppDrawerStatusMessage, FallbackValue='Click any app above to launch directly inside GameLoop'}"
-                                       FontSize="11.5" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                                       FontSize="11.5" Foreground="#64748B" VerticalAlignment="Center"/>
                         </StackPanel>
 
-                        <!-- Back Button Shortcut -->
-                        <Button Grid.Column="1"
+                        <!-- Bottom-right: Close Drawer -->
+                        <Button Grid.Column="2"
                                 Command="{Binding CloseAppDrawerCommand}"
                                 Background="Transparent"
                                 BorderThickness="0"
