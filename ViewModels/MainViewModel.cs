@@ -22,6 +22,7 @@ public partial class MainViewModel : ObservableObject
     public bool IsWindowsActive => CurrentPageTitle == "Windows";
     public bool IsOptimizerActive => CurrentPageTitle == "Optimizer";
     public bool IsGameLoopActive => CurrentPageTitle == "GameLoop";
+    public bool IsKeyMappingActive => CurrentPageTitle == "KeyMapping";
     public bool IsRegistryActive => CurrentPageTitle == "Registry";
     public bool IsPubgActive => CurrentPageTitle == "PUBG";
     public bool IsNetworkActive => CurrentPageTitle == "Network";
@@ -36,6 +37,7 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(IsWindowsActive));
         OnPropertyChanged(nameof(IsOptimizerActive));
         OnPropertyChanged(nameof(IsGameLoopActive));
+        OnPropertyChanged(nameof(IsKeyMappingActive));
         OnPropertyChanged(nameof(IsRegistryActive));
         OnPropertyChanged(nameof(IsPubgActive));
         OnPropertyChanged(nameof(IsNetworkActive));
@@ -69,12 +71,10 @@ public partial class MainViewModel : ObservableObject
     private bool _isPasscodeModalActive;
 
     [ObservableProperty]
-    private bool _isGameLoopUnlocked = false;
+    private bool _isGameLoopUnlocked = true;
 
     private static readonly HashSet<string> LockedTabs = new(StringComparer.OrdinalIgnoreCase)
     {
-        "GameLoop",
-        "PUBG",
         "Network",
         "Cleanup",
         "Backup",
@@ -177,13 +177,32 @@ public partial class MainViewModel : ObservableObject
         {
             WindowsVm?.MarkGuideStepCompleted(4);
         }
-        else if (page == "GameLoop" || page == "PUBG")
+        else if (page == "GameLoop" || page == "PUBG" || page == "KeyMapping")
         {
             WindowsVm?.MarkGuideStepCompleted(5);
         }
         else if (page == "Cleanup" || page == "Network")
         {
             WindowsVm?.MarkGuideStepCompleted(6);
+        }
+
+        if (page == "KeyMapping")
+        {
+            if (!_pageCache.TryGetValue("GameLoop", out var glCached) || glCached == null)
+            {
+                glCached = App.Services.GetService(typeof(GameLoopOptimizationViewModel)) as ObservableObject;
+                _pageCache["GameLoop"] = glCached;
+            }
+
+            if (glCached is GameLoopOptimizationViewModel glVm)
+            {
+                glVm.SelectedSubTab = 2; // KeyMapping Suite tab
+            }
+
+            CurrentPageTitle = "KeyMapping";
+            CurrentPage = glCached;
+            OnCurrentPageTitleChanged(CurrentPageTitle);
+            return;
         }
 
         if (!_pageCache.TryGetValue(page, out var cachedVm) || cachedVm == null)

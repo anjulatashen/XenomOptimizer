@@ -253,6 +253,11 @@
                                                  PreviewMouseLeftButtonDown="NavButton_PreviewMouseLeftButtonDown"
                                                  Command="{Binding NavigateToCommand}" CommandParameter="GameLoop"/>
 
+                                    <RadioButton x:Name="NavKeyMapping" Style="{StaticResource HaulixSidebarButton}" Content="KeyMapping Suite" Tag="&#xE765;"
+                                                 IsChecked="{Binding IsKeyMappingActive, Mode=OneWay}"
+                                                 PreviewMouseLeftButtonDown="NavButton_PreviewMouseLeftButtonDown"
+                                                 Command="{Binding NavigateToCommand}" CommandParameter="KeyMapping"/>
+
                                     <RadioButton x:Name="NavPubg" Style="{StaticResource HaulixSidebarButton}" Content="PUBG Mobile" Tag="&#xE7F4;"
                                                  IsChecked="{Binding IsPubgActive, Mode=OneWay}"
                                                  PreviewMouseLeftButtonDown="NavButton_PreviewMouseLeftButtonDown"
