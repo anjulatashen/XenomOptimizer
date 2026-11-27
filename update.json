@@ -1,6 +1,6 @@
 {
-  "version": "1.0.3 Beta",
+  "version": "1.0.4 Beta",
   "downloadUrl": "https://github.com/anjulatashen/XenomOptimizer/raw/main/XenomOptimizer-Update.zip",
-  "releaseNotes": "— Hardware-level Kernel IOCTL Storage detection (100% accurate HDD / NVMe / SATA SSD identification)\n— GameLoop Engine & Resolution persistence (retains OpenGL+/DirectX+ and 1080p without resetting)\n— Kernel & GPU Responsiveness Tweaks: fixed Apply All & Revert All controls\n— Custom Gamer Toast Notifications with Xenom branding (replaced generic Windows 'i' icon)\n— Full Self-Contained .NET 8 runtime bundle",
+  "releaseNotes": "— GameLoop OpenGL+ Engine Persistence: Fixed Tencent Rule 408 downscaling to DirectX+/Xiaomi specs on launch\n— Modern Library Drawer Navigation Dock: Home, Gaming telemetry, and device shortcut tabs\n— Live Hardware Telemetry Panel: Real-time CPU, RAM, GPU, and Disk utilization tracking\n— Tri-Mode Performance Switch: Normal, Gaming, and Ultra Gaming profiles\n— Interactive Search Bar: Auto-focused cursor loop and instant search\n— Background ADB Launcher: Seamless cold-boot & foreground window focus",
   "mandatory": false
 }

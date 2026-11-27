@@ -6,172 +6,401 @@
              mc:Ignorable="d"
              d:DesignHeight="800" d:DesignWidth="1340">
 
-    <!-- Dim Backdrop Overlay (Covers the entire window & sidebar) -->
-    <Grid Background="#B0000000" MouseLeftButtonDown="Backdrop_MouseLeftButtonDown">
-        <!-- Bottom Sheet / Drawer with reduced side margins (8px) and plain clean dark theme -->
+    <UserControl.Resources>
+        <!-- Modern Floating Context Menu (Photo 3 Style matching TrayMenu) -->
+        <Style x:Key="AppDrawerContextMenu" TargetType="ContextMenu">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HasDropShadow" Value="False"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContextMenu">
+                        <!-- Outer transparent padding prevents shadow clipping and eliminates square edge bugs -->
+                        <Border Background="Transparent" Padding="12">
+                            <Border Background="#1C1C1E"
+                                    BorderBrush="#333338"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    MinWidth="168"
+                                    Padding="4,5,4,5">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="16" ShadowDepth="0" Color="#000000" Opacity="0.65"/>
+                                </Border.Effect>
+                                <StackPanel IsItemsHost="True"/>
+                            </Border>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Centered Clean 1px Separator Style (Photo 3 Exact Match) -->
+        <Style x:Key="AppDrawerSeparatorStyle" TargetType="Separator">
+            <Setter Property="Height" Value="1"/>
+            <Setter Property="Margin" Value="0,4"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Separator">
+                        <Border Height="1" Background="#2C2C30" Margin="8,0" HorizontalAlignment="Stretch" SnapsToDevicePixels="True"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="AppDrawerMenuItem" TargetType="MenuItem">
+            <Setter Property="Foreground" Value="#DCDCDC"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Margin" Value="0,1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border x:Name="ItemBorder" Background="Transparent" CornerRadius="4" Padding="10,0">
+                            <Grid VerticalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="22"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0" ContentSource="Icon" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                <ContentPresenter Grid.Column="1" ContentSource="Header" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#2D2D32"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="AppDrawerMenuItemDestructive" TargetType="MenuItem" BasedOn="{StaticResource AppDrawerMenuItem}">
+            <Setter Property="Foreground" Value="#FA5050"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="MenuItem">
+                        <Border x:Name="ItemBorder" Background="Transparent" CornerRadius="4" Padding="10,0">
+                            <Grid VerticalAlignment="Center">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="22"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <ContentPresenter Grid.Column="0" ContentSource="Icon" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                <ContentPresenter Grid.Column="1" ContentSource="Header" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="ItemBorder" Property="Background" Value="#342022"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Three Dots Button Style: Solid Dark Container, Pure Black on Hover with Crisp White Dots -->
+        <Style x:Key="AppDotsButtonStyle" TargetType="Button">
+            <Setter Property="Opacity" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="DotBg" Width="26" Height="26" CornerRadius="13"
+                                Background="#1A1C23" BorderBrush="#333338" BorderThickness="1">
+                            <TextBlock x:Name="DotText" Text="···" FontSize="15" FontWeight="Bold" Foreground="#94A3B8"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-4,0,0"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="DotBg" Property="Background" Value="#000000"/>
+                                <Setter TargetName="DotBg" Property="BorderBrush" Value="#555866"/>
+                                <Setter TargetName="DotText" Property="Foreground" Value="#FFFFFF"/>
+                            </Trigger>
+                            <DataTrigger Binding="{Binding ContextMenu.IsOpen, RelativeSource={RelativeSource Self}}" Value="True">
+                                <Setter TargetName="DotBg" Property="Background" Value="#000000"/>
+                                <Setter TargetName="DotBg" Property="BorderBrush" Value="#555866"/>
+                                <Setter TargetName="DotText" Property="Foreground" Value="#FFFFFF"/>
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Border, AncestorLevel=1}}" Value="True">
+                    <Setter Property="Opacity" Value="1"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding ContextMenu.IsOpen, RelativeSource={RelativeSource Self}}" Value="True">
+                    <Setter Property="Opacity" Value="1"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <!-- Apple Dynamic Island Style 3-Stop Mode Slider Style (Photo 4) -->
+        <Style x:Key="DynamicIslandSliderStyle" TargetType="Slider">
+            <Setter Property="Stylus.IsPressAndHoldEnabled" Value="False"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid VerticalAlignment="Center">
+                            <!-- Base Track Bar (Rounded Capsule) -->
+                            <Border Height="7" CornerRadius="3.5" Background="#161820" BorderBrush="#252A36" BorderThickness="1" Margin="10,0"/>
+
+                            <!-- Interactive Track with Decrease / Increase RepeatButtons and Thumb -->
+                            <Track x:Name="PART_Track">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.DecreaseLarge}">
+                                        <RepeatButton.Style>
+                                            <Style TargetType="RepeatButton">
+                                                <Setter Property="OverridesDefaultStyle" Value="True"/>
+                                                <Setter Property="IsTabStop" Value="False"/>
+                                                <Setter Property="Focusable" Value="False"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="RepeatButton">
+                                                            <Border Height="7" CornerRadius="3.5,0,0,3.5" Margin="10,0,0,0">
+                                                                <Border.Background>
+                                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                                        <GradientStop Color="#059669" Offset="0"/>
+                                                                        <GradientStop Color="#10B981" Offset="1"/>
+                                                                    </LinearGradientBrush>
+                                                                </Border.Background>
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </RepeatButton.Style>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.IncreaseLarge}">
+                                        <RepeatButton.Style>
+                                            <Style TargetType="RepeatButton">
+                                                <Setter Property="OverridesDefaultStyle" Value="True"/>
+                                                <Setter Property="IsTabStop" Value="False"/>
+                                                <Setter Property="Focusable" Value="False"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="RepeatButton">
+                                                            <Rectangle Fill="Transparent"/>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </RepeatButton.Style>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Width="24" Height="24" Cursor="Hand">
+                                        <Thumb.Style>
+                                            <Style TargetType="Thumb">
+                                                <Setter Property="OverridesDefaultStyle" Value="True"/>
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Thumb">
+                                                            <Grid>
+                                                                <!-- Glowing Outer Ring (Photo 4 Style) -->
+                                                                <Ellipse Width="22" Height="22" Fill="#3310B981" Stroke="#10B981" StrokeThickness="1.5">
+                                                                    <Ellipse.Effect>
+                                                                        <DropShadowEffect Color="#10B981" BlurRadius="8" ShadowDepth="0" Opacity="0.85"/>
+                                                                    </Ellipse.Effect>
+                                                                </Ellipse>
+                                                                <!-- White Solid Core -->
+                                                                <Ellipse Width="9" Height="9" Fill="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Grid>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Thumb.Style>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- Dim Backdrop Overlay (Covers the entire window & sidebar with AAA Deep Dim) -->
+    <Grid Background="#D8000000" MouseLeftButtonDown="Backdrop_MouseLeftButtonDown">
+        <!-- Top Sheet / Drawer with razor-thin 3px left/right margins and top-to-bottom layout -->
         <Border x:Name="DrawerPanel"
-                VerticalAlignment="Bottom"
+                VerticalAlignment="Top"
                 Height="740"
-                Margin="8,0,8,0"
+                Margin="3,0,3,0"
+                Background="Transparent"
                 BorderThickness="0"
-                CornerRadius="28,28,0,0"
+                CornerRadius="0,0,24,24"
                 MouseLeftButtonDown="DrawerPanel_MouseLeftButtonDown">
 
-            <!-- Clean Plain Dark Theme Gradient matching the App -->
-            <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#13151C" Offset="0.0"/>
-                    <GradientStop Color="#0F1016" Offset="0.4"/>
-                    <GradientStop Color="#0B0C0F" Offset="1.0"/>
-                </LinearGradientBrush>
-            </Border.Background>
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="DrawerTranslate" Y="0"/>
+            </Border.RenderTransform>
 
             <Border.Effect>
-                <DropShadowEffect BlurRadius="45" ShadowDepth="0" Direction="0" Color="#000000" Opacity="0.95"/>
+                <DropShadowEffect BlurRadius="45" ShadowDepth="6" Direction="270" Color="#000000" Opacity="0.95"/>
             </Border.Effect>
 
             <Grid>
-                <!-- Mask element that defines the exact smooth rounded top boundary -->
-                <Border x:Name="DrawerClipMask" Background="Black" CornerRadius="28,28,0,0"/>
+                <!-- Clean Dark Background (#0A0A0A) with Curved Bottom Corners (No Stroke / Border) -->
+                <Border x:Name="DrawerInnerBackground"
+                        Background="#0A0A0A"
+                        BorderThickness="0"
+                        CornerRadius="0,0,24,24"/>
 
-                <!-- Clipped container (all UI anti-aliased and clipped to CornerRadius) -->
+                <!-- ═══ DRAWER CONTENT ═══ -->
                 <Grid>
-                    <Grid.OpacityMask>
-                        <VisualBrush Visual="{Binding ElementName=DrawerClipMask}"/>
-                    </Grid.OpacityMask>
-
-                    <!-- ═══ DRAWER CONTENT ═══ -->
-                    <Grid>
                     <Grid.RowDefinitions>
-                        <!-- Row 0: Centered Enlarged Clickable Pull Handle (User Request) -->
-                        <RowDefinition Height="Auto"/>
+                        <!-- Row 0: Top Draggable Title Bar (Window controls, Left model badge, Centered App Title) -->
+                        <RowDefinition Height="46"/>
                         <!-- Row 1: Top Header (Library Title, Back, Search, Controls) -->
                         <RowDefinition Height="Auto"/>
                         <!-- Row 2: Library App Tiles (Image 4 Style, Only Installed + Settings + Add APK) -->
                         <RowDefinition Height="*"/>
+                        <!-- Row 3: Centered Enlarged Clickable Bottom Pull Handle -->
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- ═══ ROW 0: CENTERED ENLARGED CLICKABLE PULL HANDLE ═══ -->
-                    <Grid Grid.Row="0" Margin="0,12,0,4" HorizontalAlignment="Center">
-                        <Border x:Name="TopPullHandle"
-                                Width="68" Height="5.5"
-                                CornerRadius="2.75"
-                                Background="#3E4A5E"
-                                Cursor="Hand"
-                                ToolTip="Click to hide"
-                                MouseLeftButtonDown="PullHandle_MouseLeftButtonDown">
-                            <Border.Style>
-                                <Style TargetType="Border">
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#00D4FF"/>
-                                            <Setter Property="Effect">
-                                                <Setter.Value>
-                                                    <DropShadowEffect BlurRadius="12" Color="#00D4FF" Opacity="0.85" ShadowDepth="0"/>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Style>
-                        </Border>
-                    </Grid>
+                    <!-- ═══ ROW 0: TOP TITLE BAR (Draggable, Inset Divider Line) ═══ -->
+                    <Border x:Name="DrawerTitleBar" Grid.Row="0" Height="46" Background="Transparent"
+                            MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+                        <Grid>
+                            <!-- Left: Beta Label Only (Windows & GameLoop badge removed per request) -->
+                            <StackPanel HorizontalAlignment="Left" Orientation="Horizontal" Margin="24,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="Beta" FontFamily="{StaticResource PrimaryFont}"
+                                           FontSize="10.5" FontWeight="SemiBold" Foreground="#38BDF8"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
 
-                    <!-- ═══ ROW 1: TOP HEADER & CONTROLS (Image 4 Style) ═══ -->
-                    <Grid Grid.Row="1" Margin="32,8,32,24">
+                            <!-- Center: LAG KILLER BY XENOM (Centered across the ENTIRE window width!) -->
+                            <TextBlock x:Name="CenterAppTitle" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       FontFamily="{StaticResource PrimaryFont}" FontSize="13" FontWeight="Bold">
+                                <Run Text="LAG KILLER BY " Foreground="{StaticResource TextPrimaryBrush}"/>
+                                <Run Text="XENOM" Foreground="{StaticResource AccentElectricBlueBrush}" FontWeight="ExtraBold"/>
+                            </TextBlock>
+
+                            <!-- Right: Window Controls (Minimize & Close) -->
+                            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center">
+                                <Button Content="─" Click="Minimize_Click" Style="{StaticResource TitleBarButton}" ToolTip="Minimize"/>
+                                <Button Content="✕" Click="Close_Click" Style="{StaticResource TitleBarCloseButton}" ToolTip="Close"/>
+                            </StackPanel>
+
+                            <!-- Inset Divider Line (Matches Main Title Bar) -->
+                            <Border Height="1" VerticalAlignment="Bottom" Margin="22,0,22,0" Background="#1E202A"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- ═══ ROW 1: TOP HEADER & CONTROLS (Back Button Removed, Library Left-Aligned) ═══ -->
+                    <Grid Grid.Row="1" Margin="24,14,24,14">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Left: Back Button & Library Title -->
-                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                            <!-- Back Button -->
-                            <Button Command="{Binding CloseAppDrawerCommand}"
-                                    Background="#141722"
-                                    BorderBrush="#252D3E"
-                                    BorderThickness="1"
-                                    Padding="12,8"
-                                    Margin="0,0,20,0"
-                                    Cursor="Hand">
-                                <Button.Style>
-                                    <Style TargetType="Button">
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="Button">
-                                                    <Border Background="{TemplateBinding Background}"
-                                                            BorderBrush="{TemplateBinding BorderBrush}"
-                                                            BorderThickness="{TemplateBinding BorderThickness}"
-                                                            CornerRadius="10"
-                                                            Padding="{TemplateBinding Padding}">
-                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                            <TextBlock Text="&#xE72B;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#00D4FF" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                                            <TextBlock Text="Back" FontSize="12" FontWeight="SemiBold" Foreground="#F8FAFC" VerticalAlignment="Center"/>
-                                                        </StackPanel>
-                                                    </Border>
-                                                    <ControlTemplate.Triggers>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter Property="Background" Value="#1C2232"/>
-                                                            <Setter Property="BorderBrush" Value="#00D4FF"/>
-                                                        </Trigger>
-                                                    </ControlTemplate.Triggers>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
-
-                            <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="Library" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF"/>
-                                <TextBlock Text="From GameLoop's own app list. Refresh while GameLoop runs to add versions and running status."
-                                           FontSize="11.5" Foreground="#64748B" Margin="0,2,0,0"/>
-                            </StackPanel>
+                        <!-- Left: Library Title & Subtitle (At Far Left) -->
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock Text="Library" FontFamily="{StaticResource PrimaryFont}" FontSize="24" FontWeight="Bold" Foreground="#FFFFFF"/>
+                            <TextBlock Text="From GameLoop's own app list. Refresh while GameLoop runs to add versions and running status."
+                                       FontSize="11.5" Foreground="#64748B" Margin="0,2,0,0"/>
                         </StackPanel>
 
-                        <!-- Right: Status Badge, Search Box, Refresh & Close -->
+                        <!-- Right: Status Badge, Search Box, Refresh & Uninstall Mode -->
                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                            <!-- Setup Status Badge (Image 4 Style) -->
-                            <Border Background="#141722" BorderBrush="#252F44" BorderThickness="1" CornerRadius="12" Padding="12,6" Margin="0,0,12,0" VerticalAlignment="Center">
+                            <!-- GameLoop Version & Running Status Badge (Orange Blinking Idle / Green Solid Running) -->
+                            <Border x:Name="StatusBadgeBorder" Background="#1C1E22" BorderBrush="#282B33" BorderThickness="1" CornerRadius="12" Padding="12,6" Margin="0,0,12,0" VerticalAlignment="Center">
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <Ellipse Width="6" Height="6" Fill="#F59E0B" Margin="0,0,8,0"/>
-                                    <TextBlock Text="GameLoop Environment" FontSize="11" FontWeight="SemiBold" Foreground="#94A3B8"/>
+                                    <Ellipse x:Name="StatusDot" Width="6.5" Height="6.5" Fill="#F59E0B" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="StatusText" Text="Detecting GameLoop..." FontFamily="{StaticResource PrimaryFont}" FontSize="11" FontWeight="SemiBold" Foreground="#FDBA74" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
 
-                            <!-- Search Apps Input (Image 4 Style) -->
-                            <Border Width="160" Height="34" Background="#141722" BorderBrush="#242C3E" BorderThickness="1" CornerRadius="8" Margin="0,0,10,0" Padding="10,0">
+                            <!-- Modern Minimalist Search Bar (Matching Reference Photo with / Shortcut Badge) -->
+                            <Border x:Name="SearchBorder" Width="184" Height="34"
+                                    Background="#0E0E10"
+                                    BorderBrush="#26262B"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Margin="0,0,10,0"
+                                    Padding="10,0,8,0"
+                                    Cursor="IBeam"
+                                    MouseLeftButtonDown="SearchBorder_MouseLeftButtonDown">
                                 <Grid VerticalAlignment="Center">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="&#xE721;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#64748B" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                    <TextBox Grid.Column="1" Background="Transparent" BorderThickness="0" Foreground="#F8FAFC" FontSize="11.5" VerticalAlignment="Center" CaretBrush="#00D4FF"/>
-                                    <TextBlock Grid.Column="1" Text="Search apps" FontSize="11.5" Foreground="#475569" VerticalAlignment="Center" IsHitTestVisible="False"/>
+
+                                    <!-- Left: Search Magnifying Glass Icon -->
+                                    <TextBlock Grid.Column="0" Text="&#xE721;" FontFamily="{StaticResource IconFont}" FontSize="12.5" Foreground="#71717A" Margin="0,0,8,0" VerticalAlignment="Center"/>
+
+                                    <!-- Center: TextBox & Search Placeholder -->
+                                    <Grid Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBox x:Name="SearchBox"
+                                                 Background="Transparent"
+                                                 BorderThickness="0"
+                                                 Foreground="#FFFFFF"
+                                                 FontSize="12"
+                                                 FontFamily="{StaticResource PrimaryFont}"
+                                                 VerticalAlignment="Center"
+                                                 CaretBrush="#FFFFFF"
+                                                 GotFocus="SearchBox_GotFocus"
+                                                 LostFocus="SearchBox_LostFocus"
+                                                 TextChanged="SearchBox_TextChanged"/>
+                                        <TextBlock x:Name="SearchPlaceholder"
+                                                   Text="Search"
+                                                   FontSize="12"
+                                                   FontFamily="{StaticResource PrimaryFont}"
+                                                   Foreground="#71717A"
+                                                   VerticalAlignment="Center"
+                                                   IsHitTestVisible="False"/>
+                                    </Grid>
+
+                                    <!-- Right: Keyboard Shortcut Badge [ / ] -->
+                                    <Border x:Name="SearchSlashBadge" Grid.Column="2" Width="19" Height="19" CornerRadius="4.5" Background="#222226" VerticalAlignment="Center" Margin="4,0,0,0">
+                                        <TextBlock Text="/" FontSize="11" FontWeight="SemiBold" Foreground="#8E8E93" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0"/>
+                                    </Border>
                                 </Grid>
                             </Border>
 
-                            <!-- Refresh Button (Image 4 Style: ↻) -->
-                            <Button Width="34" Height="34"
-                                    Background="#141722"
-                                    BorderBrush="#242C3E"
+                            <!-- Refresh Button (↻) with Spin Animation -->
+                            <Button x:Name="RefreshBtn" Click="RefreshBtn_Click"
+                                    Width="34" Height="34"
+                                    Background="#1C1E22"
+                                    BorderBrush="#282B33"
                                     BorderThickness="1"
                                     Margin="0,0,8,0"
                                     Cursor="Hand"
-                                    ToolTip="Refresh App List">
+                                    ToolTip="Refresh GameLoop &amp; App Status">
                                 <Button.Style>
                                     <Style TargetType="Button">
                                         <Setter Property="Template">
                                             <Setter.Value>
                                                 <ControlTemplate TargetType="Button">
                                                     <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
-                                                        <TextBlock Text="&#xE72C;" FontFamily="{StaticResource IconFont}" FontSize="13" Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="RefreshIconText" Text="&#xE72C;" FontFamily="{StaticResource IconFont}" FontSize="13" Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center" RenderTransformOrigin="0.5,0.5">
+                                                            <TextBlock.RenderTransform>
+                                                                <RotateTransform x:Name="RefreshRotate" Angle="0"/>
+                                                            </TextBlock.RenderTransform>
+                                                        </TextBlock>
                                                     </Border>
                                                     <ControlTemplate.Triggers>
                                                         <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter Property="Background" Value="#1C2232"/>
+                                                            <Setter Property="Background" Value="#242832"/>
                                                             <Setter Property="BorderBrush" Value="#00D4FF"/>
                                                         </Trigger>
                                                     </ControlTemplate.Triggers>
@@ -182,26 +411,27 @@
                                 </Button.Style>
                             </Button>
 
-                            <!-- Close Button (✕) -->
-                            <Button Command="{Binding CloseAppDrawerCommand}"
+                            <!-- Delete / Uninstall Mode Toggle Button (Red Styled, Full Red on Hover) -->
+                            <Button x:Name="DeleteModeBtn" Click="DeleteModeBtn_Click"
                                     Width="34" Height="34"
-                                    Background="#141722"
-                                    BorderBrush="#242C3E"
-                                    BorderThickness="1"
                                     Cursor="Hand"
-                                    ToolTip="Close Library">
+                                    ToolTip="Uninstall Mode">
                                 <Button.Style>
                                     <Style TargetType="Button">
+                                        <Setter Property="Background" Value="#1C1E22"/>
+                                        <Setter Property="BorderBrush" Value="#282B33"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
                                         <Setter Property="Template">
                                             <Setter.Value>
                                                 <ControlTemplate TargetType="Button">
-                                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
-                                                        <TextBlock Text="✕" FontSize="12" Foreground="#94A3B8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    <Border x:Name="BtnBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
+                                                        <TextBlock x:Name="TrashIcon" Text="&#xE74D;" FontFamily="{StaticResource IconFont}" FontSize="13" Foreground="#EF4444" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                     </Border>
                                                     <ControlTemplate.Triggers>
                                                         <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter Property="Background" Value="#EF4444"/>
-                                                            <Setter Property="BorderBrush" Value="#EF4444"/>
+                                                            <Setter TargetName="BtnBorder" Property="Background" Value="#EF4444"/>
+                                                            <Setter TargetName="BtnBorder" Property="BorderBrush" Value="#EF4444"/>
+                                                            <Setter TargetName="TrashIcon" Property="Foreground" Value="#FFFFFF"/>
                                                         </Trigger>
                                                     </ControlTemplate.Triggers>
                                                 </ControlTemplate>
@@ -213,42 +443,14 @@
                         </StackPanel>
                     </Grid>
 
-                    <!-- ═══ ROW 2: LIBRARY APP ICONS (Image 4 Style) ═══ -->
-                    <!-- Only installed apps + Settings + Add APK! Banner and bottom bar removed for lean look -->
-                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="32,0,32,24">
-                        <WrapPanel Orientation="Horizontal">
+                    <!-- ═══ ROW 2: LIBRARY APP ICONS & SKELETON REFRESH SHIMMER ═══ -->
+                    <Grid Grid.Row="2">
+                        <!-- Real App Tiles -->
+                        <ScrollViewer x:Name="RealAppsScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="24,0,24,16">
+                            <WrapPanel Orientation="Horizontal">
 
-                            <!-- ═══ APP 1: PUBG MOBILE (Original Logo from GameLoop Cache) ═══ -->
-                            <Border Width="110" Height="136" Margin="0,0,16,16" Background="Transparent" CornerRadius="14" Cursor="Hand">
-                                <Border.InputBindings>
-                                    <MouseBinding Gesture="LeftClick" Command="{Binding LaunchPubgCommand}"/>
-                                </Border.InputBindings>
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Style.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#1A1E2B"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
-                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <!-- App Icon: Authentic Original PUBG Mobile Logo -->
-                                    <Border Width="72" Height="72" CornerRadius="18" ClipToBounds="True" Background="#141722" BorderBrush="#252F44" BorderThickness="1">
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.5"/>
-                                        </Border.Effect>
-                                        <Image Source="/Assets/original_pubg_icon.png" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <TextBlock Text="PUBG MOBILE" FontSize="11.5" FontWeight="Bold" Foreground="#F1F5F9" HorizontalAlignment="Center" Margin="0,10,0,0"/>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- ═══ APP 2: Play Store (Image 4 Style) ═══ -->
-                            <Border Width="110" Height="136" Margin="0,0,16,16" Background="Transparent" CornerRadius="14" Cursor="Hand">
-                                <Border.InputBindings>
-                                    <MouseBinding Gesture="LeftClick" Command="{Binding LaunchPlayStoreCommand}"/>
-                                </Border.InputBindings>
+                            <!-- ═══ APP 1: Play Store (First in Order) ═══ -->
+                            <Border x:Name="PlayStoreTile" Width="110" Height="136" Margin="0,0,16,16" Background="Transparent" CornerRadius="14" Cursor="Hand" MouseLeftButtonDown="PlayStore_Click">
                                 <Border.Style>
                                     <Style TargetType="Border">
                                         <Style.Triggers>
@@ -260,26 +462,73 @@
                                 </Border.Style>
                                 <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                        <!-- App Icon: White rounded card with Google Play logo -->
-                                        <Border Width="72" Height="72" CornerRadius="18" ClipToBounds="True" Background="#FFFFFF">
-                                            <Border.Effect>
-                                                <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.4"/>
-                                            </Border.Effect>
-                                            <Image Source="/Assets/playstore_icon.png" Stretch="Uniform" Margin="6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                        <TextBlock Text="Play Store" FontSize="11.5" FontWeight="Bold" Foreground="#F1F5F9" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                                        <!-- App Icon: White authentic squircle card with filled Google Play logo -->
+                                        <Grid Width="72" Height="72">
+                                            <Path Width="72" Height="72"
+                                                  Data="M 36,0 C 64.8,0 72,7.2 72,36 C 72,64.8 64.8,72 36,72 C 7.2,72 0,64.8 0,36 C 0,7.2 7.2,0 36,0 Z"
+                                                  Fill="#FFFFFF">
+                                                <Path.Effect>
+                                                    <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.4"/>
+                                                </Path.Effect>
+                                            </Path>
+                                            <Image Source="/Assets/playstore_icon.png" Stretch="Uniform" Margin="9" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <TextBlock Text="Play Store" FontFamily="{StaticResource PrimaryFont}" FontSize="12" FontWeight="Bold" Foreground="#F1F5F9" HorizontalAlignment="Center" Margin="0,10,0,0"/>
                                     </StackPanel>
 
-                                    <!-- Three dots icon (Image 4 Style: ··· in top right) -->
-                                    <TextBlock Text="···" FontSize="13" FontWeight="Bold" Foreground="#64748B" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-4,0"/>
+                                    <!-- Delete Mode Badge (Visible in Uninstall Mode) -->
+                                    <Border x:Name="PlayStoreDeleteBadge" Visibility="Collapsed" Background="#EF4444" CornerRadius="6" Padding="6,3" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-4,0">
+                                        <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFont}" FontSize="10" Foreground="#FFFFFF"/>
+                                    </Border>
+
+                                    <!-- Hidden Badge (Shown only when F9 reveals hidden apps) -->
+                                    <Border x:Name="PlayStoreHiddenBadge" Visibility="Collapsed" Background="#D97706" CornerRadius="6" Padding="5,2" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-4,-4,0,0">
+                                        <TextBlock Text="Hidden" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                    </Border>
+
+                                    <!-- Three dots button (Hover Only) -->
+                                    <Button x:Name="PlayStoreDotsBtn" Click="DotsButton_Click" MouseEnter="DotsButton_MouseEnter" MouseLeave="DotsButton_MouseLeave" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-4,0" Style="{StaticResource AppDotsButtonStyle}">
+                                        <Button.ContextMenu>
+                                            <ContextMenu Style="{StaticResource AppDrawerContextMenu}" MouseEnter="ContextMenu_MouseEnter" MouseLeave="ContextMenu_MouseLeave" Closed="ContextMenu_Closed">
+                                                <MenuItem Header="Launch Play Store" Click="LaunchPlayStore_Click" Style="{StaticResource AppDrawerMenuItem}">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="&#xE768;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#00D4FF"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="App Info" Click="AppInfo_Click" Tag="com.android.vending" Style="{StaticResource AppDrawerMenuItem}">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="&#xE946;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#94A3B8"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Force Stop" Click="ForceStop_Click" Tag="com.android.vending" Style="{StaticResource AppDrawerMenuItem}">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="&#xE71A;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#F59E0B"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Clear Data" Click="ClearData_Click" Tag="com.android.vending" Style="{StaticResource AppDrawerMenuItem}">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="&#xE894;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#94A3B8"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem x:Name="MenuItemHidePlayStore" Header="Hide App" Click="HideApp_Click" Tag="PlayStore" Style="{StaticResource AppDrawerMenuItem}">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="&#xED1A;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#38BDF8"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <Separator Style="{StaticResource AppDrawerSeparatorStyle}"/>
+                                                <MenuItem Header="Uninstall" Click="Uninstall_Click" Tag="com.android.vending" Style="{StaticResource AppDrawerMenuItemDestructive}">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#EF4444"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                            </ContextMenu>
+                                        </Button.ContextMenu>
+                                    </Button>
                                 </Grid>
                             </Border>
 
-                            <!-- ═══ APP 3: Settings (Image 4 Style) ═══ -->
-                            <Border Width="110" Height="136" Margin="0,0,16,16" Background="Transparent" CornerRadius="14" Cursor="Hand">
-                                <Border.InputBindings>
-                                    <MouseBinding Gesture="LeftClick" Command="{Binding LaunchSettingsCommand}"/>
-                                </Border.InputBindings>
+                            <!-- ═══ APP 2: Settings (Second in Order) ═══ -->
+                            <Border x:Name="SettingsTile" Width="110" Height="136" Margin="0,0,16,16" Background="Transparent" CornerRadius="14" Cursor="Hand" MouseLeftButtonDown="Settings_Click">
                                 <Border.Style>
                                     <Style TargetType="Border">
                                         <Style.Triggers>
@@ -289,49 +538,617 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
-                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <!-- App Icon: Dark rounded square with gear -->
-                                    <Border Width="72" Height="72" CornerRadius="18" Background="#141722" BorderBrush="#252F44" BorderThickness="1">
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.5"/>
-                                        </Border.Effect>
-                                        <TextBlock Text="&#xE713;" FontFamily="{StaticResource IconFont}" FontSize="28" Foreground="#E2E8F0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <!-- App Icon: Dark squircle with gear -->
+                                        <Grid Width="72" Height="72">
+                                            <Path Width="72" Height="72"
+                                                  Data="M 36,0 C 64.8,0 72,7.2 72,36 C 72,64.8 64.8,72 36,72 C 7.2,72 0,64.8 0,36 C 0,7.2 7.2,0 36,0 Z"
+                                                  Fill="#141722" Stroke="#252F44" StrokeThickness="1">
+                                                <Path.Effect>
+                                                    <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.5"/>
+                                                </Path.Effect>
+                                            </Path>
+                                            <TextBlock Text="&#xE713;" FontFamily="{StaticResource IconFont}" FontSize="36" Foreground="#E2E8F0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Grid>
+                                        <TextBlock Text="Settings" FontFamily="{StaticResource PrimaryFont}" FontSize="12" FontWeight="Bold" Foreground="#F1F5F9" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                                    </StackPanel>
+
+                                    <!-- Hidden Badge -->
+                                    <Border x:Name="SettingsHiddenBadge" Visibility="Collapsed" Background="#D97706" CornerRadius="6" Padding="5,2" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-4,-4,0,0">
+                                        <TextBlock Text="Hidden" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF"/>
                                     </Border>
-                                    <TextBlock Text="Settings" FontSize="11.5" FontWeight="Bold" Foreground="#F1F5F9" HorizontalAlignment="Center" Margin="0,10,0,0"/>
-                                </StackPanel>
+
+                                    <!-- Three dots button (Hover Only) -->
+                                    <Button x:Name="SettingsDotsBtn" Click="DotsButton_Click" MouseEnter="DotsButton_MouseEnter" MouseLeave="DotsButton_MouseLeave" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-4,0" Style="{StaticResource AppDotsButtonStyle}">
+                                        <Button.ContextMenu>
+                                            <ContextMenu Style="{StaticResource AppDrawerContextMenu}" MouseEnter="ContextMenu_MouseEnter" MouseLeave="ContextMenu_MouseLeave" Closed="ContextMenu_Closed">
+                                                <MenuItem Header="Launch Settings" Click="LaunchSettings_Click" Style="{StaticResource AppDrawerMenuItem}">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="&#xE768;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#00D4FF"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="App Info" Click="AppInfo_Click" Tag="com.android.settings" Style="{StaticResource AppDrawerMenuItem}">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="&#xE946;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#94A3B8"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Force Stop" Click="ForceStop_Click" Tag="com.android.settings" Style="{StaticResource AppDrawerMenuItem}">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="&#xE71A;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#F59E0B"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Clear Data" Click="ClearData_Click" Tag="com.android.settings" Style="{StaticResource AppDrawerMenuItem}">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="&#xE894;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#94A3B8"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem x:Name="MenuItemHideSettings" Header="Hide App" Click="HideApp_Click" Tag="Settings" Style="{StaticResource AppDrawerMenuItem}">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="&#xED1A;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#38BDF8"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <Separator Style="{StaticResource AppDrawerSeparatorStyle}"/>
+                                                <MenuItem Header="Uninstall" Click="Uninstall_Click" Tag="com.android.settings" Style="{StaticResource AppDrawerMenuItemDestructive}">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#EF4444"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                            </ContextMenu>
+                                        </Button.ContextMenu>
+                                    </Button>
+                                </Grid>
                             </Border>
 
-                            <!-- ═══ APP 4: Install APK (Image 4 Style: Golden rounded square with +) ═══ -->
-                            <Border Width="110" Height="136" Margin="0,0,16,16" Background="Transparent" CornerRadius="14" Cursor="Hand">
-                                <Border.InputBindings>
-                                    <MouseBinding Gesture="LeftClick" Command="{Binding InstallApkFileCommand}"/>
-                                </Border.InputBindings>
+                            <!-- ═══ APP 3: PUBG MOBILE (Third in Order) ═══ -->
+                            <Border x:Name="PubgTile" Width="110" Height="136" Margin="0,0,16,16" Background="Transparent" CornerRadius="14" Cursor="Hand" MouseLeftButtonDown="Pubg_Click">
                                 <Border.Style>
                                     <Style TargetType="Border">
                                         <Style.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#1E1C16"/>
+                                                <Setter Property="Background" Value="#1A1E2B"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <!-- App Icon: Authentic Original PUBG Mobile Logo, Filled to exact Squircle edges -->
+                                        <Grid Width="72" Height="72">
+                                            <Path Width="72" Height="72"
+                                                  Data="M 36,0 C 64.8,0 72,7.2 72,36 C 72,64.8 64.8,72 36,72 C 7.2,72 0,64.8 0,36 C 0,7.2 7.2,0 36,0 Z"
+                                                  Stroke="#252F44" StrokeThickness="1">
+                                                <Path.Fill>
+                                                    <ImageBrush ImageSource="/Assets/original_pubg_icon.png" Stretch="UniformToFill"/>
+                                                </Path.Fill>
+                                                <Path.Effect>
+                                                    <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.5"/>
+                                                </Path.Effect>
+                                            </Path>
+                                        </Grid>
+                                        <TextBlock Text="PUBG MOBILE" FontFamily="{StaticResource PrimaryFont}" FontSize="12" FontWeight="Bold" Foreground="#F1F5F9" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                                    </StackPanel>
+
+                                    <!-- Delete Mode Badge (Visible in Uninstall Mode) -->
+                                    <Border x:Name="PubgDeleteBadge" Visibility="Collapsed" Background="#EF4444" CornerRadius="6" Padding="6,3" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-4,0">
+                                        <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFont}" FontSize="10" Foreground="#FFFFFF"/>
+                                    </Border>
+
+                                    <!-- Hidden Badge -->
+                                    <Border x:Name="PubgHiddenBadge" Visibility="Collapsed" Background="#D97706" CornerRadius="6" Padding="5,2" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-4,-4,0,0">
+                                        <TextBlock Text="Hidden" FontSize="9" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                    </Border>
+
+                                    <!-- Three dots button (Hover Only) -->
+                                    <Button x:Name="PubgDotsBtn" Click="DotsButton_Click" MouseEnter="DotsButton_MouseEnter" MouseLeave="DotsButton_MouseLeave" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-4,0" Style="{StaticResource AppDotsButtonStyle}">
+                                        <Button.ContextMenu>
+                                            <ContextMenu Style="{StaticResource AppDrawerContextMenu}" MouseEnter="ContextMenu_MouseEnter" MouseLeave="ContextMenu_MouseLeave" Closed="ContextMenu_Closed">
+                                                <MenuItem Header="Launch PUBG Mobile" Click="LaunchPubg_Click" Style="{StaticResource AppDrawerMenuItem}">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="&#xE768;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#00D4FF"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="App Info" Click="AppInfo_Click" Tag="PUBG" Style="{StaticResource AppDrawerMenuItem}">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="&#xE946;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#94A3B8"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Force Stop" Click="ForceStop_Click" Tag="PUBG" Style="{StaticResource AppDrawerMenuItem}">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="&#xE71A;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#F59E0B"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Clear Data" Click="ClearData_Click" Tag="PUBG" Style="{StaticResource AppDrawerMenuItem}">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="&#xE894;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#94A3B8"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem x:Name="MenuItemHidePubg" Header="Hide App" Click="HideApp_Click" Tag="PUBGMOBILE" Style="{StaticResource AppDrawerMenuItem}">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="&#xED1A;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#38BDF8"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <Separator Style="{StaticResource AppDrawerSeparatorStyle}"/>
+                                                <MenuItem Header="Uninstall" Click="Uninstall_Click" Tag="PUBG" Style="{StaticResource AppDrawerMenuItemDestructive}">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFont}" FontSize="12" Foreground="#EF4444"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                            </ContextMenu>
+                                        </Button.ContextMenu>
+                                    </Button>
+                                </Grid>
+                            </Border>
+
+                            <!-- ═══ APP 4: Install APK (Fourth in Order) ═══ -->
+                            <Border x:Name="InstallApkTile" Width="110" Height="136" Margin="0,0,16,16" Background="Transparent" CornerRadius="14" Cursor="Hand" MouseLeftButtonDown="InstallApk_Click">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#141E30"/>
                                             </Trigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
                                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <!-- App Icon: Dark square with golden border and golden plus icon -->
-                                    <Border Width="72" Height="72" CornerRadius="18" Background="#181714" BorderBrush="#D97706" BorderThickness="1.5">
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#D97706" Opacity="0.3"/>
-                                        </Border.Effect>
-                                        <TextBlock Text="&#xE710;" FontFamily="{StaticResource IconFont}" FontSize="28" Foreground="#F59E0B" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <TextBlock Text="Install APK" FontSize="11.5" FontWeight="Bold" Foreground="#F59E0B" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                                    <!-- App Icon: Dark squircle with blue border and blue plus icon -->
+                                    <Grid Width="72" Height="72">
+                                        <Path Width="72" Height="72"
+                                              Data="M 36,1 C 64,1 71,8 71,36 C 71,64 64,71 36,71 C 8,71 1,64 1,36 C 1,8 8,1 36,1 Z"
+                                              Fill="#101826" Stroke="#00D4FF" StrokeThickness="1.5"
+                                              SnapsToDevicePixels="True">
+                                            <Path.Effect>
+                                                <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Color="#000000" Opacity="0.5"/>
+                                            </Path.Effect>
+                                        </Path>
+                                        <TextBlock Text="&#xE710;" FontFamily="{StaticResource IconFont}" FontSize="36" Foreground="#00D4FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Grid>
+                                    <TextBlock Text="Install APK" FontFamily="{StaticResource PrimaryFont}" FontSize="12" FontWeight="Bold" Foreground="#00D4FF" HorizontalAlignment="Center" Margin="0,10,0,0"/>
                                 </StackPanel>
                             </Border>
 
                         </WrapPanel>
                     </ScrollViewer>
+
+                    <!-- Skeleton Shimmer Placeholders (Revealed during Refresh) -->
+                    <ScrollViewer x:Name="SkeletonAppsScrollViewer" Visibility="Collapsed" IsHitTestVisible="False" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="24,0,24,16">
+                        <WrapPanel Orientation="Horizontal">
+                            <!-- Skeleton 1 -->
+                            <Border Width="110" Height="136" Margin="0,0,16,16" Background="Transparent">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Path Width="72" Height="72"
+                                          Data="M 36,0 C 64.8,0 72,7.2 72,36 C 72,64.8 64.8,72 36,72 C 7.2,72 0,64.8 0,36 C 0,7.2 7.2,0 36,0 Z">
+                                        <Path.Fill>
+                                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5" MappingMode="RelativeToBoundingBox">
+                                                <LinearGradientBrush.RelativeTransform>
+                                                    <TranslateTransform x:Name="ShimmerTrans1" X="-1.0"/>
+                                                </LinearGradientBrush.RelativeTransform>
+                                                <GradientStop Color="#1E222D" Offset="0.0"/>
+                                                <GradientStop Color="#1E222D" Offset="0.25"/>
+                                                <GradientStop Color="#3D4559" Offset="0.50"/>
+                                                <GradientStop Color="#1E222D" Offset="0.75"/>
+                                                <GradientStop Color="#1E222D" Offset="1.0"/>
+                                            </LinearGradientBrush>
+                                        </Path.Fill>
+                                    </Path>
+                                    <Border Width="62" Height="12" CornerRadius="6" Margin="0,10,0,0">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5" MappingMode="RelativeToBoundingBox">
+                                                <LinearGradientBrush.RelativeTransform>
+                                                    <TranslateTransform x:Name="ShimmerTransPill1" X="-1.0"/>
+                                                </LinearGradientBrush.RelativeTransform>
+                                                <GradientStop Color="#181B24" Offset="0.0"/>
+                                                <GradientStop Color="#181B24" Offset="0.25"/>
+                                                <GradientStop Color="#343B4E" Offset="0.50"/>
+                                                <GradientStop Color="#181B24" Offset="0.75"/>
+                                                <GradientStop Color="#181B24" Offset="1.0"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Skeleton 2 -->
+                            <Border Width="110" Height="136" Margin="0,0,16,16" Background="Transparent">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Path Width="72" Height="72"
+                                          Data="M 36,0 C 64.8,0 72,7.2 72,36 C 72,64.8 64.8,72 36,72 C 7.2,72 0,64.8 0,36 C 0,7.2 7.2,0 36,0 Z">
+                                        <Path.Fill>
+                                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5" MappingMode="RelativeToBoundingBox">
+                                                <LinearGradientBrush.RelativeTransform>
+                                                    <TranslateTransform x:Name="ShimmerTrans2" X="-1.0"/>
+                                                </LinearGradientBrush.RelativeTransform>
+                                                <GradientStop Color="#1E222D" Offset="0.0"/>
+                                                <GradientStop Color="#1E222D" Offset="0.25"/>
+                                                <GradientStop Color="#3D4559" Offset="0.50"/>
+                                                <GradientStop Color="#1E222D" Offset="0.75"/>
+                                                <GradientStop Color="#1E222D" Offset="1.0"/>
+                                            </LinearGradientBrush>
+                                        </Path.Fill>
+                                    </Path>
+                                    <Border Width="50" Height="12" CornerRadius="6" Margin="0,10,0,0">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5" MappingMode="RelativeToBoundingBox">
+                                                <LinearGradientBrush.RelativeTransform>
+                                                    <TranslateTransform x:Name="ShimmerTransPill2" X="-1.0"/>
+                                                </LinearGradientBrush.RelativeTransform>
+                                                <GradientStop Color="#181B24" Offset="0.0"/>
+                                                <GradientStop Color="#181B24" Offset="0.25"/>
+                                                <GradientStop Color="#343B4E" Offset="0.50"/>
+                                                <GradientStop Color="#181B24" Offset="0.75"/>
+                                                <GradientStop Color="#181B24" Offset="1.0"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Skeleton 3 -->
+                            <Border Width="110" Height="136" Margin="0,0,16,16" Background="Transparent">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Path Width="72" Height="72"
+                                          Data="M 36,0 C 64.8,0 72,7.2 72,36 C 72,64.8 64.8,72 36,72 C 7.2,72 0,64.8 0,36 C 0,7.2 7.2,0 36,0 Z">
+                                        <Path.Fill>
+                                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5" MappingMode="RelativeToBoundingBox">
+                                                <LinearGradientBrush.RelativeTransform>
+                                                    <TranslateTransform x:Name="ShimmerTrans3" X="-1.0"/>
+                                                </LinearGradientBrush.RelativeTransform>
+                                                <GradientStop Color="#1E222D" Offset="0.0"/>
+                                                <GradientStop Color="#1E222D" Offset="0.25"/>
+                                                <GradientStop Color="#3D4559" Offset="0.50"/>
+                                                <GradientStop Color="#1E222D" Offset="0.75"/>
+                                                <GradientStop Color="#1E222D" Offset="1.0"/>
+                                            </LinearGradientBrush>
+                                        </Path.Fill>
+                                    </Path>
+                                    <Border Width="75" Height="12" CornerRadius="6" Margin="0,10,0,0">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5" MappingMode="RelativeToBoundingBox">
+                                                <LinearGradientBrush.RelativeTransform>
+                                                    <TranslateTransform x:Name="ShimmerTransPill3" X="-1.0"/>
+                                                </LinearGradientBrush.RelativeTransform>
+                                                <GradientStop Color="#181B24" Offset="0.0"/>
+                                                <GradientStop Color="#181B24" Offset="0.25"/>
+                                                <GradientStop Color="#343B4E" Offset="0.50"/>
+                                                <GradientStop Color="#181B24" Offset="0.75"/>
+                                                <GradientStop Color="#181B24" Offset="1.0"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Skeleton 4 -->
+                            <Border Width="110" Height="136" Margin="0,0,16,16" Background="Transparent">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Path Width="72" Height="72"
+                                          Data="M 36,0 C 64.8,0 72,7.2 72,36 C 72,64.8 64.8,72 36,72 C 7.2,72 0,64.8 0,36 C 0,7.2 7.2,0 36,0 Z">
+                                        <Path.Fill>
+                                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5" MappingMode="RelativeToBoundingBox">
+                                                <LinearGradientBrush.RelativeTransform>
+                                                    <TranslateTransform x:Name="ShimmerTrans4" X="-1.0"/>
+                                                </LinearGradientBrush.RelativeTransform>
+                                                <GradientStop Color="#1E222D" Offset="0.0"/>
+                                                <GradientStop Color="#1E222D" Offset="0.25"/>
+                                                <GradientStop Color="#3D4559" Offset="0.50"/>
+                                                <GradientStop Color="#1E222D" Offset="0.75"/>
+                                                <GradientStop Color="#1E222D" Offset="1.0"/>
+                                            </LinearGradientBrush>
+                                        </Path.Fill>
+                                    </Path>
+                                    <Border Width="65" Height="12" CornerRadius="6" Margin="0,10,0,0">
+                                        <Border.Background>
+                                            <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5" MappingMode="RelativeToBoundingBox">
+                                                <LinearGradientBrush.RelativeTransform>
+                                                    <TranslateTransform x:Name="ShimmerTransPill4" X="-1.0"/>
+                                                </LinearGradientBrush.RelativeTransform>
+                                                <GradientStop Color="#181B24" Offset="0.0"/>
+                                                <GradientStop Color="#181B24" Offset="0.25"/>
+                                                <GradientStop Color="#343B4E" Offset="0.50"/>
+                                                <GradientStop Color="#181B24" Offset="0.75"/>
+                                                <GradientStop Color="#181B24" Offset="1.0"/>
+                                            </LinearGradientBrush>
+                                        </Border.Background>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </WrapPanel>
+                    </ScrollViewer>
+                </Grid>
+
+                    <!-- ═══ ROW 3: CENTERED ENLARGED CLICKABLE BOTTOM PULL HANDLE ═══ -->
+                    <Grid Grid.Row="3" Margin="0,8,0,12" HorizontalAlignment="Center">
+                        <Border x:Name="DrawerPullHandle"
+                                Width="68" Height="5"
+                                CornerRadius="2.5"
+                                Cursor="Hand"
+                                ToolTip="Click to Close Drawer"
+                                MouseLeftButtonDown="PullHandle_MouseLeftButtonDown">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="#334155"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#FFFFFF"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                        </Border>
+                    </Grid>
+
+                    <!-- ═══ UNINSTALL CONFIRMATION MODAL OVERLAY ═══ -->
+                    <Grid x:Name="UninstallModalOverlay" Grid.Row="0" Grid.RowSpan="4" Visibility="Collapsed" Background="#C8000000" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                        <Border Width="390" Background="#111319" BorderBrush="#252D3E" BorderThickness="1.5" CornerRadius="18" Padding="24"
+                                VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="36" ShadowDepth="8" Direction="270" Color="#000000" Opacity="0.95"/>
+                            </Border.Effect>
+                            <StackPanel>
+                                <!-- Header with Red Trash Icon -->
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,16" VerticalAlignment="Center">
+                                    <Border Width="40" Height="40" CornerRadius="12" Background="#261014" BorderBrush="#EF4444" BorderThickness="1" Margin="0,0,14,0">
+                                        <TextBlock Text="&#xE74D;" FontFamily="{StaticResource IconFont}" FontSize="18" Foreground="#EF4444" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock x:Name="ModalAppNameText" Text="Uninstall Application" FontFamily="{StaticResource PrimaryFont}" FontSize="15" FontWeight="Bold" Foreground="#F8FAFC"/>
+                                        <TextBlock Text="GameLoop Application Removal" FontSize="11" Foreground="#94A3B8" Margin="0,1,0,0"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- Description -->
+                                <TextBlock x:Name="ModalDescriptionText"
+                                           Text="Are you sure you want to uninstall this application from GameLoop? All game files, user data, and cache will be permanently removed."
+                                           FontSize="12" Foreground="#CBD5E1" TextWrapping="Wrap" Margin="0,0,0,22" LineHeight="18"/>
+
+                                <!-- Buttons: Cancel (Neutral) and Uninstall (Red Action) -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="12"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <Button Grid.Column="0" Content="Cancel" Click="ModalCancel_Click"
+                                            Height="38" Cursor="Hand" Background="#161B26" BorderBrush="#2A354A" BorderThickness="1"
+                                            Foreground="#E2E8F0" FontFamily="{StaticResource PrimaryFont}" FontSize="12.5" FontWeight="SemiBold">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="#222C3E"/>
+                                                                    <Setter Property="BorderBrush" Value="#475569"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+
+                                    <Button Grid.Column="2" Content="Uninstall" Click="ModalConfirmUninstall_Click"
+                                            Height="38" Cursor="Hand" Background="#DC2626" BorderBrush="#EF4444" BorderThickness="1"
+                                            Foreground="#FFFFFF" FontFamily="{StaticResource PrimaryFont}" FontSize="12.5" FontWeight="Bold">
+                                        <Button.Style>
+                                            <Style TargetType="Button">
+                                                <Setter Property="Template">
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="10">
+                                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <ControlTemplate.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="#EF4444"/>
+                                                                    <Setter Property="BorderBrush" Value="#F87171"/>
+                                                                </Trigger>
+                                                            </ControlTemplate.Triggers>
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
                 </Grid>
             </Grid>
-        </Grid>
-    </Border>
-</Grid>
+        </Border>
+
+        <!-- ═══ GAMING MODE LEFT PANEL: TELEMETRY & DYNAMIC ISLAND MODE STEPPER ═══ -->
+        <StackPanel x:Name="GamingModeLeftPanel"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Bottom"
+                    Margin="36,0,0,44"
+                    Width="430"
+                    Visibility="Collapsed">
+
+            <!-- ─── BOX 1: HARDWARE TELEMETRY SUMMARY (CPU | RAM | GPU | DISK) ─── -->
+            <Border x:Name="TelemetryBox"
+                    Height="42"
+                    CornerRadius="14"
+                    Background="#0A0A0A"
+                    BorderBrush="#22242B"
+                    BorderThickness="1"
+                    Padding="14,0"
+                    Margin="0,0,0,10">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="16" ShadowDepth="3" Direction="270" Color="#000000" Opacity="0.6"/>
+                </Border.Effect>
+                <Grid VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <!-- 1. CPU -->
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <!-- 2. RAM -->
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <!-- 3. GPU -->
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <!-- 4. Disk -->
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- CPU -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="CPU" FontFamily="{StaticResource PrimaryFont}" FontSize="11.5" FontWeight="SemiBold" Foreground="#8E8E93" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TelemetryCpuVal" Text="16%" FontFamily="{StaticResource PrimaryFont}" FontSize="12.5" FontWeight="Bold" Foreground="#FFFFFF" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Divider 1 -->
+                    <Border Grid.Column="1" Width="1" Height="14" Background="#262832" VerticalAlignment="Center" Margin="2,0"/>
+
+                    <!-- RAM -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="RAM" FontFamily="{StaticResource PrimaryFont}" FontSize="11.5" FontWeight="SemiBold" Foreground="#8E8E93" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TelemetryRamVal" Text="59%" FontFamily="{StaticResource PrimaryFont}" FontSize="12.5" FontWeight="Bold" Foreground="#FFFFFF" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Divider 2 -->
+                    <Border Grid.Column="3" Width="1" Height="14" Background="#262832" VerticalAlignment="Center" Margin="2,0"/>
+
+                    <!-- GPU -->
+                    <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="GPU" FontFamily="{StaticResource PrimaryFont}" FontSize="11.5" FontWeight="SemiBold" Foreground="#8E8E93" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TelemetryGpuVal" Text="24%" FontFamily="{StaticResource PrimaryFont}" FontSize="12.5" FontWeight="Bold" Foreground="#FFFFFF" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Divider 3 -->
+                    <Border Grid.Column="5" Width="1" Height="14" Background="#262832" VerticalAlignment="Center" Margin="2,0"/>
+
+                    <!-- Disk -->
+                    <StackPanel Grid.Column="6" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="Disk" FontFamily="{StaticResource PrimaryFont}" FontSize="11.5" FontWeight="SemiBold" Foreground="#8E8E93" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="TelemetryDiskVal" Text="42%" FontFamily="{StaticResource PrimaryFont}" FontSize="12.5" FontWeight="Bold" Foreground="#FFFFFF" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ─── BOX 2: MODE STEPPER SLIDER (DYNAMIC ISLAND STYLE - PHOTO 4) ─── -->
+            <Border x:Name="ModeBox"
+                    Height="106"
+                    CornerRadius="16"
+                    Background="#0A0A0A"
+                    BorderBrush="#22242B"
+                    BorderThickness="1"
+                    Padding="16,10">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="20" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.65"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <!-- Row 0: Header (Icon + "Mode" Title + Status Badge) -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- Row 1: Draggable Slider Track -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- Row 2: Mode Labels (Normal, Gaming, Ultra Gaming) -->
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header Row -->
+                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <!-- Controller / Speed Icon -->
+                            <TextBlock x:Name="ModeHeaderIcon" Text="&#xE7FC;" FontFamily="{StaticResource IconFont}" FontSize="14" Foreground="#10B981" VerticalAlignment="Center"/>
+                            <TextBlock Text="Mode" FontFamily="{StaticResource PrimaryFont}" FontSize="13" FontWeight="Bold" Foreground="#FFFFFF" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+
+                        <!-- Status Badge (Photo 4 Style) -->
+                        <Border x:Name="ModeBadgeBorder" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                CornerRadius="9" Background="#0E2822" BorderBrush="#10B981" BorderThickness="1" Padding="9,3">
+                            <TextBlock x:Name="ModeBadgeText" Text="Active • Turbo" FontFamily="{StaticResource PrimaryFont}"
+                                       FontSize="10.5" FontWeight="Bold" Foreground="#10B981"/>
+                        </Border>
+                    </Grid>
+
+                    <!-- Center Row: Draggable Slider & Track -->
+                    <Grid Grid.Row="1" Height="26" VerticalAlignment="Center" Margin="0,0,0,6">
+                        <!-- Background Tick Dots (3 Stops: 0=Left, 1=Center, 2=Right) -->
+                        <Grid Margin="12,0" VerticalAlignment="Center">
+                            <Ellipse Width="6" Height="6" Fill="#1E222D" HorizontalAlignment="Left"/>
+                            <Ellipse Width="6" Height="6" Fill="#1E222D" HorizontalAlignment="Center"/>
+                            <Ellipse Width="6" Height="6" Fill="#1E222D" HorizontalAlignment="Right"/>
+                        </Grid>
+
+                        <!-- Draggable WPF Slider -->
+                        <Slider x:Name="ModeSlider"
+                                Style="{StaticResource DynamicIslandSliderStyle}"
+                                Minimum="0" Maximum="2"
+                                TickFrequency="1"
+                                IsSnapToTickEnabled="True"
+                                Value="1"
+                                ValueChanged="ModeSlider_ValueChanged"
+                                VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <!-- Bottom Row: 3 Mode Labels (Clickable) -->
+                    <Grid Grid.Row="2" Margin="2,0,2,0">
+                        <!-- Stop 0: Normal -->
+                        <TextBlock x:Name="ModeLabelNormal" Text="Normal" Tag="0"
+                                   FontFamily="{StaticResource PrimaryFont}" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="#6B7280" HorizontalAlignment="Left" Cursor="Hand"
+                                   MouseLeftButtonDown="ModeLabel_Click"/>
+
+                        <!-- Stop 1: Gaming -->
+                        <TextBlock x:Name="ModeLabelGaming" Text="Gaming" Tag="1"
+                                   FontFamily="{StaticResource PrimaryFont}" FontSize="11" FontWeight="Bold"
+                                   Foreground="#10B981" HorizontalAlignment="Center" Cursor="Hand"
+                                   MouseLeftButtonDown="ModeLabel_Click"/>
+
+                        <!-- Stop 2: Ultra Gaming -->
+                        <TextBlock x:Name="ModeLabelUltra" Text="Ultra Gaming" Tag="2"
+                                   FontFamily="{StaticResource PrimaryFont}" FontSize="11" FontWeight="SemiBold"
+                                   Foreground="#6B7280" HorizontalAlignment="Right" Cursor="Hand"
+                                   MouseLeftButtonDown="ModeLabel_Click"/>
+                    </Grid>
+                </Grid>
+            </Border>
+        </StackPanel>
+
+        <!-- ═══ FLOATING NAVIGATION BAR (SHORTCUT DOCK) ═══ -->
+        <Border x:Name="FloatingNavBar"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                Margin="0,0,0,48"
+                Width="160" Height="56"
+                CornerRadius="15"
+                Background="#000000"
+                BorderThickness="0"
+                Padding="4"
+                SnapsToDevicePixels="True">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="20" ShadowDepth="3" Direction="270" Color="#000000" Opacity="0.7"/>
+            </Border.Effect>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <!-- 1. Home Icon Tab (&#xE80F; - Active on Home) -->
+                <Border x:Name="NavTabPointer" Tag="0" MouseLeftButtonDown="NavTab_Click" MouseEnter="NavTab_MouseEnter" MouseLeave="NavTab_MouseLeave"
+                        Cursor="Hand" Width="48" Height="48" CornerRadius="11" Background="#2B2B2B" ToolTip="Home / Apps">
+                    <TextBlock Text="&#xE80F;" FontFamily="{StaticResource IconFont}" FontSize="18" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+
+                <!-- 2. Gaming Mode Controller Tab (&#xE7FC;) -->
+                <Border x:Name="NavTabPalette" Tag="1" MouseLeftButtonDown="NavTab_Click" MouseEnter="NavTab_MouseEnter" MouseLeave="NavTab_MouseLeave"
+                        Cursor="Hand" Width="48" Height="48" CornerRadius="11" Background="Transparent" Margin="4,0,0,0" ToolTip="Gaming Mode &amp; Shortcuts">
+                    <TextBlock Text="&#xE7FC;" FontFamily="{StaticResource IconFont}" FontSize="19" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+
+                <!-- 3. Smartphone Tab -->
+                <Border x:Name="NavTabPhone" Tag="2" MouseLeftButtonDown="NavTab_Click" MouseEnter="NavTab_MouseEnter" MouseLeave="NavTab_MouseLeave"
+                        Cursor="Hand" Width="48" Height="48" CornerRadius="11" Background="Transparent" Margin="4,0,0,0" ToolTip="Device &amp; Profiles">
+                    <Image Source="/Assets/nav_phone.png" Width="18" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                </Border>
+            </StackPanel>
+        </Border>
+    </Grid>
 </UserControl>

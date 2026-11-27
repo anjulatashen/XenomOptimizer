@@ -9,9 +9,9 @@
     <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>XenomOptimizer</RootNamespace>
     <AssemblyName>XenomOptimizer</AssemblyName>
-    <Version>1.0.3-beta</Version>
-    <AssemblyVersion>1.0.3.0</AssemblyVersion>
-    <FileVersion>1.0.3.0</FileVersion>
+    <Version>1.0.4-beta</Version>
+    <AssemblyVersion>1.0.4.0</AssemblyVersion>
+    <FileVersion>1.0.4.0</FileVersion>
     <Company>Xenom</Company>
     <Product>LAG Killer by XENOM (Beta)</Product>
     <Description>LAG Killer by XENOM - GameLoop &amp; PUBG Mobile Optimizer</Description>
@@ -40,6 +40,7 @@
     <Resource Include="Assets\pubg.png" />
     <Resource Include="Assets\original_pubg_icon.png" />
     <Resource Include="Assets\library_drawer_bg.png" />
+    <Resource Include="Assets\library_bg.png" />
     <Resource Include="Assets\playstore_icon.png" />
     <Resource Include="Assets\gameloop_icon.png" />
     <Resource Include="Assets\animated.gif" />
@@ -48,8 +49,11 @@
     <Resource Include="Assets\Scroll.gif" />
     <Resource Include="Assets\Scroll_cropped.gif" />
     <Resource Include="Assets\Scroll_transparent.gif" />
+    <Resource Include="Assets\library_icon.gif" />
+    <Resource Include="Assets\library_icon_black.gif" />
     <Resource Include="Assets\kevin_nunez.png" />
     <Resource Include="Assets\social_*.png" />
+    <Resource Include="Assets\nav_*.png" />
     <Resource Include="Assets\Styles\*.png" />
     <None Update="Assets\xenom.ico">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -64,6 +68,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\library_drawer_bg.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\library_bg.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\original_pubg_icon.png">
@@ -93,10 +100,19 @@
     <None Update="Assets\Scroll_transparent.gif">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Assets\library_icon.gif">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\library_icon_black.gif">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Assets\kevin_nunez.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\social_*.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Assets\nav_*.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Assets\*.mp4">

@@ -2,7 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:converters="clr-namespace:XenomOptimizer.Converters"
-             xmlns:views="clr-namespace:XenomOptimizer.Views">
+             xmlns:views="clr-namespace:XenomOptimizer.Views"
+             xmlns:gif="http://wpfanimatedgif.codeplex.com">
 
     <UserControl.Resources>
         <converters:MediaTypeToBrushConverter x:Key="MediaTypeToBrush"/>
@@ -1131,10 +1132,20 @@
                     </Border>
                 </Grid>
 
-                <!-- RIGHT COLUMN: HARDWARE SPECIFICATIONS -->
-                <Border Grid.Column="1" CornerRadius="18" Background="#111319" BorderBrush="#20232E" BorderThickness="1.5"
-                        Padding="24,18">
-                    <Grid VerticalAlignment="Center">
+                <!-- RIGHT COLUMN: HARDWARE SPECIFICATIONS (Stepped Card with Bottom-Right Cutout Notch) -->
+                <Grid Grid.Column="1">
+                    <!-- Vector Notched Background Shape (Photo 1 & 2 Custom Bottom-Right Cutout) -->
+                    <views:NotchedCardShape NotchPosition="BottomRight"
+                                           Fill="#111319" Stroke="#20232E" StrokeThickness="1.5"
+                                           NotchWidth="158" NotchHeight="58"
+                                           CornerRadius="18" InnerCornerRadius="14">
+                        <views:NotchedCardShape.Effect>
+                            <DropShadowEffect BlurRadius="25" ShadowDepth="4" Opacity="0.45" Color="#000000"/>
+                        </views:NotchedCardShape.Effect>
+                    </views:NotchedCardShape>
+
+                    <!-- Specifications Content Grid -->
+                    <Grid Margin="24,18,24,18" VerticalAlignment="Center">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
@@ -1294,7 +1305,99 @@
                             </Grid>
                         </Grid>
                     </Grid>
-                </Border>
+
+                    <!-- Enlarged "Library" Button (Sitting directly inside the Notch Cutout) -->
+                    <Button HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                            Command="{Binding DataContext.OpenAppDrawerCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            ToolTip="Open GameLoop Library Drawer"
+                            Cursor="Hand"
+                            Width="146" Height="48"
+                            Margin="0,0,2,2">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#000000"/>
+                                <Setter Property="BorderBrush" Value="#1E2028"/>
+                                <Setter Property="BorderThickness" Value="1.2"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="LibBtnBorder"
+                                                    Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="12, 12, 16, 12">
+                                                <StackPanel x:Name="LibContentGrid" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <StackPanel.RenderTransform>
+                                                        <TranslateTransform x:Name="LibContentTrans" Y="0"/>
+                                                    </StackPanel.RenderTransform>
+
+                                                    <!-- Icon (Larger 26x26, Silver default, Black on hover) -->
+                                                    <Grid VerticalAlignment="Center" Margin="0,0,10,0">
+                                                        <Image x:Name="LibIconNormal" Width="26" Height="26"
+                                                               gif:ImageBehavior.AnimatedSource="pack://application:,,,/Assets/library_icon.gif"
+                                                               gif:ImageBehavior.RepeatBehavior="Forever"
+                                                               gif:ImageBehavior.AutoStart="True"
+                                                               RenderOptions.BitmapScalingMode="HighQuality"
+                                                               Opacity="1"/>
+
+                                                        <Image x:Name="LibIconBlack" Width="26" Height="26"
+                                                               gif:ImageBehavior.AnimatedSource="pack://application:,,,/Assets/library_icon_black.gif"
+                                                               gif:ImageBehavior.RepeatBehavior="Forever"
+                                                               gif:ImageBehavior.AutoStart="True"
+                                                               RenderOptions.BitmapScalingMode="HighQuality"
+                                                               Opacity="0"/>
+                                                    </Grid>
+
+                                                    <!-- "Library" Text -->
+                                                    <TextBlock x:Name="LibText" Text="Library"
+                                                               FontFamily="{StaticResource PrimaryFont}"
+                                                               FontSize="14.5" FontWeight="Bold"
+                                                               Foreground="#CBD5E1"
+                                                               VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <!-- Signature Xenom Lime Green (#D1FE29) -->
+                                                    <Setter TargetName="LibBtnBorder" Property="Background" Value="#D1FE29"/>
+                                                    <Setter TargetName="LibBtnBorder" Property="BorderBrush" Value="#D1FE29"/>
+                                                    <Setter TargetName="LibText" Property="Foreground" Value="#000000"/>
+                                                    <Setter TargetName="LibIconNormal" Property="Opacity" Value="0"/>
+                                                    <Setter TargetName="LibIconBlack" Property="Opacity" Value="1"/>
+                                                    <Trigger.EnterActions>
+                                                        <BeginStoryboard>
+                                                            <Storyboard>
+                                                                <!-- Continuous Up and Down Bumping Bounce Animation -->
+                                                                <DoubleAnimationUsingKeyFrames Storyboard.TargetName="LibContentTrans"
+                                                                                               Storyboard.TargetProperty="Y"
+                                                                                               RepeatBehavior="Forever">
+                                                                    <SplineDoubleKeyFrame KeyTime="0:0:0.00" Value="0"/>
+                                                                    <SplineDoubleKeyFrame KeyTime="0:0:0.18" Value="-4"/>
+                                                                    <SplineDoubleKeyFrame KeyTime="0:0:0.36" Value="2"/>
+                                                                    <SplineDoubleKeyFrame KeyTime="0:0:0.54" Value="-2"/>
+                                                                    <SplineDoubleKeyFrame KeyTime="0:0:0.72" Value="0"/>
+                                                                </DoubleAnimationUsingKeyFrames>
+                                                            </Storyboard>
+                                                        </BeginStoryboard>
+                                                    </Trigger.EnterActions>
+                                                    <Trigger.ExitActions>
+                                                        <BeginStoryboard>
+                                                            <Storyboard>
+                                                                <DoubleAnimation Storyboard.TargetName="LibContentTrans"
+                                                                                 Storyboard.TargetProperty="Y"
+                                                                                 To="0" Duration="0:0:0.12"/>
+                                                            </Storyboard>
+                                                        </BeginStoryboard>
+                                                    </Trigger.ExitActions>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </Grid>
             </Grid>
 
         </StackPanel>

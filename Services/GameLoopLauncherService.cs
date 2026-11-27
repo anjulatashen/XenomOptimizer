@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.Win32;
 using XenomOptimizer.Models;
@@ -103,6 +104,180 @@ public class GameLoopLauncherService : IGameLoopLauncherService
         return false;
     }
 
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    private static void FocusGameLoopWindow()
+    {
+        try
+        {
+            var proc = Process.GetProcessesByName("AndroidEmulatorEn")
+                .Concat(Process.GetProcessesByName("AndroidEmulator"))
+                .Concat(Process.GetProcessesByName("aow_exe"))
+                .FirstOrDefault(p => p.MainWindowHandle != IntPtr.Zero);
+            if (proc != null)
+            {
+                ShowWindow(proc.MainWindowHandle, 9); // SW_RESTORE
+                SetForegroundWindow(proc.MainWindowHandle);
+            }
+        }
+        catch { }
+    }
+
+    private void EnforceUserRenderEngineAndSettings(string installPath)
+    {
+        try
+        {
+            using var cuKey = Registry.CurrentUser.OpenSubKey(@"Software\Tencent\MobileGamePC", true);
+            if (cuKey != null)
+            {
+                // Detect user's configured engine mode (default to OpenGL+ = 2 if not set)
+                int engine = 2;
+                var curEngineObj = cuKey.GetValue("RendererType") ?? cuKey.GetValue("RenderEngine");
+                if (curEngineObj != null && int.TryParse(curEngineObj.ToString(), out int parsed) && parsed > 0)
+                {
+                    engine = parsed;
+                }
+
+                if (engine == 2) // OpenGL+
+                {
+                    cuKey.SetValue("RendererType", 2, RegistryValueKind.DWord);
+                    cuKey.SetValue("RenderEngine", 2, RegistryValueKind.DWord);
+                    cuKey.SetValue("RenderMode", 1, RegistryValueKind.DWord);
+                    cuKey.SetValue("ForceDirectX", 0, RegistryValueKind.DWord);
+                    cuKey.SetValue("EnableGLESv3", 1, RegistryValueKind.DWord);
+                    cuKey.SetValue("UseVulkan", 0, RegistryValueKind.DWord);
+
+                    try
+                    {
+                        using var vmKey = cuKey.CreateSubKey("VM");
+                        vmKey.SetValue("RendererType", 2, RegistryValueKind.DWord);
+                        vmKey.SetValue("RenderEngine", 2, RegistryValueKind.DWord);
+                        vmKey.SetValue("RenderMode", 1, RegistryValueKind.DWord);
+                        vmKey.SetValue("ForceDirectX", 0, RegistryValueKind.DWord);
+                        vmKey.SetValue("EnableGLESv3", 1, RegistryValueKind.DWord);
+                    }
+                    catch { }
+
+                    try
+                    {
+                        using var r100 = cuKey.CreateSubKey(@"RunFalgs\_100");
+                        r100.SetValue("RendererEngine", 2, RegistryValueKind.DWord);
+                    }
+                    catch { }
+
+                    try
+                    {
+                        using var raow = cuKey.CreateSubKey(@"RunFalgs\aow_100");
+                        raow.SetValue("RendererEngine", 2, RegistryValueKind.DWord);
+                    }
+                    catch { }
+
+                    try
+                    {
+                        using var lmKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\Tencent\MobileGamePC", true);
+                        if (lmKey != null)
+                        {
+                            lmKey.SetValue("ForceDirectX", 0, RegistryValueKind.DWord);
+                            lmKey.SetValue("UseVulkan", 0, RegistryValueKind.DWord);
+                        }
+                    }
+                    catch { }
+                }
+
+                // Clear Tencent's auto MatchRuleId so Rule 408 is not cached or enforced
+                try
+                {
+                    using var runFlags = cuKey.OpenSubKey("RunFalgs", true);
+                    if (runFlags != null)
+                    {
+                        runFlags.SetValue("MatchRuleId", 0, RegistryValueKind.DWord);
+                        runFlags.DeleteValue("MatchRuleApk", false);
+                    }
+                }
+                catch { }
+
+                // Synchronize Config.ini: ensure Renderer = 2 (or engine) and remove enable_vulkan
+                string[] candidateInis = {
+                    Path.Combine(installPath, "ui", "Config.ini"),
+                    Path.Combine(installPath, "TxGameAssistant", "ui", "Config.ini"),
+                    Path.Combine(installPath, "Config.ini"),
+                    @"C:\Program Files\TxGameAssistant\ui\Config.ini",
+                    @"E:\Program Files\TxGameAssistant\ui\Config.ini"
+                };
+
+                foreach (var ini in candidateInis)
+                {
+                    if (File.Exists(ini))
+                    {
+                        SyncIniEngine(ini, engine);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _log.Log("Launcher", $"Error enforcing render engine settings: {ex.Message}", "WARN");
+        }
+    }
+
+    private static void SyncIniEngine(string filePath, int engine)
+    {
+        try
+        {
+            if (!File.Exists(filePath)) return;
+            var encoding = System.Text.Encoding.Default;
+            byte[] raw = File.ReadAllBytes(filePath);
+            if (raw.Length >= 2 && raw[0] == 0xFF && raw[1] == 0xFE)
+            {
+                encoding = System.Text.Encoding.Unicode;
+            }
+
+            var text = encoding.GetString(raw);
+            var lines = text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList();
+            bool inEngine = false;
+
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var trimmed = lines[i].Trim();
+                if (trimmed.StartsWith("[") && trimmed.EndsWith("]"))
+                {
+                    var sec = trimmed[1..^1].Trim().ToLowerInvariant();
+                    inEngine = sec == "engine" || sec == "engine_100038";
+                    continue;
+                }
+
+                if (inEngine)
+                {
+                    var parts = trimmed.Split(new[] { '=' }, 2);
+                    if (parts.Length == 2)
+                    {
+                        var key = parts[0].Trim().ToLowerInvariant();
+                        if (key == "renderer" || key == "render_engine" || key == "renderer_type")
+                        {
+                            lines[i] = $"{parts[0].Trim()} = {engine}";
+                        }
+                        else if (key == "render_type")
+                        {
+                            lines[i] = $"{parts[0].Trim()} = {(engine == 2 ? "opengl" : (engine == 4 ? "vulkan" : "directx"))}";
+                        }
+                    }
+                }
+
+                if (trimmed.StartsWith("enable_vulkan", StringComparison.OrdinalIgnoreCase))
+                {
+                    lines[i] = "; enable_vulkan disabled";
+                }
+            }
+
+            File.WriteAllText(filePath, string.Join("\r\n", lines) + "\r\n", encoding);
+        }
+        catch { }
+    }
+
     public async Task<bool> LaunchAppAsync(string packageName)
     {
         if (string.Equals(packageName, "appmarket", StringComparison.OrdinalIgnoreCase))
@@ -112,6 +287,9 @@ public class GameLoopLauncherService : IGameLoopLauncherService
 
         var installPath = await _detection.GetInstallPathAsync();
         if (string.IsNullOrEmpty(installPath)) installPath = @"C:\Program Files\TxGameAssistant";
+
+        // Pre-enforce user's configured engine settings (OpenGL+ / DirectX+) and clear Rule 408
+        EnforceUserRenderEngineAndSettings(installPath);
 
         string uiDir = Path.Combine(installPath, "ui");
         if (!Directory.Exists(uiDir)) uiDir = installPath;
@@ -134,23 +312,34 @@ public class GameLoopLauncherService : IGameLoopLauncherService
 
         try
         {
-            // 1. Try launching emulator with -vm 100 -startpkg
+            bool isAlreadyRunning = Process.GetProcessesByName("AndroidEmulatorEn").Length > 0 
+                                 || Process.GetProcessesByName("AndroidEmulator").Length > 0 
+                                 || Process.GetProcessesByName("aow_exe").Length > 0;
+
+            if (isAlreadyRunning)
+            {
+                _log.Log("Launcher", $"GameLoop is already running with user settings. Launching {packageName} directly via ADB...", "INFO");
+                await TrySendAdbLaunchIntentAsync(packageName, uiDir);
+                FocusGameLoopWindow();
+                return true;
+            }
+
+            // Cold start: Launch clean VM (-vm 100) WITHOUT -startpkg to prevent GameLoop from invoking Rule 408 override
             var psi = new ProcessStartInfo
             {
                 FileName = selectedExe,
-                Arguments = $"-vm 100 -startpkg \"{packageName}\"",
+                Arguments = "-vm 100",
                 WorkingDirectory = Path.GetDirectoryName(selectedExe) ?? uiDir,
                 UseShellExecute = true
             };
 
             Process.Start(psi);
-            _log.Log("Launcher", $"Started {selectedExe} with package: {packageName}", "SUCCESS");
+            _log.Log("Launcher", $"Started GameLoop in clean VM mode (-vm 100) with user's configured engine. Launching {packageName} as soon as VM is ready...", "SUCCESS");
 
-            // 2. If GameLoop is already running, send ADB intent in background to switch directly
+            // Background task to trigger app inside VM as soon as Android/ADB is ready
             _ = Task.Run(async () =>
             {
-                await Task.Delay(1200); // Small grace period
-                await TrySendAdbLaunchIntentAsync(packageName, uiDir);
+                await EnsureAppLaunchedAsync(packageName, uiDir);
             });
 
             return true;
@@ -159,6 +348,61 @@ public class GameLoopLauncherService : IGameLoopLauncherService
         {
             _log.Log("Launcher", $"Error launching package {packageName}: {ex.Message}", "ERROR");
             return false;
+        }
+    }
+
+    private static string GetAdbLaunchArgs(string packageName)
+    {
+        return packageName switch
+        {
+            "com.tencent.ig" => "shell am start -n com.tencent.ig/com.epicgames.ue4.GameActivity",
+            "com.pubg.krmobile" => "shell am start -n com.pubg.krmobile/com.epicgames.ue4.GameActivity",
+            "com.vng.pubgmobile" => "shell am start -n com.vng.pubgmobile/com.epicgames.ue4.GameActivity",
+            "com.pubg.imobile" => "shell am start -n com.pubg.imobile/com.epicgames.ue4.GameActivity",
+            "com.tencent.tmgp.pubgmhd" => "shell am start -n com.tencent.tmgp.pubgmhd/com.epicgames.ue4.GameActivity",
+            "com.android.settings" => "shell am start -a android.settings.SETTINGS",
+            "nextapp.fx" => "shell am start -n nextapp.fx/.FileActivity",
+            "com.android.browser" => "shell am start -a android.intent.action.MAIN -c android.intent.category.APP_BROWSER",
+            "com.android.vending" => "shell am start -n com.android.vending/.AssetBrowserActivity",
+            _ => $"shell monkey -p {packageName} -c android.intent.category.LAUNCHER 1"
+        };
+    }
+
+    private async Task EnsureAppLaunchedAsync(string packageName, string uiDir)
+    {
+        string adbExe = Path.Combine(uiDir, "adb.exe");
+        if (!File.Exists(adbExe)) adbExe = @"C:\Program Files\TxGameAssistant\ui\adb.exe";
+        if (!File.Exists(adbExe)) return;
+
+        string adbArgs = GetAdbLaunchArgs(packageName);
+
+        // Wait up to 25 seconds for the Android VM / ADB to respond
+        for (int i = 0; i < 25; i++)
+        {
+            await Task.Delay(1000);
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = adbExe,
+                    Arguments = adbArgs,
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                };
+
+                using var proc = Process.Start(psi);
+                if (proc != null)
+                {
+                    await proc.WaitForExitAsync();
+                    if (proc.ExitCode == 0)
+                    {
+                        _log.Log("Launcher", $"Successfully launched {packageName} via ADB in clean VM!", "SUCCESS");
+                        FocusGameLoopWindow();
+                        break;
+                    }
+                }
+            }
+            catch { }
         }
     }
 
@@ -173,15 +417,7 @@ public class GameLoopLauncherService : IGameLoopLauncherService
 
         try
         {
-            // Determine action or component
-            string adbArgs = packageName switch
-            {
-                "com.android.settings" => "shell am start -a android.settings.SETTINGS",
-                "nextapp.fx" => "shell am start -n nextapp.fx/.FileActivity",
-                "com.android.browser" => "shell am start -a android.intent.action.MAIN -c android.intent.category.APP_BROWSER",
-                "com.android.vending" => "shell am start -n com.android.vending/.AssetBrowserActivity",
-                _ => $"shell monkey -p {packageName} -c android.intent.category.LAUNCHER 1"
-            };
+            string adbArgs = GetAdbLaunchArgs(packageName);
 
             var psi = new ProcessStartInfo
             {

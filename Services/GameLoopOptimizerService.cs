@@ -287,11 +287,20 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
                 @"HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Tencent\MobileGamePC"
             };
 
+            // Check user's current render engine to preserve it (e.g. OpenGL+ or DirectX+)
+            uint currentEngine = 2u; // Default to OpenGL+
+            var curEngineObj = _registry.GetValue(@"HKEY_CURRENT_USER\Software\Tencent\MobileGamePC", "RendererType") 
+                               ?? _registry.GetValue(@"HKEY_CURRENT_USER\Software\Tencent\MobileGamePC", "RenderEngine");
+            if (curEngineObj != null && uint.TryParse(curEngineObj.ToString(), out uint parsedEng) && parsedEng > 0)
+            {
+                currentEngine = parsedEng;
+            }
+
             foreach (var key in tencentKeys)
             {
                 if (enable)
                 {
-                    _registry.SetValue(key, "RenderType", 1u, RegistryValueKind.DWord);       // 1 = DirectX+
+                    _registry.SetValue(key, "RenderType", currentEngine, RegistryValueKind.DWord);
                     _registry.SetValue(key, "Vsync", 0u, RegistryValueKind.DWord);            // Disable VSync
                     _registry.SetValue(key, "ShaderCache", 1u, RegistryValueKind.DWord);      // Enable shader cache
                     _registry.SetValue(key, "ThreadOptimization", 1u, RegistryValueKind.DWord); // Thread Boost
@@ -312,8 +321,11 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
                 string[] iniPaths =
                 {
                     Path.Combine(installPath, "TxGameAssistant", "UI", "config.ini"),
+                    Path.Combine(installPath, "UI", "config.ini"),
                     Path.Combine(installPath, "TxGameAssistant", "UI", "vm_configuration.ini")
                 };
+
+                string engineStr = currentEngine == 2 ? "opengl" : (currentEngine == 4 ? "vulkan" : "directx");
 
                 foreach (var ini in iniPaths)
                 {
@@ -322,7 +334,8 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
                         await _backup.BackupFileAsync(ini);
                         if (enable)
                         {
-                            UpdateIniKey(ini, "Engine", "render_type", "directx");
+                            UpdateIniKey(ini, "Engine", "render_type", engineStr);
+                            UpdateIniKey(ini, "Engine", "Renderer", currentEngine.ToString());
                             UpdateIniKey(ini, "Engine", "vsync", "0");
                             UpdateIniKey(ini, "Engine", "shader_cache", "1");
                             UpdateIniKey(ini, "Engine", "multithread", "1");
@@ -331,7 +344,7 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
                 }
             }
 
-            var status = enable ? "Engine Render Boost applied (DirectX+, No VSync, Thread Boost, Shader Cache)" : "Engine render settings restored";
+            var status = enable ? $"Engine Render Boost applied ({ (currentEngine == 2 ? "OpenGL+" : "DirectX+") }, No VSync, Thread Boost, Shader Cache)" : "Engine render settings restored";
             _log.Log("GameLoop", status, "SUCCESS");
             return OptimizationResult.Succeeded(status);
         }
@@ -1425,7 +1438,16 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
         {
             if (!File.Exists(filePath)) return;
 
-            var lines = File.ReadAllLines(filePath).ToList();
+            // Detect if file has UTF-16 LE BOM (Standard for GameLoop Config.ini)
+            var encoding = System.Text.Encoding.Default;
+            byte[] raw = File.ReadAllBytes(filePath);
+            if (raw.Length >= 2 && raw[0] == 0xFF && raw[1] == 0xFE)
+            {
+                encoding = System.Text.Encoding.Unicode;
+            }
+
+            var text = encoding.GetString(raw);
+            var lines = text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList();
             bool inSection = false;
             bool sectionFound = false;
             bool keyUpdated = false;
@@ -1435,7 +1457,7 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
                 var trimmed = lines[i].Trim();
                 if (trimmed.StartsWith("[") && trimmed.EndsWith("]"))
                 {
-                    var currSec = trimmed[1..^1];
+                    var currSec = trimmed[1..^1].Trim();
                     if (string.Equals(currSec, sectionName, StringComparison.OrdinalIgnoreCase))
                     {
                         inSection = true;
@@ -1444,16 +1466,20 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
                     else if (inSection)
                     {
                         // Exited our section, insert before this line if not updated
-                        lines.Insert(i, $"{keyName}={newValue}");
+                        lines.Insert(i, $"{keyName} = {newValue}");
                         keyUpdated = true;
                         break;
                     }
                 }
-                else if (inSection && trimmed.StartsWith($"{keyName}=", StringComparison.OrdinalIgnoreCase))
+                else if (inSection)
                 {
-                    lines[i] = $"{keyName}={newValue}";
-                    keyUpdated = true;
-                    break;
+                    var parts = trimmed.Split(new[] { '=' }, 2);
+                    if (parts.Length == 2 && string.Equals(parts[0].Trim(), keyName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        lines[i] = $"{keyName} = {newValue}";
+                        keyUpdated = true;
+                        break;
+                    }
                 }
             }
 
@@ -1463,10 +1489,10 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
                 {
                     lines.Add($"[{sectionName}]");
                 }
-                lines.Add($"{keyName}={newValue}");
+                lines.Add($"{keyName} = {newValue}");
             }
 
-            File.WriteAllLines(filePath, lines);
+            File.WriteAllText(filePath, string.Join("\r\n", lines) + "\r\n", encoding);
         }
         catch { }
     }
@@ -1476,15 +1502,24 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
         try
         {
             if (!File.Exists(filePath)) return;
-            var lines = File.ReadAllLines(filePath).ToList();
+            var encoding = System.Text.Encoding.Default;
+            byte[] raw = File.ReadAllBytes(filePath);
+            if (raw.Length >= 2 && raw[0] == 0xFF && raw[1] == 0xFE)
+            {
+                encoding = System.Text.Encoding.Unicode;
+            }
+
+            var text = encoding.GetString(raw);
+            var lines = text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList();
             bool updated = false;
 
             for (int i = 0; i < lines.Count; i++)
             {
                 var trimmed = lines[i].Trim();
-                if (trimmed.StartsWith($"{keyName}=", StringComparison.OrdinalIgnoreCase))
+                var parts = trimmed.Split(new[] { '=' }, 2);
+                if (parts.Length == 2 && string.Equals(parts[0].Trim(), keyName, StringComparison.OrdinalIgnoreCase))
                 {
-                    lines[i] = $"{keyName}={newValue}";
+                    lines[i] = $"{keyName} = {newValue}";
                     updated = true;
                     break;
                 }
@@ -1492,10 +1527,10 @@ public class GameLoopOptimizerService : IGameLoopOptimizerService
 
             if (!updated)
             {
-                lines.Add($"{keyName}={newValue}");
+                lines.Add($"{keyName} = {newValue}");
             }
 
-            File.WriteAllLines(filePath, lines);
+            File.WriteAllText(filePath, string.Join("\r\n", lines) + "\r\n", encoding);
         }
         catch { }
     }

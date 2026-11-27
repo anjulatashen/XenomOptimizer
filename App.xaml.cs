@@ -1122,6 +1122,48 @@ public partial class App : Application
                             }
                             catch { }
                         }
+                        if (e.Args.Contains("--drawer-delete"))
+                        {
+                            mainWindow.GameLoopAppDrawer?.DeleteModeBtn_Click(mainWindow.GameLoopAppDrawer.DeleteModeBtn, new RoutedEventArgs());
+                        }
+                        var navTabArgIndex = Array.IndexOf(e.Args, "--drawer-nav-tab");
+                        if (navTabArgIndex >= 0 && navTabArgIndex + 1 < e.Args.Length && int.TryParse(e.Args[navTabArgIndex + 1], out var navIdx))
+                        {
+                            mainWindow.GameLoopAppDrawer?.SelectNavTab(navIdx);
+                        }
+                        if (e.Args.Contains("--drawer-modal"))
+                        {
+                            mainWindow.GameLoopAppDrawer?.ShowUninstallModal("Google Play Store", "com.android.vending");
+                        }
+                        if (e.Args.Contains("--drawer-dots-menu"))
+                        {
+                            var btn = mainWindow.GameLoopAppDrawer?.PlayStoreDotsBtn;
+                            if (btn != null && btn.ContextMenu != null)
+                            {
+                                btn.ContextMenu.PlacementTarget = btn;
+                                btn.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+                                btn.ContextMenu.IsOpen = true;
+                                btn.ContextMenu.UpdateLayout();
+
+                                try
+                                {
+                                    int mw = (int)btn.ContextMenu.ActualWidth;
+                                    int mh = (int)btn.ContextMenu.ActualHeight;
+                                    if (mw <= 0) mw = 180;
+                                    if (mh <= 0) mh = 220;
+                                    var menuRtb = new System.Windows.Media.Imaging.RenderTargetBitmap(mw, mh, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                                    menuRtb.Render(btn.ContextMenu);
+                                    var menuEncoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                                    menuEncoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(menuRtb));
+                                    string menuOut = @"C:\Users\anjul\.gemini\antigravity\brain\71b74b8b-8fa5-4dce-a4ef-4fbb8a50d260\context_menu_rendered.png";
+                                    using (var mfs = File.Open(menuOut, FileMode.Create))
+                                    {
+                                        menuEncoder.Save(mfs);
+                                    }
+                                }
+                                catch { }
+                            }
+                        }
                     }
 
                     mainWindow.UpdateLayout();

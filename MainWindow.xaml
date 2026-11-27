@@ -103,6 +103,13 @@
                                 </Setter.Value>
                             </Setter>
                         </DataTrigger>
+                        <DataTrigger Binding="{Binding IsAppDrawerOpen}" Value="True">
+                            <Setter Property="Effect">
+                                <Setter.Value>
+                                    <BlurEffect Radius="16" KernelType="Gaussian" RenderingBias="Performance"/>
+                                </Setter.Value>
+                            </Setter>
+                        </DataTrigger>
                     </Style.Triggers>
                 </Style>
             </Border.Style>
@@ -353,34 +360,136 @@
                                         Visibility="{Binding IsAppDrawerOpen, Converter={StaticResource BoolToVis}}"
                                         Panel.ZIndex="1050"/>
 
-        <!-- ═══ BOTTOM-CENTER FLOATING DRAWER TRIGGER (Image 2 & User Request) ═══ -->
-        <Border HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,1" Panel.ZIndex="990">
+        <!-- ═══ BOTTOM-CENTER FLOATING DRAWER TRIGGER (Home Tab Only, Slide In/Out Animation) ═══ -->
+        <Border x:Name="BottomArrowContainer"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                Margin="0,0,0,0"
+                Panel.ZIndex="990">
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="BottomArrowTranslate" Y="0"/>
+            </Border.RenderTransform>
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Visible"/>
+                    <Setter Property="IsHitTestVisible" Value="True"/>
+                    <Setter Property="Opacity" Value="1"/>
+                    <Style.Triggers>
+                        <!-- Slide Down & Hide on non-Home tabs with smooth animation -->
+                        <DataTrigger Binding="{Binding IsDashboardActive}" Value="False">
+                            <DataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                         To="40" Duration="0:0:0.25">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseIn"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         To="0" Duration="0:0:0.2">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseIn"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.EnterActions>
+                            <DataTrigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                                         To="0" Duration="0:0:0.25">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                        <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                         To="1" Duration="0:0:0.25">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </DataTrigger.ExitActions>
+                            <Setter Property="IsHitTestVisible" Value="False"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+
             <Button x:Name="BtnBottomCenterArrow"
                     Command="{Binding OpenAppDrawerCommand}"
                     ToolTip="Open GameLoop Library"
                     Cursor="Hand"
-                    Background="#141722"
-                    BorderBrush="#253046"
-                    BorderThickness="1,1,1,0"
+                    Background="#111215"
+                    BorderThickness="0"
                     Padding="18,3"
-                    Width="60" Height="18">
+                    Width="68" Height="19">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Setter Property="Template">
                             <Setter.Value>
                                 <ControlTemplate TargetType="Button">
-                                    <Border x:Name="PillHandle" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9,9,0,0">
-                                        <TextBlock Text="&#xE70E;" FontFamily="{StaticResource IconFont}" FontSize="9.5" Foreground="#00D4FF" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-2,0,0"/>
+                                    <Border x:Name="PillHandle"
+                                            Background="{TemplateBinding Background}"
+                                            BorderThickness="0"
+                                            CornerRadius="12,12,0,0">
+                                        <!-- Arrow Icon: Gray, Inverted Direction (Down: &#xE70D;), Bumping on Hover -->
+                                        <TextBlock x:Name="ArrowIcon"
+                                                   Text="&#xE70D;"
+                                                   FontFamily="{StaticResource IconFont}"
+                                                   FontSize="9.5"
+                                                   Foreground="#64748B"
+                                                   HorizontalAlignment="Center"
+                                                   VerticalAlignment="Center"
+                                                   Margin="0,-1,0,0"
+                                                   RenderTransformOrigin="0.5,0.5">
+                                            <TextBlock.RenderTransform>
+                                                <TranslateTransform x:Name="ArrowBounceTransform" Y="0"/>
+                                            </TextBlock.RenderTransform>
+                                        </TextBlock>
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="PillHandle" Property="Background" Value="#1E283C"/>
-                                            <Setter TargetName="PillHandle" Property="BorderBrush" Value="#00D4FF"/>
-                                            <Setter Property="Effect">
-                                                <Setter.Value>
-                                                    <DropShadowEffect BlurRadius="12" Color="#00D4FF" Opacity="0.7" ShadowDepth="0"/>
-                                                </Setter.Value>
-                                            </Setter>
+                                            <Setter TargetName="PillHandle" Property="Background" Value="#1A1C22"/>
+                                            <Setter TargetName="ArrowIcon" Property="Foreground" Value="#94A3B8"/>
+                                            <!-- Bumping Animation on Hover -->
+                                            <Trigger.EnterActions>
+                                                <BeginStoryboard x:Name="BumpingStoryboard">
+                                                    <Storyboard RepeatBehavior="Forever">
+                                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ArrowIcon"
+                                                                                       Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)">
+                                                            <DiscreteDoubleKeyFrame KeyTime="0:0:0.0" Value="0"/>
+                                                            <EasingDoubleKeyFrame KeyTime="0:0:0.18" Value="2.5">
+                                                                <EasingDoubleKeyFrame.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                </EasingDoubleKeyFrame.EasingFunction>
+                                                            </EasingDoubleKeyFrame>
+                                                            <EasingDoubleKeyFrame KeyTime="0:0:0.35" Value="-1.0">
+                                                                <EasingDoubleKeyFrame.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseInOut"/>
+                                                                </EasingDoubleKeyFrame.EasingFunction>
+                                                            </EasingDoubleKeyFrame>
+                                                            <EasingDoubleKeyFrame KeyTime="0:0:0.5" Value="1.0">
+                                                                <EasingDoubleKeyFrame.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseInOut"/>
+                                                                </EasingDoubleKeyFrame.EasingFunction>
+                                                            </EasingDoubleKeyFrame>
+                                                            <EasingDoubleKeyFrame KeyTime="0:0:0.65" Value="0">
+                                                                <EasingDoubleKeyFrame.EasingFunction>
+                                                                    <CubicEase EasingMode="EaseOut"/>
+                                                                </EasingDoubleKeyFrame.EasingFunction>
+                                                            </EasingDoubleKeyFrame>
+                                                            <DiscreteDoubleKeyFrame KeyTime="0:0:1.0" Value="0"/>
+                                                        </DoubleAnimationUsingKeyFrames>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </Trigger.EnterActions>
+                                            <Trigger.ExitActions>
+                                                <StopStoryboard BeginStoryboardName="BumpingStoryboard"/>
+                                            </Trigger.ExitActions>
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
