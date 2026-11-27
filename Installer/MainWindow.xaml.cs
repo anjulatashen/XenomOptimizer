@@ -293,7 +293,7 @@ exit /b";
                     if (uninstKey != null)
                     {
                         uninstKey.SetValue("DisplayName", "LAG Killer by XENOM");
-                        uninstKey.SetValue("DisplayVersion", "1.0.4");
+                        uninstKey.SetValue("DisplayVersion", "1.0.5");
                         uninstKey.SetValue("Publisher", "Xenom");
                         uninstKey.SetValue("InstallLocation", targetDir);
                         uninstKey.SetValue("DisplayIcon", _installedExePath);

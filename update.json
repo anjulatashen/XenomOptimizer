@@ -1,6 +1,6 @@
 {
-  "version": "1.0.4 Beta",
+  "version": "1.0.5 Beta",
   "downloadUrl": "https://github.com/anjulatashen/XenomOptimizer/raw/main/XenomOptimizer-Update.zip",
-  "releaseNotes": "— GameLoop OpenGL+ Engine Persistence: Fixed Tencent Rule 408 downscaling to DirectX+/Xiaomi specs on launch\n— Modern Library Drawer Navigation Dock: Home, Gaming telemetry, and device shortcut tabs\n— Live Hardware Telemetry Panel: Real-time CPU, RAM, GPU, and Disk utilization tracking\n— Tri-Mode Performance Switch: Normal, Gaming, and Ultra Gaming profiles\n— Interactive Search Bar: Auto-focused cursor loop and instant search\n— Background ADB Launcher: Seamless cold-boot & foreground window focus",
+  "releaseNotes": "— GameLoop Global 64-bit Engine & Path Fix: Full multi-drive, registry & process detection for 64-bit GameLoop (7.0+)\n— GameLoop OpenGL+ Engine Persistence: Fixed Tencent Rule 408 downscaling to DirectX+/Xiaomi specs on launch\n— Modern Library Drawer Navigation Dock: Home, Gaming telemetry, and device shortcut tabs\n— Live Hardware Telemetry Panel: Real-time CPU, RAM, GPU, and Disk utilization tracking\n— Tri-Mode Performance Switch: Normal, Gaming, and Ultra Gaming profiles\n— Interactive Search Bar: Auto-focused cursor loop and instant search\n— Background ADB Launcher: Seamless cold-boot & foreground window focus",
   "mandatory": false
 }
