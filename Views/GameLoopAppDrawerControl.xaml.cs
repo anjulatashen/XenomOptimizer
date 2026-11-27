@@ -225,12 +225,33 @@ public partial class GameLoopAppDrawerControl : UserControl
 
     private async Task<(string edition, bool isRunning)> DetectGameLoopStatusAsync()
     {
-        return await Task.Run(() =>
+        return await Task.Run(async () =>
         {
             // Interactive GameLoop processes (exclude background service QMEmulatorService)
-            string[] procNames = { "AndroidEmulator", "AndroidEmulatorEn", "AndroidEmulatorEx", "aow_exe", "AppMarket" };
+            string[] procNames = { "AndroidEmulator", "AndroidEmulatorEn", "AndroidEmulatorEx", "aow_exe", "AppMarket", "GameLoop", "TBSGameLive" };
             bool isRunning = procNames.Any(p => Process.GetProcessesByName(p).Length > 0);
 
+            // 1. Resolve Install Path using DI service if available, else standalone resolver
+            string? validPath = null;
+            if (App.Services != null)
+            {
+                try
+                {
+                    var detectionService = App.Services.GetService<IGameLoopDetectionService>();
+                    if (detectionService != null)
+                    {
+                        validPath = await detectionService.GetInstallPathAsync();
+                    }
+                }
+                catch { }
+            }
+
+            if (string.IsNullOrEmpty(validPath) || !Directory.Exists(validPath))
+            {
+                validPath = ResolveStandaloneGameLoopPath();
+            }
+
+            // 2. Check if Chinese GameLoop or Global GameLoop
             bool isChinese = false;
             try
             {
@@ -244,32 +265,230 @@ public partial class GameLoopAppDrawerControl : UserControl
             }
             catch { }
 
-            var installPaths = new[]
-            {
-                @"C:\Program Files\TxGameAssistant",
-                @"D:\Program Files\TxGameAssistant",
-                @"E:\Program Files\TxGameAssistant",
-                @"C:\Program Files (x86)\TxGameAssistant"
-            };
-            string? validPath = installPaths.FirstOrDefault(Directory.Exists);
+            // 3. Robust 64-bit Architecture Detection (RootFS comp_ver, Directories, Version 7.x+, and Executables)
             bool is64 = false;
             if (validPath != null)
             {
-                is64 = Directory.Exists(Path.Combine(validPath, "AOW_Rootfs_100")) ||
-                       Directory.Exists(Path.Combine(validPath, "vshell")) ||
-                       File.Exists(Path.Combine(validPath, "AOW_Rootfs_100", "init"));
+                // A. Check AOW_Rootfs_100 / AOW_Rootfs comp_ver.conf
+                var conf100 = Path.Combine(validPath, "AOW_Rootfs_100", "comp_ver.conf");
+                var confRoot = Path.Combine(validPath, "AOW_Rootfs", "comp_ver.conf");
+                if (File.Exists(conf100))
+                {
+                    try { if (File.ReadAllText(conf100).Contains("x64", StringComparison.OrdinalIgnoreCase)) is64 = true; } catch { }
+                }
+                if (!is64 && File.Exists(confRoot))
+                {
+                    try { if (File.ReadAllText(confRoot).Contains("x64", StringComparison.OrdinalIgnoreCase)) is64 = true; } catch { }
+                }
+
+                // B. Check directories indicative of 64-bit GameLoop
+                if (!is64)
+                {
+                    is64 = Directory.Exists(Path.Combine(validPath, "AOW_Rootfs_100")) ||
+                           Directory.Exists(Path.Combine(validPath, "vshell")) ||
+                           Directory.Exists(Path.Combine(validPath, "vbox")) ||
+                           Directory.Exists(Path.Combine(validPath, "AOW_Rootfs_64")) ||
+                           File.Exists(Path.Combine(validPath, "AOW_Rootfs_100", "init"));
+                }
+
+                // C. Check GameLoop 7.0+ version (e.g. 7.0.19.05 - Official 64-bit GameLoop!)
+                if (!is64)
+                {
+                    string? ver = GetLocalExeOrRegistryVersion(validPath);
+                    if (!string.IsNullOrEmpty(ver))
+                    {
+                        if (ver.StartsWith("7.") || ver.Contains("x64") || ver.Contains("64"))
+                        {
+                            is64 = true;
+                        }
+                        else
+                        {
+                            var match = System.Text.RegularExpressions.Regex.Match(ver, @"\d+(\.\d+)+");
+                            if (match.Success && System.Version.TryParse(match.Value, out var pv) && pv.Major >= 7)
+                            {
+                                is64 = true;
+                            }
+                        }
+                    }
+                }
+
+                // D. Check for AndroidEmulatorEn.exe (standard 64-bit GameLoop host executable)
+                if (!is64)
+                {
+                    if (File.Exists(Path.Combine(validPath, "ui", "AndroidEmulatorEn.exe")) ||
+                        File.Exists(Path.Combine(validPath, "AndroidEmulatorEn.exe")))
+                    {
+                        is64 = true;
+                    }
+                }
             }
 
+            // If GameLoop process is currently running, it is 100% installed and running!
             string edition;
-            if (validPath == null && !isChinese)
+            if (validPath == null && !isRunning)
+            {
                 edition = "GameLoop Not Installed";
+            }
             else if (isChinese)
+            {
                 edition = is64 ? "Chinese GameLoop 64-bit" : "Chinese GameLoop 32-bit";
+            }
             else
+            {
                 edition = is64 ? "GameLoop Global 64-bit" : "GameLoop Global 32-bit";
+            }
 
             return (edition, isRunning);
         });
+    }
+
+    private static string? ResolveStandaloneGameLoopPath()
+    {
+        try
+        {
+            // 1. Check running processes first
+            string[] procNames = { "AndroidEmulatorEn", "AndroidEmulator", "AndroidEmulatorEx", "aow_exe", "AppMarket", "GameLoop", "TBSGameLive" };
+            foreach (var procName in procNames)
+            {
+                var procs = Process.GetProcessesByName(procName);
+                foreach (var p in procs)
+                {
+                    try
+                    {
+                        var fn = p.MainModule?.FileName;
+                        if (!string.IsNullOrEmpty(fn))
+                        {
+                            var dir = Path.GetDirectoryName(fn);
+                            while (dir != null)
+                            {
+                                if (GameLoopDetectionService.IsValidGameLoopInstall(dir))
+                                {
+                                    var parent = Directory.GetParent(dir)?.FullName;
+                                    if (parent != null && GameLoopDetectionService.IsValidGameLoopInstall(parent))
+                                        return parent;
+                                    return dir;
+                                }
+                                dir = Path.GetDirectoryName(dir);
+                            }
+                        }
+                    }
+                    catch { }
+                    finally { p.Dispose(); }
+                }
+            }
+
+            // 2. Direct registry checks
+            string[] directRegKeys = {
+                @"SOFTWARE\WOW6432Node\Tencent\MobileGamePC\UI",
+                @"SOFTWARE\Tencent\MobileGamePC\UI",
+                @"SOFTWARE\WOW6432Node\Tencent\MobileGamePC",
+                @"SOFTWARE\Tencent\MobileGamePC",
+                @"SOFTWARE\WOW6432Node\Tencent\AppMarket",
+                @"SOFTWARE\Tencent\AppMarket"
+            };
+
+            foreach (var rk in directRegKeys)
+            {
+                using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(rk);
+                var p = key?.GetValue("InstallPath")?.ToString() ?? key?.GetValue("Path")?.ToString();
+                if (!string.IsNullOrEmpty(p))
+                {
+                    p = p.Trim('"').Trim();
+                    if (GameLoopDetectionService.IsValidGameLoopInstall(p)) return p;
+                    var parent = Directory.GetParent(p)?.FullName;
+                    if (parent != null && GameLoopDetectionService.IsValidGameLoopInstall(parent)) return parent;
+                }
+            }
+
+            using (var cuKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Tencent\MobileGamePC\UI") ??
+                               Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Tencent\MobileGamePC") ??
+                               Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Tencent\AppMarket"))
+            {
+                var p = cuKey?.GetValue("InstallPath")?.ToString() ?? cuKey?.GetValue("Path")?.ToString();
+                if (!string.IsNullOrEmpty(p))
+                {
+                    p = p.Trim('"').Trim();
+                    if (GameLoopDetectionService.IsValidGameLoopInstall(p)) return p;
+                    var parent = Directory.GetParent(p)?.FullName;
+                    if (parent != null && GameLoopDetectionService.IsValidGameLoopInstall(parent)) return parent;
+                }
+            }
+
+            // 3. Uninstall entries
+            string[] uninstallKeys = {
+                @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\MobileGamePC",
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\MobileGamePC",
+                @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\GameLoop",
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\GameLoop"
+            };
+            foreach (var uk in uninstallKeys)
+            {
+                using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(uk);
+                var loc = key?.GetValue("InstallLocation")?.ToString();
+                if (!string.IsNullOrEmpty(loc) && Directory.Exists(loc))
+                {
+                    if (GameLoopDetectionService.IsValidGameLoopInstall(loc)) return loc;
+                }
+            }
+
+            // 4. Common drive scan
+            foreach (var drive in DriveInfo.GetDrives().Where(d => d.DriveType == DriveType.Fixed))
+            {
+                var root = drive.RootDirectory.FullName;
+                var candidates = new[]
+                {
+                    Path.Combine(root, "Program Files", "TxGameAssistant"),
+                    Path.Combine(root, "TxGameAssistant"),
+                    Path.Combine(root, "Program Files (x86)", "TxGameAssistant"),
+                    Path.Combine(root, "GameLoop"),
+                    Path.Combine(root, "Program Files", "GameLoop"),
+                    Path.Combine(root, "Program Files (x86)", "GameLoop"),
+                    Path.Combine(root, "Gameloop"),
+                    Path.Combine(root, "Program Files", "Gameloop"),
+                    Path.Combine(root, "GameLoop", "TxGameAssistant")
+                };
+                foreach (var c in candidates)
+                {
+                    if (GameLoopDetectionService.IsValidGameLoopInstall(c)) return c;
+                }
+            }
+        }
+        catch { }
+
+        return null;
+    }
+
+    private static string? GetLocalExeOrRegistryVersion(string installPath)
+    {
+        try
+        {
+            var exePaths = new[]
+            {
+                Path.Combine(installPath, "AppMarket", "AppMarket.exe"),
+                Path.Combine(installPath, "AppMarket.exe"),
+                Path.Combine(installPath, "ui", "AndroidEmulatorEn.exe"),
+                Path.Combine(installPath, "ui", "AndroidEmulator.exe"),
+                Path.Combine(installPath, "AndroidEmulatorEn.exe"),
+                Path.Combine(installPath, "AndroidEmulator.exe"),
+                Path.Combine(installPath, "GameLoop.exe")
+            };
+            foreach (var exe in exePaths)
+            {
+                if (File.Exists(exe))
+                {
+                    var vi = System.Diagnostics.FileVersionInfo.GetVersionInfo(exe);
+                    if (!string.IsNullOrEmpty(vi.FileVersion)) return vi.FileVersion;
+                    if (!string.IsNullOrEmpty(vi.ProductVersion)) return vi.ProductVersion;
+                }
+            }
+
+            using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\WOW6432Node\Tencent\MobileGamePC\UI")
+                         ?? Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Tencent\MobileGamePC\UI");
+            var v = key?.GetValue("Version")?.ToString();
+            if (!string.IsNullOrEmpty(v)) return v;
+        }
+        catch { }
+        return null;
     }
 
     private void SearchBorder_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
